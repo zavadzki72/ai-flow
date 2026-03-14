@@ -1,6 +1,6 @@
 ---
 name: planejar
-description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via map.json e context.md, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
+description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via map.json e todos os docs/ do projeto, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
 ---
 
 # Skill: Planejar (Criar Plano de Execução)
@@ -29,7 +29,7 @@ Prefira essas ferramentas ao invés de comandos bash para leitura, pois são mai
 
 ### Execução de Comandos
 
-Para comandos de build e verificação (ver `context.md#comandos` do projeto ativo),
+Para comandos de build e verificação (ver `docs/architecture/commands.md` do projeto ativo),
 use a ferramenta `Bash` apenas quando necessário executar algo — não para leitura de arquivos.
 
 ### Próximos Skills na Sequência

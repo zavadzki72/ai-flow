@@ -3,8 +3,7 @@
     "name": "NOME_DO_PROJETO",
     "description": "Descrição curta do que o projeto faz e seu propósito de negócio",
     "team": "NOME_DO_TIME",
-    "status": "active",
-    "context": "context.md"
+    "status": "active"
   },
   "stack": {
     "backend": [],
@@ -13,8 +12,7 @@
   },
   "architecture": {
     "pattern": "",
-    "style": "",
-    "details": "context.md#arquitetura"
+    "style": ""
   },
   "repositories": {
     "NOME_REPO": {
@@ -25,12 +23,6 @@
       "contexts": ["palavras", "chave", "que", "identificam", "este", "repo"]
     }
   },
-  "standards": {
-    "backend": "context.md#padroes-backend",
-    "frontend": "context.md#padroes-frontend",
-    "git": "context.md#git-workflow",
-    "testes": "context.md#testes"
-  },
   "tooling": {
     "project-management": {
       "type": "",
@@ -39,6 +31,9 @@
     }
   },
   "docs": {
+    "business": "docs/business/",
+    "architecture": "docs/architecture/",
+    "code-review": "docs/code-review/",
     "prd": "prd/",
     "plan": "plan/",
     "adr": "adr/"

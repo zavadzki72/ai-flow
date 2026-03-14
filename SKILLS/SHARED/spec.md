@@ -55,18 +55,18 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 Carregar o arquivo `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
 - `project`: nome, descrição
 - `stack`: tecnologias de backend/frontend
-- `architecture`: padrão e detalhes
+- `architecture`: padrão e estilo
 - `repositories`: todos os repos com seus `contexts` e `path`
 - `tooling`: ferramenta de gestão de projetos (Azure DevOps, Jira, etc.)
 - `docs.prd`: caminho para salvar PRDs
 
-**0.3. Ler seções relevantes de `context.md`**
+**0.3. Carregar documentação do projeto**
 
-No mínimo, ler:
-- Seção `#visao-geral` — domínio de negócio e módulos do projeto
-- Seção `#arquitetura` — camadas e estrutura do projeto
+Usar Glob para listar e ler **todos** os arquivos `.md` das pastas:
+- `{AI_FLOW_ROOT}/{map-path}/docs/business/` — domínio de negócio, módulos, glossário
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — arquitetura, padrões e estrutura
 
-Manter referência às demais seções para consulta nos passos seguintes.
+Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
 
 ---
 
@@ -140,15 +140,14 @@ Após processar, ir para **Passo 2**.
 
 ### Passo 2: Consultar Documentação do Projeto
 
-Ler seções do `context.md` relevantes para a feature em questão:
+Com a documentação já carregada no Passo 0, consultar as seções relevantes para a feature:
 
-- `#visao-geral` — módulos e regras de negócio gerais
-- `#arquitetura` — camadas e padrões
-- Fluxos técnicos relevantes ao domínio da feature (se documentados em `context.md` ou em arquivos referenciados)
+- `docs/business/` — módulos, regras de negócio, glossário
+- `docs/architecture/` — camadas e padrões
 
 Consultar PRDs anteriores na pasta `{map.docs.prd}` como referência de formato (se existirem).
 
-**Nota:** Ler apenas o que for relevante para a feature específica — não é necessário ler tudo.
+**Nota:** Se necessário, reler arquivos específicos de `docs/` para detalhes da feature.
 
 ---
 
@@ -206,7 +205,7 @@ Apresentar resumo ao dev:
 
 ### Passo 4: Fazer Perguntas de Clarificação
 
-Com base no contexto do projeto (`context.md`) e no código analisado, fazer perguntas **contextualizadas** (máximo 5) sobre:
+Com base no contexto do projeto (docs/ carregados no Passo 0) e no código analisado, fazer perguntas **contextualizadas** (máximo 5) sobre:
 
 - Regras de negócio não claras
 - Comportamento em cenários de exceção
@@ -223,7 +222,7 @@ Com base no contexto do projeto (`context.md`) e no código analisado, fazer per
 ### Passo 5: Análise Técnica
 
 #### 5.1. Impacto
-Quais componentes serão alterados? (por repositório e camada, usando a arquitetura de `context.md#arquitetura`)
+Quais componentes serão alterados? (por repositório e camada, usando a arquitetura de `docs/architecture/`)
 
 #### 5.2. Complexidade
 Estimar baseado em:
@@ -245,7 +244,7 @@ Classificar como:
 
 #### 5.4. Dependências
 - 🔗 Outras features/PRDs relacionados
-- 🔗 Sistemas externos (conforme `context.md#integracoes`)
+- 🔗 Sistemas externos (conforme `docs/business/`)
 - 🔗 Mudanças em infra ou configuração
 
 #### 5.5. Schema / Migrations (se aplicável)
@@ -255,7 +254,7 @@ Classificar como:
 - Reversível?
 
 #### 5.6. Integrações (se aplicável)
-Verificar impacto nos serviços listados em `context.md#integracoes`.
+Verificar impacto nos serviços listados em `docs/business/`.
 
 ---
 
@@ -287,7 +286,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 - **Prioridade**: Alta / Média / Baixa
 - **Complexidade**: 🟢 Baixa / 🟡 Média / 🔴 Alta
 - **Repositório(s)**: [listar apenas os afetados, com base em map.repositories]
-- **Domínio(s)**: [domínios de negócio afetados, com base em context.md]
+- **Domínio(s)**: [domínios de negócio afetados, com base em docs/]
 
 ---
 
@@ -319,7 +318,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 ## 3. ESCOPO TÉCNICO
 
 ### 3.1. Componentes a Alterar
-[Arquivos/módulos que serão MODIFICADOS — listar por repositório e camada (conforme arquitetura em context.md)]
+[Arquivos/módulos que serão MODIFICADOS — listar por repositório e camada (conforme docs/architecture/)]
 
 ### 3.2. Componentes Novos
 [Arquivos/módulos que serão CRIADOS — listar por repositório e camada]
@@ -356,7 +355,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 [Regras de validação em formato de especificação.]
 
 ### 4.6. Autorização
-[Perfis/roles que podem executar cada ação — conforme context.md]
+[Perfis/roles que podem executar cada ação — conforme docs/architecture/]
 
 ---
 
@@ -395,7 +394,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 ## 9. INTEGRAÇÕES (se aplicável)
 
 ### 9.1. Sistemas Externos Afetados
-[Listar serviços de context.md#integracoes que serão impactados]
+[Listar serviços de docs/business/ que serão impactados]
 
 - [ ] [Serviço 1]: [finalidade da alteração]
 - [ ] [Serviço 2]: [finalidade da alteração]
@@ -451,8 +450,8 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ## 13. DEFINIÇÃO DE PRONTO
 
-- [ ] Código implementado seguindo padrões do time (ver context.md#padroes-backend / #padroes-frontend)
-- [ ] Testes criados e passando (ver context.md#testes)
+- [ ] Código implementado seguindo padrões do time (ver docs/architecture/)
+- [ ] Testes criados e passando (ver docs/architecture/)
 - [ ] Migration criada e testada (se aplicável)
 - [ ] Autorização por perfil configurada corretamente
 - [ ] Integrações externas validadas (se aplicável)
@@ -464,8 +463,8 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ## 14. REFERÊNCIAS
 
-- [Documentação de negócio: context.md#visao-geral]
-- [Documentação de arquitetura: context.md#arquitetura]
+- [Documentação de negócio: docs/business/]
+- [Documentação de arquitetura: docs/architecture/]
 - [PRDs relacionados, se houver]
 - [Ticket/story: link ou ID]
 
@@ -582,7 +581,7 @@ Antes de entregar, verificar:
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto do projeto a partir do `map.json` e `context.md`
+- Carrega contexto do projeto a partir do `map.json` e `docs/`
 - Coleta informações via perguntas manuais ou integração com ferramenta de gestão
 - Identifica repositórios afetados usando os `contexts` do `map.json`
 - Atualiza repositórios e analisa código existente

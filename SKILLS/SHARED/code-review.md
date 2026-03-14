@@ -24,11 +24,13 @@ Extrair:
 - `tooling`: ferramenta de gestão de projetos (para criação de PR)
 - `docs.prd` e `docs.plan`: caminhos dos documentos
 
-**0.3. Ler seções obrigatórias de `context.md`**
+**0.3. Carregar documentação do projeto**
 
-- `#padroes-backend` e/ou `#padroes-frontend` — padrões e anti-patterns do projeto
-- `#testes` — frameworks, convenção de nomenclatura, cobertura esperada
-- `#code-review-checklist` — checklist específico do projeto para esta skill
+Usar Glob para listar e ler **todos** os arquivos `.md` das pastas:
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões, anti-patterns e convenções de teste
+- `{AI_FLOW_ROOT}/{map-path}/docs/code-review/` — checklist específico do projeto
+
+Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
 
 ---
 
@@ -133,9 +135,9 @@ Prosseguir com análise?
 ### Passo 5: Consultar Padrões do Projeto
 
 Antes de analisar o código, reler:
-- `context.md#padroes-backend` — padrões obrigatórios e anti-patterns proibidos
-- `context.md#testes` — frameworks, convenção de nomenclatura, cobertura esperada
-- `context.md#code-review-checklist` — checklist específico do projeto
+- `docs/architecture/` — padrões obrigatórios e anti-patterns proibidos
+- `docs/architecture/` — frameworks, convenção de nomenclatura, cobertura esperada
+- `docs/code-review/` — checklist específico do projeto
 
 ---
 
@@ -143,7 +145,7 @@ Antes de analisar o código, reler:
 
 #### 6.1. Checklist do Projeto
 
-Aplicar todos os itens de `context.md#code-review-checklist`.
+Aplicar todos os itens de `docs/code-review/`.
 
 Este checklist contém os critérios específicos da stack e arquitetura do projeto — itens que o contexto do projeto define como obrigatórios ou proibidos.
 
@@ -209,13 +211,13 @@ Este checklist contém os critérios específicos da stack e arquitetura do proj
 
 #### 6.7. Testes
 
-Verificar usando `context.md#testes`:
+Verificar usando `docs/architecture/`:
 - [ ] Convenção de nomenclatura seguida?
 - [ ] Estrutura Arrange/Act/Assert presente e clara?
 - [ ] Frameworks corretos utilizados?
 - [ ] Happy path coberto?
 - [ ] Cenários de erro e edge cases cobertos?
-- [ ] Cobertura de código adequada (conforme threshold em `context.md#testes`)?
+- [ ] Cobertura de código adequada (conforme threshold em `docs/architecture/`)?
 - [ ] Testes independentes entre si?
 - [ ] Mocks configurados corretamente (sem over-mocking)?
 
@@ -238,9 +240,9 @@ Para cada oportunidade:
 #### ✅ APROVADO
 - Todos os critérios do PRD atendidos
 - PLAN atualizado corretamente
-- Sem anti-patterns proibidos (ver `context.md#code-review-checklist`)
+- Sem anti-patterns proibidos (ver `docs/code-review/`)
 - Sem issues de segurança
-- Cobertura de testes dentro do threshold definido em `context.md#testes`
+- Cobertura de testes dentro do threshold definido em `docs/architecture/`
 - Build sem erros
 - Sem code smells graves
 
@@ -253,11 +255,11 @@ Para cada oportunidade:
 
 #### ❌ REQUER ALTERAÇÕES
 Qualquer um dos bloqueadores abaixo impede o merge:
-- Anti-patterns proibidos listados em `context.md#code-review-checklist`
+- Anti-patterns proibidos listados em `docs/code-review/`
 - Issues de segurança (credenciais expostas, injection, dados sensíveis logados)
 - Critérios do PRD não atendidos
 - Bugs que causam comportamento incorreto
-- Cobertura de testes abaixo do mínimo definido em `context.md#testes`
+- Cobertura de testes abaixo do mínimo definido em `docs/architecture/`
 - Autorização incorreta ou ausente em endpoints protegidos
 - N+1 queries com impacto significativo de performance
 - Mudanças de schema com risco de perda de dados
@@ -478,7 +480,7 @@ Se aprovação for ❌, **não criar PR** — listar o que precisa ser corrigido
 
 1. **Seja construtivo** — critique o código, não o desenvolvedor
 2. **Seja específico** — aponte arquivo e linha exatos (`arquivo:42`)
-3. **Explique o "porquê"** — referencie padrões de `context.md`
+3. **Explique o "porquê"** — referencie padrões de `docs/`
 4. **Sugira soluções** — sempre que possível, mostre como corrigir
 5. **Reconheça o bom** — destaque código bem feito
 6. **Priorize** — use 🔴 🟡 🟢 para indicar urgência
@@ -489,13 +491,13 @@ Se aprovação for ❌, **não criar PR** — listar o que precisa ser corrigido
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto via `map.json` e `context.md`
+- Carrega contexto via `map.json` e `docs/`
 - Verifica PLAN atualizado
 - Valida aderência ao PRD (critérios, regras, specs)
 - Analisa diff via `git diff`
-- Aplica checklist específico do projeto (`context.md#code-review-checklist`)
+- Aplica checklist específico do projeto (`docs/code-review/`)
 - Verifica SOLID, segurança, performance, code smells (universal)
-- Analisa testes conforme `context.md#testes`
+- Analisa testes conforme `docs/architecture/`
 - Gera relatório estruturado (🔴 / 🟡 / 🟢)
 - Cria PR via ferramenta configurada em `map.tooling` (se aprovado)
 

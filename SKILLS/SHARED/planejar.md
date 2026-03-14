@@ -21,17 +21,16 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 
 Carregar `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
 - `repositories`: paths locais, branches e contexts de cada repo
-- `architecture`: padrão, estilo e link para `context.md#arquitetura`
-- `standards`: links para seções de padrões em `context.md`
+- `architecture`: padrão e estilo
 - `docs.prd`: caminho onde os PRDs ficam salvos
 - `docs.plan`: caminho onde os PLANs devem ser salvos
 
-**0.3. Ler seções obrigatórias de `context.md`**
+**0.3. Carregar documentação do projeto**
 
-- `#arquitetura` — camadas, estrutura de pastas e ordem natural de implementação
-- `#padroes-backend` e/ou `#padroes-frontend` — convenções de código
-- `#testes` — frameworks, convenção de nomenclatura e estratégia
-- `#comandos` — comandos de build, test, migrations e outros específicos da stack
+Usar Glob para listar e ler **todos** os arquivos `.md` da pasta de arquitetura:
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões, estrutura de pastas, ordem de implementação, comandos
+
+Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
 
 ---
 
@@ -120,7 +119,7 @@ Informar ao dev ao concluir:
 
 **4.1. Mapear estrutura do projeto**
 
-Explorar as camadas conforme definidas em `context.md#arquitetura`:
+Explorar as camadas conforme definidas em `docs/architecture/`:
 - Listar pastas das camadas principais
 - Identificar estrutura de Commands/Queries ou equivalente
 - Verificar entidades de domínio relacionadas ao PRD
@@ -130,7 +129,7 @@ Explorar as camadas conforme definidas em `context.md#arquitetura`:
 
 Baseado no domínio do PRD, buscar arquivos relevantes por padrão de nome:
 ```bash
-# Adaptar padrão conforme a stack (ver context.md#arquitetura)
+# Adaptar padrão conforme a stack (ver docs/architecture/)
 # Exemplos genéricos:
 find . -name "*{Dominio}*" -not -path "*/bin/*" -not -path "*/obj/*"
 find . -name "*{Entidade}*" -not -path "*/bin/*" -not -path "*/obj/*"
@@ -148,7 +147,7 @@ Ler arquivos identificados para entender:
 
 **4.4. Consultar padrões obrigatórios**
 
-Ler as seções de `context.md` referenciadas em `map.standards` antes de planejar as etapas.
+Ler as arquivos de `docs/architecture/` antes de planejar as etapas.
 
 Apresentar resumo do que foi encontrado:
 ```
@@ -193,7 +192,7 @@ Com base nas respostas e no código analisado, dividir a implementação em etap
 - ✅ Cada etapa inclui seus próprios testes
 - ✅ Build + testes devem passar ao fim de cada etapa
 - ✅ Etapas devem ser independentes quando possível
-- ✅ Seguir a ordem natural de implementação da arquitetura (conforme `context.md#arquitetura`)
+- ✅ Seguir a ordem natural de implementação da arquitetura (conforme `docs/architecture/`)
   - Regra geral: dados/domínio primeiro, API/interface por último
   - Exemplo típico: Domain → Persistência → Lógica de Negócio → API → Integrações
 
@@ -254,7 +253,7 @@ e principais componentes afetados por camada]
 
 ## MAPA DE COMPONENTES IDENTIFICADOS
 
-[Listar componentes por camada conforme a arquitetura do projeto em context.md#arquitetura]
+[Listar componentes por camada conforme a arquitetura do projeto em docs/architecture/]
 
 ### [Camada 1 — ex: Domínio]
 - `{path}/[Arquivo]` (novo / alterado)
@@ -275,8 +274,8 @@ e principais componentes afetados por camada]
 
 ## ESTRATÉGIA DE TESTES
 
-[Convenção de nomenclatura de testes — conforme context.md#testes]
-[Frameworks utilizados — conforme context.md#testes]
+[Convenção de nomenclatura de testes — conforme docs/architecture/]
+[Frameworks utilizados — conforme docs/architecture/]
 
 - [ ] [Cenário de teste 1]
 - [ ] [Cenário de teste 2 — happy path]
@@ -310,13 +309,13 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 **Critérios de Aceitação:**
 - [ ] [Critério 1]
 - [ ] [Critério 2]
-- [ ] Build sem erros (ver context.md#comandos)
+- [ ] Build sem erros (ver docs/architecture/)
 - [ ] Testes passando
 
 **Dependências:** Nenhuma
 
 **Comandos Úteis:**
-[Ver context.md#comandos — adaptar para o arquivo/módulo desta etapa]
+[Ver docs/architecture/ — adaptar para o arquivo/módulo desta etapa]
 
 ---
 
@@ -334,12 +333,12 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 ## CHECKLIST FINAL DE VALIDAÇÃO
 
 ### Build & Testes
-[Conforme context.md#comandos]
+[Conforme docs/architecture/]
 - [ ] Build sem erros
 - [ ] Todos os testes passando
 
 ### Padrões de Código
-[Conforme context.md#padroes-backend / #padroes-frontend]
+[Conforme docs/architecture/]
 - [ ] [Padrão 1 do projeto]
 - [ ] [Padrão 2 do projeto]
 
@@ -353,7 +352,7 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 - [ ] Testado com usuário sem permissão (deve retornar erro adequado)
 
 ### Integrações (se aplicável)
-[Conforme context.md#integracoes]
+[Conforme docs/business/]
 - [ ] [Integração 1 validada]
 
 ### PRD
@@ -398,16 +397,16 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
 - **PRD**: {map.docs.prd}/NNN_ID_Nome_Feature.md
-- **Contexto do Projeto**: context.md
-- **Arquitetura**: context.md#arquitetura
-- **Padrões**: context.md#padroes-backend / #padroes-frontend
+- **Contexto do Projeto**: docs/
+- **Arquitetura**: docs/architecture/
+- **Padrões**: docs/architecture/
 - **Código relacionado**: [paths identificados na análise]
 
 ---
 
 ## COMANDOS ÚTEIS
 
-[Ver context.md#comandos para comandos completos da stack do projeto]
+[Ver docs/architecture/ para comandos completos da stack do projeto]
 
 ---
 
@@ -425,7 +424,7 @@ Após cada etapa concluída:
 ## OBSERVAÇÕES
 
 1. **Implementar uma etapa por vez** — garantir testes passando antes de avançar
-2. **Seguir os padrões do projeto** — ver context.md#padroes-backend / #padroes-frontend
+2. **Seguir os padrões do projeto** — ver docs/architecture/
 3. **Code review contínuo** — usar `/code-review` após cada etapa
 
 ---
@@ -492,11 +491,11 @@ Alguma etapa ficou confusa ou precisa ser ajustada?
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto do projeto via `map.json` e `context.md`
+- Carrega contexto do projeto via `map.json` e `docs/`
 - Lê e valida o PRD obrigatório
 - Atualiza repositório(s) antes de analisar
 - Explora código profundamente por camada
-- Consulta padrões do time via `context.md`
+- Consulta padrões do time via `docs/`
 - Faz perguntas técnicas contextualizadas (máx 10)
 - Identifica componentes técnicos com paths completos
 - Quebra em baby steps seguindo a ordem natural da arquitetura

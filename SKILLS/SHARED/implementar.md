@@ -21,15 +21,14 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 
 Carregar `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
 - `repositories`: paths locais, URLs, branches e contexts
-- `standards`: links para seções de padrões em `context.md`
 - `docs.plan`: caminho onde os PLANs estão salvos
 
-**0.3. Ler seções obrigatórias de `context.md`**
+**0.3. Carregar documentação do projeto**
 
-- `#padroes-backend` e/ou `#padroes-frontend` — **ler completamente antes de escrever qualquer código**
-- `#testes` — convenção de nomenclatura, frameworks e estrutura
-- `#estrutura-de-arquivos` — onde colocar cada tipo de arquivo
-- `#comandos` — build, test, migrations
+Usar Glob para listar e ler **todos** os arquivos `.md` da pasta de arquitetura:
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões de código, estrutura de arquivos e comandos
+
+Ler cada arquivo encontrado antes de escrever qualquer linha de código. Não pular nenhum.
 
 ---
 
@@ -69,7 +68,7 @@ Por favor, use:
 - Repositório(s) afetado(s)
 - Arquivos a criar ou modificar (com caminhos completos)
 - O que implementar (descrição técnica)
-- Testes necessários (com nomes no padrão definido em `context.md#testes`)
+- Testes necessários (com nomes no padrão definido em `docs/architecture/`)
 - Critérios de aceitação
 - Dependências de outras etapas
 
@@ -193,17 +192,17 @@ Pronto para implementar ETAPA N!
 
 **4.1. Reler padrões obrigatórios**
 
-Consultar as seções de `context.md` relevantes para o tipo de mudança desta etapa:
-- Se criar/modificar lógica de negócio → `context.md#padroes-backend`
-- Se criar testes → `context.md#testes`
-- Se criar/modificar UI → `context.md#padroes-frontend`
+Consultar as seções de `docs/architecture/` relevantes para o tipo de mudança desta etapa:
+- Se criar/modificar lógica de negócio → `docs/architecture/`
+- Se criar testes → `docs/architecture/`
+- Se criar/modificar UI → `docs/architecture/`
 
 **4.2. Encontrar e ler código similar**
 
 Buscar arquivos do mesmo tipo e domínio para entender o padrão exato adotado no projeto:
 
 ```bash
-# Adaptar o padrão de busca conforme a stack (context.md#arquitetura)
+# Adaptar o padrão de busca conforme a stack (docs/architecture/)
 # Exemplos genéricos:
 find {repo.path} -name "*{Tipo}*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "*/.git/*"
 ```
@@ -217,7 +216,7 @@ find {repo.path} -name "*{Tipo}*" -not -path "*/bin/*" -not -path "*/obj/*" -not
 
 **4.3. Verificar estrutura de arquivos**
 
-Consultar `context.md#estrutura-de-arquivos` para confirmar onde colocar cada arquivo novo.
+Consultar `docs/architecture/` para confirmar onde colocar cada arquivo novo.
 
 ---
 
@@ -230,7 +229,7 @@ Consultar `context.md#estrutura-de-arquivos` para confirmar onde colocar cada ar
 
 1. Ler arquivo(s) atual(is)
 2. Implementar as mudanças descritas no PLAN
-3. Criar testes (padrão: context.md#testes)
+3. Criar testes (padrão: docs/architecture/)
 4. Rodar build
 5. Rodar testes
 6. Code review interno
@@ -245,18 +244,18 @@ Tudo certo para começar?
 - Usar `Read` para ler arquivos antes de editar — **nunca editar sem ler antes**
 - Usar `Edit` para modificações pontuais em arquivos existentes
 - Usar `Write` apenas para arquivos novos
-- Seguir **rigorosamente** os padrões lidos em `context.md#padroes-backend` / `#padroes-frontend`
+- Seguir **rigorosamente** os padrões lidos em `docs/architecture/` / `#padroes-frontend`
 - Implementar exatamente o que está descrito no PLAN — sem adicionar complexidade não solicitada
 
 **5.3. Criar testes**
 
-Seguir a convenção de nomenclatura de `context.md#testes`.
-Usar os frameworks definidos em `context.md#testes`.
+Seguir a convenção de nomenclatura de `docs/architecture/`.
+Usar os frameworks definidos em `docs/architecture/`.
 Estrutura padrão: Arrange / Act / Assert.
 
 **5.4. Rodar build**
 
-Usar o comando de build de `context.md#comandos`:
+Usar o comando de build de `docs/architecture/`:
 
 ```
 ✅ Build succeeded — 0 erros, 0 warnings
@@ -276,7 +275,7 @@ Analisar, corrigir e rodar novamente. Se não conseguir corrigir, explicar ao de
 
 **5.5. Rodar testes**
 
-Usar os comandos de teste de `context.md#comandos`:
+Usar os comandos de teste de `docs/architecture/`:
 
 ```
 ✅ Tests: X/X passed — 0 failed
@@ -321,12 +320,12 @@ Antes do commit, verificar os itens críticos dos padrões do projeto:
 ```
 🔍 Code Review Interno
 
-[Baseado em context.md#padroes-backend / #padroes-frontend]
+[Baseado em docs/architecture/]
 
 ✅ Padrão de estrutura de arquivos seguido?
 ✅ Convenções de nomenclatura seguidas?
 ✅ Tratamento de erros conforme o padrão do projeto?
-✅ Sem anti-patterns listados em context.md?
+✅ Sem anti-patterns listados em docs/architecture/?
 ✅ Async/await correto (se aplicável)?
 ✅ Autorização configurada (se aplicável)?
 ✅ Testes: convenção de nomenclatura correta?
@@ -477,13 +476,13 @@ Próximas etapas pendentes:
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto via `map.json` e `context.md` antes de escrever código
+- Carrega contexto via `map.json` e `docs/architecture/` antes de escrever código
 - Lê PLAN e verifica dependências entre etapas
 - Atualiza repositório e gerencia branch (cria ou usa existente)
 - Verifica working tree antes de implementar
 - Lê código similar existente para replicar o estilo do projeto
-- Implementa exatamente o que está no PLAN, seguindo `context.md#padroes`
-- Cria testes conforme `context.md#testes`
+- Implementa exatamente o que está no PLAN, seguindo `docs/architecture/`
+- Cria testes conforme `docs/architecture/`
 - Roda build e testes — corrige automaticamente se possível
 - Faz code review interno baseado nos padrões do projeto
 - Commita com arquivos específicos (nunca `git add -A` sem verificar)
