@@ -63,6 +63,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `planejar` | `/planejar` | Cria um PLAN de execução a partir de um PRD |
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
+| `setup-project` | `/setup-project` | Cria novo projeto no ai-flow (map.json, context.md, .ai-project) |
 
 ---
 
