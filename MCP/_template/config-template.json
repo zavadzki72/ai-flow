@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "NOME_DO_PROVIDER": {
+      "command": "npx",
+      "args": ["-y", "PACOTE_OFICIAL_NPM"],
+      "env": {
+        "VARIAVEL_DE_CONFIGURACAO": "SUBSTITUIR",
+        "VARIAVEL_DE_TOKEN": "SUBSTITUIR_PELO_TOKEN"
+      }
+    }
+  }
+}

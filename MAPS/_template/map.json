@@ -1,0 +1,46 @@
+{
+  "project": {
+    "name": "NOME_DO_PROJETO",
+    "description": "Descrição curta do que o projeto faz e seu propósito de negócio",
+    "team": "NOME_DO_TIME",
+    "status": "active",
+    "context": "context.md"
+  },
+  "stack": {
+    "backend": [],
+    "frontend": [],
+    "infra": []
+  },
+  "architecture": {
+    "pattern": "",
+    "style": "",
+    "details": "context.md#arquitetura"
+  },
+  "repositories": {
+    "NOME_REPO": {
+      "path": "C:/Projetos/NOME_DO_PROJETO/NOME_REPO",
+      "url": "git@github.com:org/NOME_REPO.git",
+      "branch": "develop",
+      "boilerplate": "",
+      "contexts": ["palavras", "chave", "que", "identificam", "este", "repo"]
+    }
+  },
+  "standards": {
+    "backend": "context.md#padroes-backend",
+    "frontend": "context.md#padroes-frontend",
+    "git": "context.md#git-workflow",
+    "testes": "context.md#testes"
+  },
+  "tooling": {
+    "project-management": {
+      "type": "",
+      "workitems-project": "",
+      "repos-project": ""
+    }
+  },
+  "docs": {
+    "prd": "prd/",
+    "plan": "plan/",
+    "adr": "adr/"
+  }
+}

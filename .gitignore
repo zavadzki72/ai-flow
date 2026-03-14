@@ -1,0 +1,17 @@
+# Project-specific maps (keep only the _template)
+MAPS/*
+!MAPS/_template
+!MAPS/_template/**
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/

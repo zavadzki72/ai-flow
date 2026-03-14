@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "azure-devops": {
+      "command": "npx",
+      "args": ["-y", "@microsoft/azure-devops-mcp"],
+      "env": {
+        "AZURE_DEVOPS_ORG": "SUBSTITUIR_PELA_ORG",
+        "AZURE_DEVOPS_TOKEN": "SUBSTITUIR_PELO_PAT"
+      }
+    }
+  }
+}
