@@ -46,8 +46,6 @@ Regras para derivar o slug a partir do nome do projeto:
 Exemplos:
 - "Meu Sistema" → `meu-sistema`
 - "Order Manager 2.0" → `order-manager-20`
-- "Clarity" → `clarity`
-- "Gestão de KPIs" → `gestao-de-kpis`
 
 ### Verificação de Projeto Existente
 

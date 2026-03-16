@@ -53,7 +53,7 @@ Perguntar ao dev em uma única mensagem:
 📦 BLOCO 1 — Projeto
 
 1. Nome do projeto:
-   [ex: Meu Sistema, Order Manager, Clarity]
+   [ex: Meu Sistema, Order Manager]
 
 2. Descrição curta (1-2 frases):
    [O que o projeto faz e seu propósito de negócio]
