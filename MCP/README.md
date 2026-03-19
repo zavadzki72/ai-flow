@@ -22,6 +22,7 @@ No Claude Code, MCPs são configurados em:
 | Provider | Status | Pacote Oficial | Skill |
 |----------|--------|---------------|-------|
 | Azure DevOps | ✅ Disponível | `@microsoft/azure-devops-mcp` | `MCP/azure-devops/SKILL.md` |
+| SonarQube | ✅ Disponível | `mcp/sonarqube` (Docker) | `MCP/sonarqube/SKILL.md` |
 | Datadog | 🔜 Em breve | — | — |
 
 ---

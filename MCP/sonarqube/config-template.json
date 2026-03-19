@@ -1,0 +1,18 @@
+{
+  "_comment": "SonarQube Cloud — substituir TOKEN e ORG",
+  "mcpServers": {
+    "sonarqube": {
+      "command": "docker",
+      "args": [
+        "run", "--init", "--pull=always", "-i", "--rm",
+        "-e", "SONARQUBE_TOKEN",
+        "-e", "SONARQUBE_ORG",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "SUBSTITUIR_PELO_TOKEN",
+        "SONARQUBE_ORG": "SUBSTITUIR_PELA_ORG"
+      }
+    }
+  }
+}

@@ -33,5 +33,10 @@ Para comandos de build e verificação (ver `docs/architecture/commands.md` do p
 use a ferramenta `Bash` apenas quando necessário executar algo — não para leitura de arquivos.
 
 ### Próximos Skills na Sequência
-- Após criar o PLAN: `/implementar ETAPA 1`
+
+> ⛔ **HARD STOP — NÃO IMPLEMENTAR AUTOMATICAMENTE**
+> Após criar o PLAN, a skill termina. Não executar nenhuma etapa de implementação.
+> Aguardar o dev acionar explicitamente `/implementar ETAPA N`.
+
+- Para implementar: o dev aciona `/implementar ETAPA 1` (não automático)
 - Para revisar código: `/code-review`

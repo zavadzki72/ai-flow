@@ -435,7 +435,7 @@ Após cada etapa concluída:
 
 ---
 
-### Passo 8: Validar Plano com o Dev
+### Passo 8: Validar Plano com o Dev — PARAR AQUI
 
 ```
 ✅ Plano de Execução Criado!
@@ -463,8 +463,14 @@ Após cada etapa concluída:
 ❓ Este plano faz sentido para você?
    Alguma etapa precisa ser ajustada?
 
-🚀 Próximo Passo: /implementar ETAPA 1
+🚀 Quando quiser iniciar: /implementar ETAPA 1
 ```
+
+> ⛔ **HARD STOP — A SKILL TERMINA AQUI.**
+> NÃO executar nenhuma etapa de implementação.
+> NÃO criar arquivos de código.
+> NÃO modificar código existente.
+> Aguardar o dev acionar explicitamente `/implementar ETAPA N`.
 
 ---
 
@@ -503,9 +509,14 @@ Alguma etapa ficou confusa ou precisa ser ajustada?
 - Gera PLAN em `{map.docs.plan}`
 - Explica cada etapa ao dev
 
-### ❌ NÃO FAZ:
-- ❌ Clonar repositório pela primeira vez (o repo já deve existir)
-- ❌ Implementar código → use `/implementar`
+### ❌ NÃO FAZ — NUNCA, EM NENHUMA CIRCUNSTÂNCIA:
+- ❌ **Implementar código** — mesmo que "o próximo passo natural seja implementar"
+- ❌ **Criar arquivos de código** — o PLAN.md é o único arquivo criado por esta skill
+- ❌ **Modificar código existente** — zero alterações no repositório além do PLAN.md
 - ❌ Criar branches → use `/implementar`
 - ❌ Fazer commits → use `/implementar`
 - ❌ Rodar testes → use `/implementar`
+- ❌ Clonar repositório pela primeira vez (o repo já deve existir)
+
+> A skill termina após salvar o PLAN e apresentar o resumo ao dev (Passo 8).
+> O dev precisa acionar explicitamente `/implementar ETAPA N` para iniciar a execução.
