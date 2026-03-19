@@ -221,6 +221,36 @@ Verificar usando `docs/architecture/`:
 - [ ] Testes independentes entre si?
 - [ ] Mocks configurados corretamente (sem over-mocking)?
 
+#### 6.8. Análise SonarQube (se configurado)
+
+Verificar se `map.tooling.sonar.project-key` está preenchido no `map.json`.
+
+**Se configurado**, perguntar ao dev:
+
+```
+🔍 SonarQube está configurado para este projeto (project-key: {map.tooling.sonar.project-key}).
+Deseja incluir a análise SonarQube no code review? (s/n)
+```
+
+**Se o dev aceitar**, usar o MCP SonarQube (ver adapter do agente) para coletar:
+
+1. **Quality Gate** — status atual (passou / falhou) e condições violadas
+2. **Métricas do projeto:**
+   - `coverage` — cobertura de testes (%)
+   - `duplicated_lines_density` — duplicação (%)
+   - `ncloc` — linhas de código
+   - `complexity` — complexidade ciclomática
+   - `bugs` — bugs detectados
+   - `vulnerabilities` — vulnerabilidades
+   - `code_smells` — code smells
+   - `security_hotspots` — hotspots de segurança
+3. **Issues abertas** — filtrar por severidade `HIGH` e `BLOCKER`, tipo segurança (`SECURITY`) e confiabilidade (`RELIABILITY`)
+4. **Security Hotspots** — listar hotspots com status `TO_REVIEW`
+
+Cruzar os resultados com a análise manual dos passos anteriores e incluir na seção **ANÁLISE SONARQUBE** do relatório (Passo 9).
+
+**Se não configurado ou dev recusar:** pular esta etapa sem impacto no restante do review.
+
 ---
 
 ### Passo 7: Oportunidades de Refatoração
@@ -397,6 +427,31 @@ Gerar relatório no formato abaixo:
 - [x] ✅ Sem N+1 queries
 - [x] ✅ Operações assíncronas
 - [ ] ⚠️ [Issue se houver]
+
+---
+
+## ANÁLISE SONARQUBE *(omitir seção se não configurado ou recusado)*
+
+**Quality Gate**: ✅ Passou / ❌ Falhou
+**Condições violadas**: [listar se houver]
+
+### Métricas
+| Métrica | Valor | Status |
+|---------|-------|--------|
+| Cobertura | X% | ✅/⚠️/❌ |
+| Duplicação | X% | ✅/⚠️/❌ |
+| Bugs | X | ✅/⚠️/❌ |
+| Vulnerabilidades | X | ✅/⚠️/❌ |
+| Code Smells | X | ✅/⚠️/❌ |
+| Security Hotspots | X | ✅/⚠️/❌ |
+
+### Issues Críticas (HIGH/BLOCKER)
+- [Issue 1]: `arquivo:linha` — [descrição] *(severidade / categoria)*
+- *Nenhuma issue crítica encontrada* *(se não houver)*
+
+### Security Hotspots (TO_REVIEW)
+- [Hotspot 1]: `arquivo:linha` — [descrição]
+- *Nenhum hotspot pendente* *(se não houver)*
 
 ---
 

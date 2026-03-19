@@ -28,6 +28,10 @@
       "type": "",
       "workitems-project": "",
       "repos-project": ""
+    },
+    "sonar": {
+      "mcp-server": "",
+      "project-key": ""
     }
   },
   "docs": {

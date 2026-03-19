@@ -26,5 +26,15 @@ Verificar `map.tooling.project-management.type` do projeto ativo:
 
 **`gitlab`** — orientar o dev a usar `glab mr create` ou criar via interface.
 
+### Análise SonarQube (Passo 6.8)
+
+Se `map.tooling.sonar.project-key` estiver preenchido e o dev aceitar a análise, usar a integração MCP SonarQube disponível no Gemini com o servidor definido em `map.tooling.sonar.mcp-server`.
+
+Coletar via MCP:
+- Status do Quality Gate (`get_project_quality_gate_status`)
+- Métricas: coverage, duplicated_lines_density, bugs, vulnerabilities, code_smells, security_hotspots (`get_component_measures`)
+- Issues abertas com severidade HIGH/BLOCKER (`search_sonar_issues_in_projects`)
+- Security hotspots com status TO_REVIEW (`search_security_hotspots`)
+
 ### Próximos Passos Após Aprovação
 - Merge para `{repo.branch}` após aprovação dos reviewers

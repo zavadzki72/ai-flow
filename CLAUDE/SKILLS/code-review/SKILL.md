@@ -46,5 +46,39 @@ gh pr create --base {repo.branch} --title "[título]" --body "[descrição]"
 glab mr create --target-branch {repo.branch} --title "[título]" --description "[descrição]"
 ```
 
+### Análise SonarQube (Passo 6.8)
+
+Se `map.tooling.sonar.project-key` estiver preenchido e o dev aceitar a análise:
+
+**Construir o nome do servidor** a partir de `map.tooling.sonar.mcp-server` e usar as ferramentas no padrão `mcp__{mcp-server}__{tool}`:
+
+| Ação | Ferramenta |
+|------|------------|
+| Status do Quality Gate | `mcp__{mcp-server}__get_project_quality_gate_status` |
+| Métricas do projeto | `mcp__{mcp-server}__get_component_measures` |
+| Issues abertas (HIGH/BLOCKER) | `mcp__{mcp-server}__search_sonar_issues_in_projects` |
+| Security hotspots pendentes | `mcp__{mcp-server}__search_security_hotspots` |
+
+**Parâmetros recomendados:**
+
+```
+# Quality Gate
+projectKey: {map.tooling.sonar.project-key}
+
+# Métricas
+projectKey: {map.tooling.sonar.project-key}
+metricKeys: ["coverage", "duplicated_lines_density", "ncloc", "complexity",
+             "bugs", "vulnerabilities", "code_smells", "security_hotspots"]
+
+# Issues críticas
+projects: ["{map.tooling.sonar.project-key}"]
+severities: ["HIGH", "BLOCKER"]
+issueStatuses: ["OPEN"]
+
+# Security hotspots pendentes
+projectKey: {map.tooling.sonar.project-key}
+status: ["TO_REVIEW"]
+```
+
 ### Próximos Passos Após Aprovação
 - Merge para `{repo.branch}` após aprovação dos reviewers
