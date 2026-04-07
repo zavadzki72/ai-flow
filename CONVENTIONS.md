@@ -14,6 +14,7 @@ Toda skill tem três camadas:
 SKILLS/SHARED/nome-skill.md     ← lógica central, agnóstica de provider
 CLAUDE/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Claude Code
 GEMINI/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Gemini
+COPILOT/SKILLS/nome-skill/SKILL.md  ← adapter com sintaxe GitHub Copilot CLI
 ```
 
 ### Como as Skills Acessam Contexto de Projeto
@@ -42,7 +43,7 @@ Após identificar o projeto:
 - **Passos numerados e explícitos.** O dev deve conseguir acompanhar o que a skill está fazendo.
 - **Saída estruturada.** Relatórios e resultados devem ter formato consistente.
 
-### Frontmatter do Adapter Claude
+### Frontmatter do Adapter Claude e Copilot CLI
 
 ```markdown
 ---
@@ -104,3 +105,13 @@ Cada boilerplate deve conter um `README.md` explicando:
 2. Preencha `map.json` com as informações do projeto
 3. Preencha `context.md` com arquitetura, padrões e glossário
 4. Crie o arquivo `.ai-project` na raiz de cada repositório do projeto apontando para `MAPS/{nome-projeto}`
+
+---
+
+## Adicionando uma Nova Skill
+
+1. Crie a lógica central em `SKILLS/SHARED/nome-skill.md`
+2. Crie o adapter em `CLAUDE/SKILLS/nome-skill/SKILL.md`
+3. Crie o adapter em `GEMINI/SKILLS/nome-skill/SKILL.md`
+4. Crie o adapter em `COPILOT/SKILLS/nome-skill/SKILL.md`
+5. Documente na tabela em `README.md`
