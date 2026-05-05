@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dummy.Domain/Dummy.Domain.csproj" />
+    <Project Path="src/Dummy.Application/Dummy.Application.csproj" />
+    <Project Path="src/Dummy.Infra/Dummy.Infra.csproj" />
+    <Project Path="src/Dummy.WebApi/Dummy.WebApi.csproj" />
+    <Project Path="src/Dummy.UnitTests/Dummy.UnitTests.csproj" />
+  </Folder>
+</Solution>
