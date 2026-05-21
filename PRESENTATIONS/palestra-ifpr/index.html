@@ -730,12 +730,214 @@
     border-radius: 3px;
     box-shadow: 0 0 8px var(--neon-pink);
   }
+
+  /* ============ 3-COLUMN GRID (artefatos) ============ */
+  .cols.cols-three {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .cols.cols-three { grid-template-columns: 1fr; gap: 16px; }
+  }
+
+  /* ============ MODE TOGGLE BUTTON (HUD) ============ */
+  .mode-toggle {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+    pointer-events: auto;
+  }
+  .mode-toggle:hover {
+    border-color: var(--neon-pink);
+    color: var(--neon-pink);
+  }
+  .mode-toggle .label-scroll { display: none; }
+  body.scroll-mode .mode-toggle .label-slides { display: none; }
+  body.scroll-mode .mode-toggle .label-scroll { display: inline; }
+
+  /* ============ SCROLL MODE ============ */
+  html.scroll-mode,
+  body.scroll-mode {
+    overflow: auto !important;
+    height: auto !important;
+  }
+  body.scroll-mode .deck {
+    height: auto;
+    overflow: visible;
+  }
+  body.scroll-mode .slide {
+    position: relative;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    min-height: 100vh;
+    height: auto;
+    overflow: visible;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+  }
+  body.scroll-mode .slide:last-child { border-bottom: none; }
+  body.scroll-mode .progressbar,
+  body.scroll-mode .dots,
+  body.scroll-mode .nav-hint,
+  body.scroll-mode .swipe-hint,
+  body.scroll-mode .counter {
+    display: none !important;
+  }
+  /* disable all entrance animations in scroll mode */
+  body.scroll-mode .megaword,
+  body.scroll-mode .chips .chip,
+  body.scroll-mode .flow > *,
+  body.scroll-mode ul li {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* ============ SWIPE HINT (mobile only) ============ */
+  .swipe-hint {
+    position: fixed;
+    bottom: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.6;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    pointer-events: none;
+    display: none;
+  }
+
+  /* ============ MOBILE BREAKPOINT (≤ 600px) ============ */
+  @media (max-width: 600px) {
+    /* HUD */
+    .hud { padding: 10px 14px; }
+    .brand { font-size: 10px; letter-spacing: 0.10em; }
+    .brand .full { display: none; }
+    .counter { font-size: 10px; padding: 4px 9px; }
+    .mode-toggle { padding: 4px 9px; font-size: 9px; letter-spacing: 0.06em; }
+
+    /* Slide */
+    .slide { padding: 8vh 5vw 6vh; }
+
+    /* Typography */
+    h1 { font-size: clamp(1.9rem, 9vw, 2.6rem); }
+    h2 { font-size: clamp(1.35rem, 6vw, 2rem); }
+    h3 { font-size: clamp(0.92rem, 3.5vw, 1.15rem); }
+    p { font-size: clamp(0.92rem, 3.6vw, 1.05rem); }
+    .lead { font-size: clamp(1rem, 4vw, 1.25rem); margin-bottom: 1em; }
+    .kicker { font-size: 10px; padding: 4px 10px; margin-bottom: 16px; }
+
+    /* Megawords */
+    .megaword { font-size: clamp(2rem, 9vw, 3.5rem) !important; line-height: 1; }
+
+    /* Cols */
+    .cols { grid-template-columns: 1fr !important; gap: 14px; }
+
+    /* Cards */
+    .card { padding: 16px 18px; border-radius: 14px; }
+    .card h3 { font-size: 0.82rem; margin-bottom: 6px; }
+    .card p { font-size: 0.95rem; }
+
+    /* Lists */
+    ul li { font-size: 0.95rem; padding: 6px 0 6px 26px; }
+    ul li::before { width: 10px; top: 14px; }
+
+    /* Flow: stack vertical */
+    .flow {
+      flex-direction: column;
+      gap: 4px;
+      align-items: stretch;
+      margin: 16px 0;
+    }
+    .flow .pill {
+      padding: 9px 14px;
+      font-size: 0.88rem;
+      justify-content: center;
+      text-align: center;
+    }
+    .flow .arrow {
+      align-self: center;
+      transform: rotate(90deg);
+      font-size: 1.1rem;
+      margin: 2px 0;
+    }
+    .flow .loop { align-self: center; font-size: 1.4rem; }
+
+    /* Chips */
+    .chip { padding: 6px 12px; font-size: 0.82rem; }
+    .chips { gap: 6px; }
+
+    /* Pre/code */
+    pre { padding: 14px 16px; font-size: 0.72rem; line-height: 1.5; border-radius: 10px; }
+    pre.with-dots { padding-top: 28px; }
+    pre::before { top: 9px; left: 11px; width: 7px; height: 7px; box-shadow: 12px 0 0 #ffbd2e, 24px 0 0 #27c93f; }
+
+    /* Terminal */
+    .terminal { font-size: 0.78rem; padding: 12px 14px; }
+
+    /* Stack diagram */
+    .stack { gap: 8px; max-width: 100%; }
+    .stack-node { padding: 12px 14px; font-size: 0.85rem; }
+
+    /* Title slide */
+    .title-slide h1 { font-size: clamp(2.2rem, 11vw, 3.6rem); }
+    .title-meta { gap: 8px; font-size: 0.78rem; margin-top: 18px; }
+
+    /* About */
+    .about-grid { grid-template-columns: 1fr; gap: 14px; }
+    .photo-frame { width: 150px; height: 150px; }
+    .photo-name-main { font-size: 1.05rem; }
+    .photo-name-sub { font-size: 0.75rem; }
+    .about-content .card { padding: 16px 18px; }
+    .about-content .card p { font-size: 0.95rem; }
+    .about-content ul li { font-size: 0.92rem; }
+
+    /* Thanks/QR slide */
+    .thanks-grid { gap: 18px; }
+    .qr-img { width: 160px; height: 160px; }
+    .qr-label { font-size: 0.65rem; }
+    .qr-url { font-size: 0.72rem; }
+
+    /* Dots: bigger touch targets */
+    .dots { gap: 8px; bottom: 18px; }
+    .dot { width: 10px; height: 10px; }
+    .dot.active { width: 30px; height: 10px; border-radius: 5px; }
+
+    /* Nav hint hidden, swipe hint shown */
+    .nav-hint { display: none; }
+    .swipe-hint { display: block; }
+  }
 </style>
 </head>
 <body>
+<script>
+  // restore scroll-mode preference ASAP to avoid layout flash on reload
+  try {
+    if (localStorage.getItem('ai-flow-scroll-mode') === '1') {
+      document.documentElement.classList.add('scroll-mode');
+      document.body.classList.add('scroll-mode');
+    }
+  } catch (e) {}
+</script>
 
 <div class="hud">
-  <div class="brand">ai<span>-</span>flow · marccus zavadzki</div>
+  <div class="brand">ai<span>-</span>flow<span class="full"> · marccus zavadzki</span></div>
+  <button class="mode-toggle" id="modeToggle" title="Alternar entre slide e scroll" aria-label="Alternar modo de visualização">
+    <span class="label-slides">▦ slides</span>
+    <span class="label-scroll">≣ scroll</span>
+  </button>
   <div class="counter"><b id="cur">01</b> / <span id="total">29</span></div>
 </div>
 
@@ -1135,7 +1337,7 @@ MAPS/meu-projeto</code></pre>
     <span class="kicker">slide 16 · artefatos</span>
     <h2>Os <span class="gradient">artefatos</span> do ai-flow.</h2>
     <p class="lead">Três documentos que o workflow gera e consulta.</p>
-    <div class="cols" style="grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+    <div class="cols cols-three">
       <div class="card">
         <h3>📄 PRD</h3>
         <p class="small"><b class="neon-pink">Product Requirements Document</b></p>
@@ -1475,6 +1677,7 @@ MAPS/meu-projeto</code></pre>
 <div class="nav-hint">
   <span class="key">←</span> <span class="key">→</span> ou <span class="key">space</span> · <span class="key">Home</span> <span class="key">End</span> · <span class="key">F</span> fullscreen
 </div>
+<div class="swipe-hint">deslize ← → para navegar</div>
 
 <script>
   const slides = document.querySelectorAll('.slide');
@@ -1517,7 +1720,11 @@ MAPS/meu-projeto</code></pre>
   function next() { go(Math.min(idx + 1, total - 1)); }
   function prev() { go(Math.max(idx - 1, 0)); }
 
+  // helper: are we in scroll mode?
+  const inScrollMode = () => document.body.classList.contains('scroll-mode');
+
   document.addEventListener('keydown', (e) => {
+    if (inScrollMode()) return;
     if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
       e.preventDefault(); next();
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -1534,15 +1741,39 @@ MAPS/meu-projeto</code></pre>
   let touchStartX = 0;
   document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
   document.addEventListener('touchend', e => {
+    if (inScrollMode()) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
   });
 
-  // click to advance (right half = next, left half = prev) — disabled on links
+  // click to advance (right half = next, left half = prev) — disabled on links + toggle
   document.addEventListener('click', e => {
-    if (e.target.closest('a, .dot, .key')) return;
+    if (inScrollMode()) return;
+    if (e.target.closest('a, .dot, .key, .mode-toggle')) return;
     if (e.clientX > window.innerWidth / 2) next();
     else prev();
+  });
+
+  // ============ SCROLL MODE TOGGLE ============
+  const modeToggle = document.getElementById('modeToggle');
+  const SCROLL_MODE_KEY = 'ai-flow-scroll-mode';
+
+  function setScrollMode(enabled) {
+    document.documentElement.classList.toggle('scroll-mode', enabled);
+    document.body.classList.toggle('scroll-mode', enabled);
+    try { localStorage.setItem(SCROLL_MODE_KEY, enabled ? '1' : '0'); } catch (e) {}
+    if (enabled) {
+      // entering scroll: jump to top so user sees slide 1 first
+      window.scrollTo({ top: 0 });
+    } else {
+      // leaving scroll: restore current slide visibility
+      update();
+    }
+  }
+
+  modeToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    setScrollMode(!inScrollMode());
   });
 </script>
 
