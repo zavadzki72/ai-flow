@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IA não entende seu sistema, até você ensinar ela</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0a0a14;
+    --bg-1: #11111f;
+    --bg-2: #1a1a2e;
+    --neon-pink: #ff2e9a;
+    --neon-cyan: #00f0ff;
+    --neon-purple: #b14aff;
+    --neon-green: #2bff88;
+    --neon-yellow: #ffd84a;
+    --text: #ececf5;
+    --text-dim: #9b9bb5;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* animated grid bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(177,74,255,0.18), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(0,240,255,0.15), transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(255,46,154,0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  .deck {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5vh 8vw;
+    opacity: 0;
+    transform: translateX(60px) scale(0.98);
+    transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    pointer-events: none;
+    overflow-y: auto;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+  }
+  .slide.prev {
+    transform: translateX(-60px) scale(0.98);
+  }
+
+  /* HUD: progress + counter */
+  .hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    pointer-events: none;
+  }
+  .brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .brand span { color: var(--neon-cyan); }
+  .counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+  }
+  .counter b { color: var(--neon-pink); }
+
+  .progressbar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple), var(--neon-cyan));
+    width: 0%;
+    transition: width 0.4s ease;
+    z-index: 10;
+    box-shadow: 0 0 12px var(--neon-pink);
+  }
+
+  .nav-hint {
+    position: fixed;
+    bottom: 18px; right: 24px;
+    z-index: 10;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+  .key {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    margin: 0 2px;
+    color: var(--text);
+  }
+
+  /* typography */
+  h1 {
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6em;
+  }
+  h2 {
+    font-size: clamp(1.8rem, 4.2vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5em;
+  }
+  h3 {
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    font-weight: 600;
+    color: var(--neon-cyan);
+    margin-bottom: 0.4em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  p {
+    font-size: clamp(1rem, 1.5vw, 1.4rem);
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 0.8em;
+  }
+  .lead {
+    font-size: clamp(1.2rem, 2vw, 1.7rem);
+    color: var(--text-dim);
+    margin-bottom: 1.4em;
+    max-width: 900px;
+  }
+  .kicker {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--neon-pink);
+    padding: 6px 14px;
+    border: 1px solid rgba(255,46,154,0.3);
+    border-radius: 999px;
+    background: rgba(255,46,154,0.08);
+    margin-bottom: 24px;
+  }
+
+  /* gradient text */
+  .gradient {
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple) 50%, var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .neon-cyan { color: var(--neon-cyan); }
+  .neon-pink { color: var(--neon-pink); }
+  .neon-green { color: var(--neon-green); }
+  .neon-yellow { color: var(--neon-yellow); }
+  .neon-purple { color: var(--neon-purple); }
+
+  /* lists */
+  ul {
+    list-style: none;
+    margin: 0.8em 0;
+  }
+  ul li {
+    position: relative;
+    padding: 8px 0 8px 32px;
+    font-size: clamp(1rem, 1.4vw, 1.25rem);
+    color: var(--text);
+    opacity: 0;
+    transform: translateX(-12px);
+    animation: itemIn 0.5s forwards;
+  }
+  ul li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 17px;
+    width: 14px; height: 2px;
+    background: linear-gradient(90deg, var(--neon-pink), transparent);
+  }
+  .slide.active ul li:nth-child(1) { animation-delay: 0.15s; }
+  .slide.active ul li:nth-child(2) { animation-delay: 0.25s; }
+  .slide.active ul li:nth-child(3) { animation-delay: 0.35s; }
+  .slide.active ul li:nth-child(4) { animation-delay: 0.45s; }
+  .slide.active ul li:nth-child(5) { animation-delay: 0.55s; }
+  .slide.active ul li:nth-child(6) { animation-delay: 0.65s; }
+  .slide.active ul li:nth-child(7) { animation-delay: 0.75s; }
+  .slide.active ul li:nth-child(8) { animation-delay: 0.85s; }
+  @keyframes itemIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* two columns */
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 12px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+    opacity: 0.6;
+  }
+  .card.green::before { background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan)); }
+  .card.red::before { background: linear-gradient(90deg, #ff4a4a, var(--neon-pink)); }
+  .card.purple::before { background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink)); }
+
+  /* code */
+  pre, code {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  pre {
+    background: rgba(0,0,0,0.45);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    overflow-x: auto;
+    font-size: clamp(0.85rem, 1.05vw, 1.05rem);
+    line-height: 1.6;
+    margin: 16px 0;
+    position: relative;
+  }
+  pre::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 14px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #ff5f56;
+    box-shadow: 16px 0 0 #ffbd2e, 32px 0 0 #27c93f;
+  }
+  pre.with-dots { padding-top: 38px; }
+  .tok-key { color: var(--neon-pink); }
+  .tok-str { color: var(--neon-green); }
+  .tok-com { color: var(--text-dim); font-style: italic; }
+  .tok-num { color: var(--neon-yellow); }
+  .tok-fn  { color: var(--neon-cyan); }
+
+  /* arrow flow */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .flow .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 22px;
+    border-radius: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+  .flow .pill::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,46,154,0.1), rgba(0,240,255,0.1));
+    z-index: -1;
+  }
+  .flow .arrow {
+    color: var(--neon-cyan);
+    font-size: 1.4rem;
+    font-weight: bold;
+  }
+  .flow .loop {
+    color: var(--neon-pink);
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-shadow: 0 0 12px var(--neon-pink);
+  }
+
+  /* big stack diagram */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    margin: 24px auto;
+    max-width: 480px;
+  }
+  .stack-node {
+    width: 100%;
+    padding: 18px 24px;
+    text-align: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,46,154,0.15), rgba(0,240,255,0.12));
+    border: 1px solid rgba(255,255,255,0.12);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-size: 1.05rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s;
+  }
+  .stack-node:hover { transform: translateX(8px); }
+  .stack-arrow {
+    color: var(--neon-cyan);
+    font-size: 1.2rem;
+    opacity: 0.6;
+  }
+
+  /* title slide */
+  .title-slide {
+    justify-content: center;
+    text-align: left;
+  }
+  .title-slide h1 {
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 0.95;
+  }
+  .title-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+  .title-meta a { color: var(--neon-cyan); text-decoration: none; }
+  .title-meta a:hover { color: var(--neon-pink); }
+
+  /* big stat */
+  .megaword {
+    font-size: clamp(3.5rem, 11vw, 9rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    margin: 0.1em 0;
+  }
+  .strike {
+    text-decoration: line-through;
+    text-decoration-thickness: 6px;
+    text-decoration-color: var(--neon-pink);
+    color: var(--text-dim);
+  }
+
+  /* highlight box */
+  .highlight {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(255,46,154,0.2), rgba(177,74,255,0.2));
+    border: 1px solid rgba(255,46,154,0.4);
+  }
+
+  .center { text-align: center; align-items: center; }
+  .center > * { margin-left: auto; margin-right: auto; }
+
+  /* terminal style */
+  .terminal {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    color: var(--neon-green);
+    margin: 14px 0;
+  }
+  .terminal .prompt { color: var(--neon-pink); }
+  .terminal .cmd { color: var(--neon-cyan); }
+
+  /* tag chips */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .chip {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+  .chip.pink { border-color: rgba(255,46,154,0.4); color: var(--neon-pink); }
+  .chip.cyan { border-color: rgba(0,240,255,0.4); color: var(--neon-cyan); }
+  .chip.green { border-color: rgba(43,255,136,0.4); color: var(--neon-green); }
+  .chip.yellow { border-color: rgba(255,216,74,0.4); color: var(--neon-yellow); }
+  .chip.purple { border-color: rgba(177,74,255,0.4); color: var(--neon-purple); }
+
+  /* shake / glitch effect for emphasis */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+  }
+  .glitch::before {
+    color: var(--neon-pink);
+    transform: translate(-2px, 0);
+    mix-blend-mode: screen;
+    animation: glitchAnim 3s infinite;
+  }
+  .glitch::after {
+    color: var(--neon-cyan);
+    transform: translate(2px, 0);
+    mix-blend-mode: screen;
+    animation: glitchAnim 3s infinite reverse;
+  }
+  @keyframes glitchAnim {
+    0%, 92%, 100% { transform: translate(0); opacity: 0; }
+    93% { transform: translate(-2px, 1px); opacity: 0.8; }
+    95% { transform: translate(2px, -1px); opacity: 0.8; }
+    97% { transform: translate(-1px, -1px); opacity: 0.6; }
+  }
+
+  /* megaword dramatic entrance (scale + fade, staggered) */
+  .slide.active .megaword {
+    opacity: 0;
+    transform: scale(0.65);
+    animation: megawordIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .slide.active .megaword:nth-of-type(1) { animation-delay: 0.25s; }
+  .slide.active .megaword:nth-of-type(2) { animation-delay: 0.55s; }
+  .slide.active .megaword:nth-of-type(3) { animation-delay: 0.85s; }
+  .slide.active .megaword:nth-of-type(4) { animation-delay: 1.15s; }
+  @keyframes megawordIn {
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* chips cascade entrance */
+  .slide.active .chips .chip {
+    opacity: 0;
+    transform: translateY(-8px);
+    animation: chipIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .slide.active .chips .chip:nth-child(1) { animation-delay: 0.20s; }
+  .slide.active .chips .chip:nth-child(2) { animation-delay: 0.28s; }
+  .slide.active .chips .chip:nth-child(3) { animation-delay: 0.36s; }
+  .slide.active .chips .chip:nth-child(4) { animation-delay: 0.44s; }
+  .slide.active .chips .chip:nth-child(5) { animation-delay: 0.52s; }
+  .slide.active .chips .chip:nth-child(6) { animation-delay: 0.60s; }
+  .slide.active .chips .chip:nth-child(7) { animation-delay: 0.68s; }
+  .slide.active .chips .chip:nth-child(8) { animation-delay: 0.76s; }
+  @keyframes chipIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* flow pills + arrows cascade */
+  .slide.active .flow > * {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.92);
+    animation: flowIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .slide.active .flow > *:nth-child(1) { animation-delay: 0.25s; }
+  .slide.active .flow > *:nth-child(2) { animation-delay: 0.38s; }
+  .slide.active .flow > *:nth-child(3) { animation-delay: 0.51s; }
+  .slide.active .flow > *:nth-child(4) { animation-delay: 0.64s; }
+  .slide.active .flow > *:nth-child(5) { animation-delay: 0.77s; }
+  .slide.active .flow > *:nth-child(6) { animation-delay: 0.90s; }
+  .slide.active .flow > *:nth-child(7) { animation-delay: 1.03s; }
+  .slide.active .flow > *:nth-child(8) { animation-delay: 1.16s; }
+  .slide.active .flow > *:nth-child(9) { animation-delay: 1.29s; }
+  @keyframes flowIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .small { font-size: 0.95rem; color: var(--text-dim); }
+
+  /* QR code on final slide */
+  .thanks-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 44px;
+    align-items: center;
+    max-width: 720px;
+    margin: 28px auto 0;
+  }
+  .qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px;
+    background: white;
+    border-radius: 14px;
+    box-shadow:
+      0 0 30px rgba(255, 46, 154, 0.35),
+      0 0 60px rgba(0, 240, 255, 0.22);
+    text-decoration: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: qrPulse 3.5s ease-in-out infinite;
+  }
+  .qr-wrap:hover {
+    transform: scale(1.04);
+    box-shadow:
+      0 0 40px rgba(255, 46, 154, 0.55),
+      0 0 80px rgba(0, 240, 255, 0.35);
+  }
+  @keyframes qrPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(255,46,154,0.35), 0 0 60px rgba(0,240,255,0.22); }
+    50%      { box-shadow: 0 0 45px rgba(177,74,255,0.45), 0 0 90px rgba(255,46,154,0.28); }
+  }
+  .qr-img {
+    width: 200px;
+    height: 200px;
+    display: block;
+    border-radius: 4px;
+  }
+  .qr-label {
+    color: #0a0a14;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-top: 10px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .qr-url {
+    color: var(--neon-pink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .thanks-contacts {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 0;
+    gap: 10px;
+  }
+  @media (max-width: 700px) {
+    .thanks-grid { grid-template-columns: 1fr; gap: 24px; }
+    .thanks-contacts { align-items: center; }
+  }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; }
+    .slide { padding: 8vh 6vw; }
+  }
+
+  /* hide scrollbar */
+  .slide::-webkit-scrollbar { display: none; }
+  .slide { scrollbar-width: none; }
+
+  /* about-me slide: photo + content */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 36px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .photo-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .photo-frame {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    padding: 4px;
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple) 50%, var(--neon-cyan));
+    box-shadow:
+      0 0 40px rgba(255, 46, 154, 0.35),
+      0 0 80px rgba(0, 240, 255, 0.18);
+    animation: photoGlow 4s ease-in-out infinite;
+  }
+  @keyframes photoGlow {
+    0%, 100% { box-shadow: 0 0 40px rgba(255, 46, 154, 0.35), 0 0 80px rgba(0, 240, 255, 0.18); }
+    50%      { box-shadow: 0 0 60px rgba(177, 74, 255, 0.45), 0 0 100px rgba(255, 46, 154, 0.25); }
+  }
+  .photo {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: var(--bg-2);
+  }
+  .photo-placeholder {
+    display: none;
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(177,74,255,0.15), transparent 60%),
+      var(--bg-2);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .ph-icon { font-size: 3rem; margin-bottom: 8px; opacity: 0.7; }
+  .ph-text code {
+    color: var(--neon-cyan);
+    background: rgba(0,240,255,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .photo-name { text-align: center; }
+  .photo-name-main {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .photo-name-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+  .about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .about-content .card { padding: 20px 24px; }
+  .about-content .card p { font-size: 1.05rem; margin-bottom: 0; }
+  .about-content .card h3 { margin-bottom: 8px; }
+  .about-content ul li { padding: 4px 0 4px 32px; font-size: 1.02rem; }
+  .about-content ul li::before { top: 13px; }
+
+  @media (max-width: 900px) {
+    .about-grid { grid-template-columns: 1fr; gap: 20px; }
+    .photo-frame { width: 200px; height: 200px; }
+  }
+
+  /* dot indicator on nav */
+  .dots {
+    position: fixed;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .dot.active {
+    background: var(--neon-pink);
+    width: 24px;
+    border-radius: 3px;
+    box-shadow: 0 0 8px var(--neon-pink);
+  }
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="brand">ai<span>-</span>flow · marccus zavadzki</div>
+  <div class="counter"><b id="cur">01</b> / <span id="total">29</span></div>
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1: TITLE -->
+  <section class="slide active title-slide">
+    <h1>IA <span class="strike">não entende</span><br>seu sistema<br><span class="gradient">até você ensinar ela.</span></h1>
+    <p class="lead">Como aumentar produtividade em <b>grandes codebases</b> com Inteligência Artificial.</p>
+    <div class="title-meta">
+      <div><span class="neon-pink">→</span> Marccus Zavadzki</div>
+      <div><span class="neon-cyan">→</span> Software Engineer</div>
+      <div><span class="neon-purple">→</span> Payabli</div>
+    </div>
+    <div class="title-meta">
+      <a href="https://marccusz.com" target="_blank">marccusz.com</a>
+      <a href="https://blog.marccusz.com" target="_blank">blog.marccusz.com</a>
+      <a href="https://github.com/zavadzki72/ai-flow" target="_blank">github.com/zavadzki72/ai-flow</a>
+    </div>
+  </section>
+
+  <!-- 2: sobre mim -->
+  <section class="slide">
+    <span class="kicker">slide 02 · sobre mim</span>
+    <h2>Mas antes... <span class="gradient">quem sou eu?</span> 👋</h2>
+    <div class="about-grid">
+      <div class="photo-wrap">
+        <div class="photo-frame">
+          <img src="me.jpg" alt="Marccus Zavadzki" class="photo"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="photo-placeholder">
+            <div class="ph-icon">📸</div>
+            <div class="ph-text">substitua por<br><code>me.jpg</code></div>
+          </div>
+        </div>
+        <div class="photo-name">
+          <div class="photo-name-main">Marccus Zavadzki</div>
+          <div class="photo-name-sub">Software Engineer</div>
+        </div>
+      </div>
+      <div class="about-content">
+        <div class="card purple">
+          <h3>Quem sou eu</h3>
+          <ul>
+            <li>💻 Software Engineer</li>
+            <li>⚽ Apaixonado por futebol — 10 e Faixa</li>
+            <li>🇾🇪 <b>São-paulino</b> de coração</li>
+            <li>🥩 Apreciador de um bom churrasco</li>
+          </ul>
+          <div class="chips" style="margin-top: 14px;">
+            <span class="chip cyan">.NET</span>
+            <span class="chip green">C#</span>
+            <span class="chip pink">IA</span>
+            <span class="chip yellow">Docker</span>
+            <span class="chip purple">Arquitetura</span>
+          </div>
+        </div>
+        <div class="card green">
+          <h3>O que faço hoje</h3>
+          <p>Trabalho como Engenheiro de Software em uma fintech americana: <b class="neon-cyan">Payabli</b>. </p>
+          <p>Trafego de <b class="neon-cyan">milhoes</b> de dados, diferentes contextos, tendo que ser <b class="neon-cyan">100% acertivo</b>. </p>
+          <p style="margin-top: 8px;">Aí descobri: <b class="neon-green">a IA é boa</b>... mas <b class="neon-pink">precisa saber usa-la</b> antes de qualquer coisa. 🚀</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: experiência que todo dev já teve -->
+  <section class="slide">
+    <span class="kicker">slide 03</span>
+    <h2>Uma experiência que <span class="gradient">TODO dev</span> já teve.</h2>
+    <div class="cols">
+      <div class="card green">
+        <h3>No começo do projeto</h3>
+        <ul>
+          <li>Você pede uma feature</li>
+          <li>A IA entende rápido</li>
+          <li>O código funciona de primeira</li>
+          <li>Tudo parece <b class="neon-green">mágico</b> ✨</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>Quando o projeto cresce</h3>
+        <ul>
+          <li>A IA "esquece" o que vocês combinaram</li>
+          <li>Inventa funções que não existem</li>
+          <li>Mistura padrões diferentes</li>
+          <li>Repete código que já tinha</li>
+          <li>Quebra coisa que <b class="neon-pink">estava funcionando</b> 💥</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: ERRO #1 — prompt gigante one-shot -->
+  <section class="slide">
+    <span class="kicker">slide 04 · erro #1</span>
+    <h2>Querer fazer <span class="gradient">tudo de uma vez</span>.</h2>
+    <div class="terminal">
+      <span class="prompt">$</span> <span class="cmd">você</span>: "cria pra mim um e-commerce completo:<br>
+      &nbsp;&nbsp;login + carrinho + pagamento + admin + relatórios.<br>
+      &nbsp;&nbsp;tem que tá pronto."
+    </div>
+    <div class="cols">
+      <div class="card red">
+        <h3>O que a IA faz</h3>
+        <ul>
+          <li>Tenta tudo de uma vez</li>
+          <li>Perde detalhes no caminho</li>
+          <li>Mistura padrões</li>
+          <li>Mete biblioteca aleatória</li>
+          <li>Entrega <b class="neon-pink">30%</b> que <b class="neon-yellow">parece 100%</b></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Por quê?</h3>
+        <p>A IA tem uma <b class="neon-pink">janela de contexto limitada</b>.</p>
+        <p>Muito input ao mesmo tempo = ela <b class="neon-yellow">se afoga</b>.</p>
+        <p class="small" style="margin-top: 10px;">→ Vamos voltar nesse conceito daqui a pouco. 👀</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6: ERRO #2 — cada conversa começa do zero -->
+  <section class="slide">
+    <span class="kicker">slide 05 · erro #2</span>
+    <h2>Cada conversa <span class="strike">lembra</span> da anterior.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>Segunda</h3>
+        <p>Você explica pacientemente:</p>
+        <ul>
+          <li>Padrão do projeto</li>
+          <li>Onde criar arquivos</li>
+          <li>Quais libs usar</li>
+          <li>Regras de negócio</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>Terça</h3>
+        <p>Nova conversa. Você explica:</p>
+        <ul>
+          <li>Padrão do projeto <b class="neon-pink">de novo</b></li>
+          <li>Onde criar arquivos <b class="neon-pink">de novo</b></li>
+          <li>Quais libs usar <b class="neon-pink">de novo</b></li>
+          <li>Regras de negócio <b class="neon-pink">de novo</b></li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 24px;">A IA <span class="neon-pink">não tem memória</span> entre sessões.</h2>
+  </section>
+
+  <!-- 7: ERRO #3 — multi-repo + complexidade da empresa real -->
+  <section class="slide">
+    <span class="kicker">slide 06 · erro #3</span>
+    <h2>Sua empresa <span class="gradient">não é</span> seu projeto pessoal.</h2>
+    <div class="cols">
+      <div>
+        <h3>Múltiplos repos</h3>
+<pre class="with-dots"><code><span class="tok-fn">frontend/</span>
+<span class="tok-fn">api/</span>
+<span class="tok-fn">worker/</span>
+<span class="tok-fn">infra/</span></code></pre>
+        <p class="small">→ Onde a IA deveria criar o arquivo?</p>
+      </div>
+      <div>
+        <h3>E ainda tem</h3>
+        <div class="chips">
+          <span class="chip pink">Arquitetura customizada</span>
+          <span class="chip cyan">Regras de negócio</span>
+          <span class="chip purple">Convenções internas</span>
+          <span class="chip green">Permissões</span>
+          <span class="chip yellow">Fluxos escondidos</span>
+          <span class="chip pink">Decisões históricas</span>
+          <span class="chip cyan">Padrões de code review</span>
+        </div>
+      </div>
+    </div>
+    <h2 style="margin-top: 24px;">A IA <span class="neon-pink">não tem como</span> adivinhar isso.</h2>
+  </section>
+
+  <!-- 7: insight principal -->
+  <section class="slide center">
+    <span class="kicker">slide 07 · o insight</span>
+    <div class="megaword strike">Prompt não escala.</div>
+    <div class="megaword gradient">Sistema escala.</div>
+    <div class="megaword" style="font-size: clamp(2rem, 6vw, 4.5rem); margin-top: 18px;">E no fundo, é só <span class="gradient">contexto</span>.</div>
+    <p class="small" style="margin-top: 22px;">→ E nada disso funciona sem <b class="neon-pink">revisão humana</b>. Voltamos nisso. 🚨</p>
+  </section>
+
+  <!-- 10: CONCEITO #1 — o que é contexto? -->
+  <section class="slide">
+    <span class="kicker">slide 08 · conceito #1</span>
+    <h2>O que é <span class="gradient">contexto</span>?</h2>
+    <p class="lead">Tudo que a IA precisa <b class="neon-cyan">saber</b> pra responder bem.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Inclui</h3>
+        <ul>
+          <li>Histórico da conversa</li>
+          <li>Código do projeto</li>
+          <li>Regras de negócio</li>
+          <li>Padrões do time</li>
+          <li>Documentação</li>
+          <li>Stack tecnológica</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Analogia</h3>
+        <p>Imagina um <b class="neon-cyan">dev novo</b> chegando hoje no time.</p>
+        <p>Você manda: <em>"implementa o checkout"</em>.</p>
+        <p>Sem mostrar o repo. Sem explicar nada.</p>
+        <p style="margin-top: 12px;"><b class="neon-pink">Que código ele vai entregar?</b></p>
+      </div>
+    </div>
+    <h2 style="margin-top: 20px;">IA <span class="neon-pink">sem contexto</span> = dev novo no escuro.</h2>
+  </section>
+
+  <!-- 11: CONCEITO #2 — janela de contexto -->
+  <section class="slide">
+    <span class="kicker">slide 09 · conceito #2</span>
+    <h2><span class="gradient">Janela</span> de contexto.</h2>
+    <p class="lead">Toda IA tem um <b class="neon-pink">limite de leitura</b>.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Capacidade típica</h3>
+        <ul>
+          <li>GPT-4 → ~128k tokens</li>
+          <li>Claude → ~200k tokens</li>
+          <li>Gemini → até 1M tokens</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">~ 1 token ≈ 0.75 palavra</p>
+      </div>
+      <div class="card red">
+        <h3>O problema real</h3>
+        <p>Quanto MAIS você joga de uma vez:</p>
+        <ul>
+          <li>Maior a chance de <b class="neon-pink">se perder</b></li>
+          <li>Detalhes do meio <b class="neon-yellow">somem</b></li>
+          <li>Respostas ficam <b class="neon-pink">inconsistentes</b></li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 16px;">Solução: dar <span class="neon-green">só o que importa</span>, na hora certa.</h2>
+  </section>
+
+  <!-- 12: CONCEITO #3 — RAG -->
+  <section class="slide">
+    <span class="kicker">slide 10 · conceito #3</span>
+    <h2><span class="gradient">RAG</span> — Retrieval Augmented Generation.</h2>
+    <p class="lead">A técnica que resolve a <b class="neon-cyan">janela de contexto</b>.</p>
+    <div class="cols">
+      <div class="card red">
+        <h3>❌ Sem RAG</h3>
+        <p>Você joga TUDO no prompt:</p>
+        <ul>
+          <li>O repo inteiro</li>
+          <li>Toda documentação</li>
+          <li>Todas as regras</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">→ IA se afoga, custa caro, lento</p>
+      </div>
+      <div class="card green">
+        <h3>✅ Com RAG</h3>
+        <p>A IA <b class="neon-cyan">busca</b> só o que precisa:</p>
+        <ul>
+          <li>Indexa tudo num banco</li>
+          <li>Consulta o que é relevante</li>
+          <li>Carrega só o necessário</li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 20px;">Analogia: <span class="neon-pink">índice de livro</span> vs ler livro inteiro.</h2>
+  </section>
+
+  <!-- 13: CONCEITO #4 — Skills -->
+  <section class="slide">
+    <span class="kicker">slide 11 · conceito #4</span>
+    <h2><span class="gradient">Skills</span> — comportamento reutilizável.</h2>
+    <p class="lead">Uma "habilidade" que a IA <b class="neon-cyan">carrega quando precisa</b>.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Pense em uma skill como</h3>
+        <ul>
+          <li>🧠 Uma "personalidade" temporária</li>
+          <li>📋 Conjunto de regras + instruções</li>
+          <li>🎯 Focada em uma tarefa específica</li>
+          <li>♻️ Reutilizável em qualquer projeto</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Exemplo</h3>
+        <p>Skill <b class="neon-cyan">/code-review</b>:</p>
+        <ul>
+          <li>Sabe o que checar</li>
+          <li>Sabe o formato de saída</li>
+          <li>Segue um checklist fixo</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">→ A IA <b class="neon-pink">vira</b> um code reviewer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14: o que é ai-flow -->
+  <section class="slide">
+    <span class="kicker">slide 12</span>
+    <h2>O que é o <span class="gradient">ai-flow</span>?</h2>
+    <p class="lead">"Um <b class="neon-cyan">sistema operacional</b> para desenvolvimento com IA."</p>
+    <div class="cols">
+      <div class="card red">
+        <h3>O objetivo NÃO era</h3>
+        <ul>
+          <li>Criar um prompt melhor</li>
+          <li>Um pacote de IA</li>
+          <li>Mais automação aleatória</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>O objetivo era</h3>
+        <div class="megaword neon-green" style="font-size: clamp(2rem, 4.5vw, 3.4rem);">PROCESSO<br>CONTÍNUO</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15: arquitetura -->
+  <section class="slide">
+    <span class="kicker">slide 13</span>
+    <h2>A Arquitetura do <span class="gradient">ai-flow</span>.</h2>
+    <div class="stack">
+      <div class="stack-node">👨‍💻 Dev</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">⚡ Skills</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">🗺️ Maps</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">📦 Project Context</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">📁 Repositories</div>
+    </div>
+  </section>
+
+  <!-- 16: MAPS + multi-repo resolvido -->
+  <section class="slide">
+    <span class="kicker">slide 14</span>
+    <h2><span class="neon-pink">Maps</span> = memória persistente da IA.</h2>
+    <div class="cols">
+      <div>
+        <h3>Estrutura</h3>
+<pre class="with-dots"><code>MAPS/<span class="tok-fn">{projeto}</span>/
+  ├── map.json
+  ├── context.md
+  ├── prd/
+  ├── plan/
+  └── adr/</code></pre>
+        <h3 style="margin-top: 18px;">Multi-repo? Resolvido.</h3>
+<pre class="with-dots"><code><span class="tok-str">"contexts"</span>: [
+  <span class="tok-str">"backend"</span>,
+  <span class="tok-str">"database"</span>,
+  <span class="tok-str">"business-rules"</span>
+]</code></pre>
+      </div>
+      <div>
+        <h3>O map guarda</h3>
+        <div class="chips">
+          <span class="chip pink">Stack</span>
+          <span class="chip cyan">Repositórios</span>
+          <span class="chip green">Paths</span>
+          <span class="chip yellow">Boilerplates</span>
+          <span class="chip purple">Regras</span>
+          <span class="chip pink">Arquitetura</span>
+          <span class="chip cyan">Convenções</span>
+          <span class="chip green">Glossário</span>
+        </div>
+        <h2 style="margin-top: 24px;">A IA para de <span class="strike">improvisar</span>.</h2>
+        <p class="small">Lembra do <b class="neon-cyan">RAG</b>? Os maps são <b class="neon-pink">o que a IA consulta</b>. 🎯</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17: .ai-project -->
+  <section class="slide">
+    <span class="kicker">slide 15</span>
+    <h2>Projeto ativo.</h2>
+    <p class="lead">Cada repositório tem um arquivo <code class="highlight">.ai-project</code>.</p>
+<pre class="with-dots"><code><span class="tok-com"># .ai-project</span>
+MAPS/meu-projeto</code></pre>
+    <h3 style="margin-top: 28px;">Resultado</h3>
+    <ul>
+      <li>A IA sabe <b class="neon-cyan">onde está</b></li>
+      <li>A IA sabe <b class="neon-pink">qual contexto carregar</b></li>
+      <li>O dev <b class="neon-green">não precisa repetir tudo</b></li>
+    </ul>
+  </section>
+
+  <!-- 18: artefatos do ai-flow -->
+  <section class="slide">
+    <span class="kicker">slide 16 · artefatos</span>
+    <h2>Os <span class="gradient">artefatos</span> do ai-flow.</h2>
+    <p class="lead">Três documentos que o workflow gera e consulta.</p>
+    <div class="cols" style="grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+      <div class="card">
+        <h3>📄 PRD</h3>
+        <p class="small"><b class="neon-pink">Product Requirements Document</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">O QUÊ</b> precisa ser feito.</p>
+        <ul>
+          <li>Problema</li>
+          <li>Solução</li>
+          <li>Critérios de aceite</li>
+          <li>Casos de borda</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Gerado pelo <code>/spec</code></p>
+      </div>
+      <div class="card purple">
+        <h3>📋 PLAN</h3>
+        <p class="small"><b class="neon-purple">Plano de Execução</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">COMO</b> vai ser feito.</p>
+        <ul>
+          <li>Quebra em baby steps</li>
+          <li>Paths e comandos</li>
+          <li>Ordem de implementação</li>
+          <li>Critério de "pronto"</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Gerado pelo <code>/planejar</code></p>
+      </div>
+      <div class="card green">
+        <h3>📐 ADR</h3>
+        <p class="small"><b class="neon-green">Architecture Decision Record</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">POR QUE</b> essa decisão.</p>
+        <ul>
+          <li>Contexto da decisão</li>
+          <li>Alternativas consideradas</li>
+          <li>Trade-offs</li>
+          <li>Consequências</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Cresce com o projeto</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19: O CICLO (loop visual) -->
+  <section class="slide">
+    <span class="kicker">slide 17 · o ciclo</span>
+    <h2>O <span class="gradient">ciclo</span> — não é uma esteira.</h2>
+    <div class="flow" style="justify-content: center; margin: 28px 0;">
+      <div class="pill"><span class="neon-pink">/spec</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-cyan">/planejar</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-green">/implementar</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-yellow">/code-review</span></div>
+      <span class="loop">↻</span>
+    </div>
+    <p class="lead" style="text-align: center;">Cada iteração <b class="neon-cyan">refina</b> e <b class="neon-pink">expande</b> o sistema.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Cada etapa alimenta a próxima</h3>
+        <ul>
+          <li>O <b class="neon-pink">PRD</b> informa o PLAN</li>
+          <li>O <b class="neon-cyan">PLAN</b> guia a implementação</li>
+          <li>O <b class="neon-green">context.md</b> mantém consistência</li>
+          <li>O <b class="neon-yellow">review</b> valida tudo</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>O segredo</h3>
+        <div class="megaword gradient" style="font-size: clamp(1.6rem, 3vw, 2.4rem);">Contexto persistente<br>&gt; prompts aleatórios.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19: /spec -->
+  <section class="slide">
+    <span class="kicker">slide 18 · etapa 1</span>
+    <h2><code class="highlight neon-pink">/spec</code> — O dev descreve a feature.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>A skill gera</h3>
+        <ul>
+          <li>Problema</li>
+          <li>Solução</li>
+          <li>Critérios de aceite</li>
+          <li>Casos de borda</li>
+          <li>Impactos no sistema</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>Resultado</h3>
+        <div class="terminal">
+          <span class="prompt">$</span> <span class="cmd">/spec</span> "criar tela de login"<br>
+          <span class="prompt">→</span> PRD_001_Tela_Login_Feature.md ✅
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20: /planejar (baby steps + janela contexto) -->
+  <section class="slide">
+    <span class="kicker">slide 19 · etapa 2</span>
+    <h2><code class="highlight neon-cyan">/planejar</code> — Quebrar em <span class="gradient">baby steps</span>.</h2>
+    <p class="lead">Lembra da <b class="neon-pink">janela de contexto</b>? É por isso que quebramos em pedaços.</p>
+<pre class="with-dots"><code><span class="tok-key">### Etapa 1 — Entidade</span>
+<span class="tok-com">- Criar Product</span>
+<span class="tok-com">- Criar repository</span>
+
+<span class="tok-key">### Etapa 2 — Commands</span>
+<span class="tok-com">- CreateProductCommand</span>
+<span class="tok-com">- Handler</span>
+<span class="tok-com">- Validator</span></code></pre>
+    <h2 style="margin-top: 8px;">Cada etapa <span class="neon-green">cabe na janela</span> de contexto.</h2>
+  </section>
+
+  <!-- 21: /implementar -->
+  <section class="slide">
+    <span class="kicker">slide 20 · etapa 3</span>
+    <h2><code class="highlight neon-green">/implementar</code> — A skill faz o trabalho.</h2>
+    <div class="cols">
+      <div class="card green">
+        <h3>O que a skill faz</h3>
+        <ul>
+          <li>Descobre o repo correto</li>
+          <li>Cria branch</li>
+          <li>Implementa</li>
+          <li>Segue os padrões</li>
+          <li>Executa testes</li>
+          <li>Faz commit</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>Sem precisar repetir</h3>
+        <ul>
+          <li>"usa esse padrão"</li>
+          <li>"coloca nesse path"</li>
+          <li>"não usa essa biblioteca"</li>
+        </ul>
+        <h2 style="margin-top: 14px;">O contexto <span class="neon-green">já existe</span>. ✨</h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- 22: /code-review -->
+  <section class="slide">
+    <span class="kicker">slide 21 · etapa 4</span>
+    <h2><code class="highlight neon-yellow">/code-review</code> — A IA valida o que foi feito.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>A IA valida</h3>
+        <ul>
+          <li>Critérios do PRD</li>
+          <li>Regras do PLAN</li>
+          <li>Padrões do projeto</li>
+          <li>Segurança</li>
+          <li>Performance</li>
+          <li>Legibilidade</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>+ SonarQube</h3>
+        <ul>
+          <li>Quality Gate</li>
+          <li>Cobertura de testes</li>
+          <li>Vulnerabilidades</li>
+          <li>Bugs</li>
+          <li>Code Smells</li>
+        </ul>
+        <p class="small" style="margin-top: 12px;">Tudo no <b class="neon-cyan">mesmo fluxo</b>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23: MCP — explica o protocolo + exemplos -->
+  <section class="slide">
+    <span class="kicker">slide 22</span>
+    <h2><span class="gradient">MCP</span> — Model Context Protocol.</h2>
+    <p class="lead">O padrão que faz a IA <b class="neon-cyan">agir</b>, não só conversar.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>🔧 Azure DevOps</h3>
+        <ul>
+          <li>Ler work items</li>
+          <li>Criar branch</li>
+          <li>Abrir PR</li>
+          <li>Consultar sprint</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>📊 SonarQube</h3>
+        <ul>
+          <li>Ler métricas</li>
+          <li>Validar Quality Gate</li>
+          <li>Coletar vulnerabilidades</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top: 18px;">→ As <b class="neon-cyan">skills</b> usam os <b class="neon-pink">MCPs</b> pra executar ações reais nos seus sistemas.</p>
+  </section>
+
+  <!-- 24: workflow > modelo -->
+  <section class="slide center">
+    <span class="kicker">slide 23 · o ponto MAIS importante</span>
+    <h2>O workflow importa <span class="gradient">mais</span> que o modelo.</h2>
+    <div class="chips" style="justify-content: center; margin-top: 24px;">
+      <span class="chip pink">Claude</span>
+      <span class="chip cyan">Gemini</span>
+      <span class="chip green">Codex</span>
+    </div>
+    <div class="megaword" style="margin-top: 24px;">Todos viram <span class="strike">detalhe</span>.</div>
+    <p class="lead" style="margin-top: 16px;">Porque o diferencial é:</p>
+    <div class="chips" style="justify-content: center;">
+      <span class="chip yellow">processo</span>
+      <span class="chip purple">contexto</span>
+      <span class="chip pink">consistência</span>
+    </div>
+  </section>
+
+  <!-- 25: perigo do vibe coding (aprofundado) -->
+  <section class="slide">
+    <span class="kicker">slide 24 · ⚠️ aviso</span>
+    <h2>O perigo do <span class="gradient">"vibe coding"</span>.</h2>
+    <p class="lead">IA também acelera bagunça. 🚨</p>
+    <div class="card red">
+      <h3>Perigos</h3>
+      <ul>
+        <li>Código sem entendimento</li>
+        <li>Arquitetura inconsistente</li>
+        <li>Dependência da IA</li>
+        <li>Devs sem base técnica</li>
+        <li>Código impossível de manter</li>
+      </ul>
+    </div>
+    <h2 style="margin-top: 24px;">Revisão humana <span class="neon-pink">não é opcional</span>.</h2>
+  </section>
+
+  <!-- 26: IA não substitui + futuro (merged) -->
+  <section class="slide">
+    <span class="kicker">slide 25</span>
+    <h2>IA <span class="neon-pink">não substitui</span> engenharia.</h2>
+    <p class="lead">O humano <b class="neon-cyan">continua no controle</b>. 🧠</p>
+    <div class="chips">
+      <span class="chip">Menos código</span>
+      <span class="chip cyan">Mais contexto</span>
+      <span class="chip pink">Mais arquitetura</span>
+      <span class="chip green">Mais code review</span>
+    </div>
+    <h2 style="margin-top: 32px;">A próxima geração de devs<br><span class="strike">não vai competir digitando mais rápido</span>.</h2>
+    <div class="megaword gradient" style="font-size: clamp(2rem, 5vw, 4rem); margin-top: 12px;">Vai competir<br>estruturando melhor. 🚀</div>
+  </section>
+
+  <!-- 27: como começar — ai-flow é agregador -->
+  <section class="slide">
+    <span class="kicker">slide 26 · como começar</span>
+    <h2>ai-flow é um <span class="gradient">agregador</span>, não um concorrente.</h2>
+    <div class="cols">
+      <div class="card red">
+        <h3>❌ O que NÃO é</h3>
+        <ul>
+          <li>Mais uma IA</li>
+          <li>Substituto do Claude/Cursor</li>
+          <li>Concorrente do Copilot</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>✅ O que É</h3>
+        <ul>
+          <li>Orquestra Claude, Cursor, Gemini, Codex</li>
+          <li>Estrutura o workflow</li>
+          <li>Persiste o contexto</li>
+          <li>Padroniza as skills</li>
+        </ul>
+      </div>
+    </div>
+    <h3 style="margin-top: 24px;">Comece em 3 comandos</h3>
+    <div class="terminal">
+      <span class="prompt">$</span> <span class="cmd">git clone</span> https://github.com/zavadzki72/ai-flow<br>
+      <span class="prompt">$</span> <span class="cmd">/setup-project</span> <span style="color: var(--text-dim); font-style: italic;"># a própria skill te guia</span><br>
+      <span class="prompt">$</span> <span class="cmd">/spec</span> "sua primeira feature"
+    </div>
+    <p class="small" style="margin-top: 10px;">→ Repo completo: <a href="https://github.com/zavadzki72/ai-flow" target="_blank" style="color: var(--neon-cyan);">github.com/zavadzki72/ai-flow</a></p>
+  </section>
+
+  <!-- 28: demo -->
+  <section class="slide">
+    <span class="kicker">slide 27 · demo ao vivo 🎬</span>
+    <h2>Vamos ver isso funcionando?</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>/spec</h3>
+        <p>Gerando um PRD</p>
+      </div>
+      <div class="card purple">
+        <h3>/planejar</h3>
+        <p>Criando plano de execução</p>
+      </div>
+      <div class="card green">
+        <h3>/implementar</h3>
+        <p>Gerando código seguindo padrões</p>
+      </div>
+      <div class="card red">
+        <h3>/code-review</h3>
+        <p>Validando qualidade automaticamente</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 29: conclusão -->
+  <section class="slide center">
+    <span class="kicker">slide 28 · conclusão</span>
+    <div class="megaword">O problema <span class="strike">nunca foi</span> a IA.</div>
+    <div class="megaword gradient">O problema sempre foi contexto.</div>
+  </section>
+
+  <!-- 29: obrigado -->
+  <section class="slide center title-slide">
+    <span class="kicker">slide 29 · fim</span>
+    <h1 class="gradient">Obrigado!</h1>
+    <p class="lead">Perguntas? 🙋</p>
+    <div class="thanks-grid">
+      <a href="https://ai-flow.marccusz.com" target="_blank" class="qr-wrap" title="Abrir apresentação">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=https%3A%2F%2Fai-flow.marccusz.com&margin=2&ecc=M" alt="QR Code para ai-flow.marccusz.com" class="qr-img">
+        <span class="qr-label">📲 Acesse a apresentação</span>
+        <span class="qr-url">ai-flow.marccusz.com</span>
+      </a>
+      <div class="title-meta thanks-contacts">
+        <div>🌐 <a href="https://marccusz.com" target="_blank">marccusz.com</a></div>
+        <div>🌐 <a href="https://blog.marccusz.com" target="_blank">blog.marccusz.com</a></div>
+        <div>💻 <a href="https://github.com/zavadzki72/ai-flow" target="_blank">github.com/zavadzki72/ai-flow</a></div>
+        <div>💼 <span class="neon-cyan">linkedin.com/in/marccus-zavadzki</span></div>
+      </div>
+    </div>
+    <p class="small" style="margin-top: 28px;">Feito com café, IA e muito contexto. ☕</p>
+  </section>
+
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="progressbar" id="bar"></div>
+<div class="nav-hint">
+  <span class="key">←</span> <span class="key">→</span> ou <span class="key">space</span> · <span class="key">Home</span> <span class="key">End</span> · <span class="key">F</span> fullscreen
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  const counter = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const bar = document.getElementById('bar');
+  const dots = document.getElementById('dots');
+  let idx = 0;
+
+  totalEl.textContent = String(total).padStart(2, '0');
+
+  // build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => go(i));
+    dots.appendChild(d);
+  });
+
+  function update() {
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'prev');
+      if (i === idx) s.classList.add('active');
+      else if (i < idx) s.classList.add('prev');
+    });
+    counter.textContent = String(idx + 1).padStart(2, '0');
+    bar.style.width = ((idx + 1) / total * 100) + '%';
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+
+  function go(i) {
+    if (i < 0 || i >= total) return;
+    idx = i;
+    update();
+  }
+
+  function next() { go(Math.min(idx + 1, total - 1)); }
+  function prev() { go(Math.max(idx - 1, 0)); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault(); next();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault(); prev();
+    } else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(total - 1); }
+    else if (e.key.toLowerCase() === 'f') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  // swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
+  });
+
+  // click to advance (right half = next, left half = prev) — disabled on links
+  document.addEventListener('click', e => {
+    if (e.target.closest('a, .dot, .key')) return;
+    if (e.clientX > window.innerWidth / 2) next();
+    else prev();
+  });
+</script>
+
+</body>
+</html>
