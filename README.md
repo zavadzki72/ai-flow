@@ -75,6 +75,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 ## Configurando MCPs
 
 MCPs (Model Context Protocol) conectam a IA a sistemas externos como Azure DevOps, Datadog, etc.
+As skills em `MCP/` são agnósticas de cliente e geram configuração para Claude Code, Cursor, Gemini CLI, GitHub Copilot/VS Code ou outro cliente MCP compatível.
 
 | Provider | Skill | Status |
 |----------|-------|--------|
@@ -84,9 +85,9 @@ MCPs (Model Context Protocol) conectam a IA a sistemas externos como Azure DevOp
 Para configurar:
 1. Certifique-se de ter o projeto ativo configurado (`.ai-project`)
 2. Invoque a skill correspondente: `/setup-mcp-azure-devops`
-3. Siga o processo guiado — a skill lê o `map.json` para pré-preencher a org automaticamente
+3. Siga o processo guiado — a skill lê o `map.json`, gera uma especificação MCP portável e aplica no cliente escolhido
 
-Consulte `MCP/README.md` para mais detalhes.
+Consulte `MCP/README.md` e `MCP/CLIENTS.md` para mais detalhes.
 
 ---
 

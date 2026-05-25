@@ -1,7 +1,7 @@
 {
-  "_comment": "SonarQube Cloud — substituir TOKEN e ORG",
+  "_comment": "Formato mcpServers para clientes como Claude/Cursor/Gemini. Para GitHub Copilot/VS Code, use MCP/CLIENTS.md e converta para servers. Nao salve token real em arquivo versionavel.",
   "mcpServers": {
-    "sonarqube": {
+    "sonarqube-cloud-SUBSTITUIR_PELA_ORG": {
       "command": "docker",
       "args": [
         "run", "--init", "--pull=always", "-i", "--rm",
@@ -10,7 +10,7 @@
         "mcp/sonarqube"
       ],
       "env": {
-        "SONARQUBE_TOKEN": "SUBSTITUIR_PELO_TOKEN",
+        "SONARQUBE_TOKEN": "${env:SONARQUBE_TOKEN}",
         "SONARQUBE_ORG": "SUBSTITUIR_PELA_ORG"
       }
     }

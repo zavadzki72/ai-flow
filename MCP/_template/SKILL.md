@@ -1,6 +1,6 @@
 ---
 name: setup-mcp-PROVIDER
-description: Configura o MCP oficial do PROVIDER (PACOTE_NPM). Orienta criação de token/credenciais, gera configuração pré-preenchida e aplica no local escolhido (global ou projeto) com confirmação explícita.
+description: Configura o MCP oficial do PROVIDER. Coleta credenciais, gera uma especificação MCP portável e aplica no cliente escolhido pelo dev (Claude Code, Cursor, Gemini CLI, GitHub Copilot/VS Code ou outro cliente compatível).
 ---
 
 # Skill: Setup MCP — PROVIDER
@@ -13,11 +13,11 @@ description: Configura o MCP oficial do PROVIDER (PACOTE_NPM). Orienta criação
 ## Pré-requisitos
 
 Listar pré-requisitos do MCP:
-- [ ] [Pré-requisito 1 — ex: Node.js >= 18]
-- [ ] [Pré-requisito 2 — ex: conta no serviço]
+- [ ] [Pré-requisito 1 — ex: Node.js >= 20]
+- [ ] [Pré-requisito 2 — ex: Docker]
+- [ ] [Pré-requisito 3 — conta no serviço]
 
 ```bash
-# Verificar pré-requisitos
 COMANDO_VERIFICACAO --version
 ```
 
@@ -33,92 +33,139 @@ Extrair de `map.json` os valores relevantes para pré-preencher a configuração
 
 ---
 
-### Passo 2: Coletar Informações
+### Passo 2: Coletar Informações do Provider
 
-**2.1.** Confirmar/solicitar [parâmetro de configuração principal]:
-```
-[Mensagem para o dev]
-```
+Confirmar/solicitar os parâmetros de configuração do MCP.
 
-**2.2.** Orientar criação de token/credenciais:
-```
-🔑 Você precisará de [tipo de credencial].
+Orientar criação de token/credenciais quando necessário:
+
+```text
+Você precisará de [tipo de credencial].
 
 Acesse: [URL para criação]
-
 [Instruções de escopos/permissões mínimas]
 
-⚠️ O token NÃO será salvo em nenhum arquivo do repositório.
+O token não deve ser salvo em arquivo versionável.
 ```
 
 ---
 
-### Passo 3: Escolher Local de Configuração
+### Passo 3: Escolher Cliente MCP
 
+Perguntar:
+
+```text
+Em qual cliente você quer configurar este MCP?
+
+1. Claude Code
+2. Cursor
+3. Gemini CLI
+4. GitHub Copilot / VS Code
+5. Outro cliente MCP compatível
 ```
-📍 Onde aplicar a configuração?
 
-1️⃣  Global (~/.claude/settings.json) — todos os projetos
-2️⃣  Projeto (.mcp.json) — apenas este projeto
-
-Qual opção? (1/2)
-```
+Usar `MCP/CLIENTS.md` como referência obrigatória para formatos, paths e comandos.
 
 ---
 
-### Passo 4: Gerar e Exibir Configuração
+### Passo 4: Escolher Escopo
 
-Gerar JSON com valores coletados (baseado em `config-template.json`).
-Exibir ao dev com token parcialmente ocultado.
-Pedir confirmação antes de aplicar.
+Perguntar o escopo conforme o cliente escolhido:
 
----
+- Claude Code: `local`, `project` ou `user`
+- Cursor: projeto (`.cursor/mcp.json`) ou global (`~/.cursor/mcp.json`)
+- Gemini CLI: `project` ou `user`
+- GitHub Copilot / VS Code: workspace (`.vscode/mcp.json`) ou user profile
+- Outro: gerar instrução portável
 
-### Passo 5: Aplicar Configuração
-
-- Ler arquivo de destino atual (preservar outros MCPs já configurados)
-- Fazer merge do novo bloco `mcpServers`
-- Se opção projeto: verificar `.gitignore` e adicionar `.mcp.json` se necessário
+Para qualquer escopo versionável, nunca inserir segredo real no arquivo.
 
 ---
 
-### Passo 6: Verificar e Orientar Reinício
+### Passo 5: Gerar Especificação Portável
 
-```bash
-# Testar instalação do pacote
-npx -y PACOTE_OFICIAL_NPM --version
+Gerar primeiro a especificação MCP portável:
+
+```json
+{
+  "name": "PROVIDER-{slug}",
+  "transport": "stdio",
+  "command": "COMANDO",
+  "args": ["ARGS"],
+  "env": {}
+}
 ```
 
-Orientar reinício do Claude Code e sugerir teste inicial.
+Para HTTP, usar:
+
+```json
+{
+  "name": "PROVIDER-{slug}",
+  "transport": "http",
+  "url": "https://example.com/mcp",
+  "headers": {}
+}
+```
+
+Exibir ao dev com segredos mascarados e pedir confirmação antes de aplicar.
 
 ---
 
-### Passo 7: Relatório Final
+### Passo 6: Aplicar no Cliente Escolhido
 
-```
-✅ MCP PROVIDER Configurado!
+Aplicar seguindo `MCP/CLIENTS.md`:
+
+- Se o cliente tem CLI de gerenciamento, preferir CLI quando ela preservar corretamente o escopo escolhido.
+- Se for editar JSON, ler arquivo atual, fazer merge preservando outros servidores e gravar JSON válido.
+- Se o servidor já existir, perguntar antes de sobrescrever.
+- Se for configuração de projeto, verificar `.gitignore` quando houver risco de segredo.
+
+---
+
+### Passo 7: Verificar e Orientar Reinício
+
+Executar a verificação adequada ao cliente:
+
+- Claude Code: `claude mcp list` e `/mcp`
+- Cursor: Settings > MCP ou `Available Tools` no Agent
+- Gemini CLI: `gemini mcp list` e `/mcp`
+- GitHub Copilot / VS Code: `MCP: List Servers`
+- Outro: comando/documentação do cliente
+
+Orientar reinício/reload do cliente quando necessário.
+
+---
+
+### Passo 8: Relatório Final
+
+```text
+MCP PROVIDER configurado.
 
 Resumo:
-  - Pacote: PACOTE_OFICIAL_NPM
-  - Local: {global ou projeto}
+  - Cliente: {cliente}
+  - Escopo: {escopo}
+  - Servidor: {name}
+  - Transporte: {stdio|http|sse}
+  - Local/Comando: {path ou comando usado}
 
-Ferramentas disponíveis após reiniciar:
-  - [Ferramenta 1]
-  - [Ferramenta 2]
+Teste sugerido:
+  - [prompt ou comando de teste]
 ```
 
 ---
 
 ## Troubleshooting
 
-- **MCP não aparece:** verificar JSON válido, local correto, reiniciar Claude Code
-- **Erro de autenticação:** token expirado ou sem permissões — gerar novo token
-- **Pacote não encontrado:** verificar nome oficial do pacote em https://www.npmjs.com
+- **MCP não aparece:** verificar arquivo/escopo correto, recarregar cliente e listar servidores.
+- **Erro de autenticação:** token expirado, conta errada ou permissões insuficientes.
+- **Servidor stdio não conecta:** testar `{command} {args...}` manualmente.
+- **Docker não conecta:** verificar `docker info`.
+- **Node/npx não conecta:** verificar `node --version` e `npx --version`.
 
 ---
 
 ## Referências
 
-- Pacote oficial: https://www.npmjs.com/package/PACOTE_OFICIAL_NPM
+- Guia de clientes: `MCP/CLIENTS.md`
+- Pacote/servidor oficial: [URL]
 - Documentação de autenticação: [URL]
-- Configuração MCP no Claude Code: https://docs.anthropic.com/claude-code/mcp

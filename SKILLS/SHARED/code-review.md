@@ -520,7 +520,7 @@ git diff {repo.branch}...HEAD --name-only  # arquivos
 - Descrição: resumo, resultados do review, mudanças, testes, referências ao PRD e PLAN
 
 **Criar PR via ferramenta configurada em `map.tooling.project-management`:**
-- `type: azure-devops` → usar MCP Azure DevOps (ver adapter Claude/Gemini para tool names)
+- `type: azure-devops` → usar MCP Azure DevOps (ver adapter do agente/cliente para tool names)
 - `type: github` → usar `gh pr create`
 - `type: gitlab` → usar `glab mr create`
 - Outros → orientar o dev a criar manualmente

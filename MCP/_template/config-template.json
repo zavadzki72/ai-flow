@@ -1,11 +1,12 @@
 {
+  "_comment": "Formato mcpServers para clientes como Claude/Cursor/Gemini. Para GitHub Copilot/VS Code, use MCP/CLIENTS.md e converta para servers. Nao salve token real em arquivo versionavel.",
   "mcpServers": {
     "NOME_DO_PROVIDER": {
       "command": "npx",
       "args": ["-y", "PACOTE_OFICIAL_NPM"],
       "env": {
         "VARIAVEL_DE_CONFIGURACAO": "SUBSTITUIR",
-        "VARIAVEL_DE_TOKEN": "SUBSTITUIR_PELO_TOKEN"
+        "VARIAVEL_DE_TOKEN": "${env:VARIAVEL_DE_TOKEN}"
       }
     }
   }

@@ -1,12 +1,9 @@
 {
+  "_comment": "Formato mcpServers para clientes como Claude/Cursor/Gemini. Para GitHub Copilot/VS Code, use MCP/CLIENTS.md e converta para servers.",
   "mcpServers": {
-    "azure-devops": {
+    "azure-devops-SUBSTITUIR_PELA_ORG": {
       "command": "npx",
-      "args": ["-y", "@microsoft/azure-devops-mcp"],
-      "env": {
-        "AZURE_DEVOPS_ORG": "SUBSTITUIR_PELA_ORG",
-        "AZURE_DEVOPS_TOKEN": "SUBSTITUIR_PELO_PAT"
-      }
+      "args": ["-y", "@azure-devops/mcp", "SUBSTITUIR_PELA_ORG"]
     }
   }
 }

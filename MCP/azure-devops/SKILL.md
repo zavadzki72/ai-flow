@@ -1,6 +1,6 @@
 ---
 name: setup-mcp-azure-devops
-description: Configura o MCP oficial do Azure DevOps (@azure-devops/mcp). Pergunta o nome da organização, registra via `claude mcp add` e orienta o dev a reiniciar o Claude Code. Suporta múltiplas orgs — cada execução adiciona uma entrada sem remover as outras.
+description: Configura o MCP oficial do Azure DevOps de forma agnóstica de cliente. Gera uma especificação MCP portável e aplica em Claude Code, Cursor, Gemini CLI, GitHub Copilot/VS Code ou outro cliente compatível.
 ---
 
 # Skill: Setup MCP — Azure DevOps
@@ -12,175 +12,367 @@ description: Configura o MCP oficial do Azure DevOps (@azure-devops/mcp). Pergun
 
 ## Informações Importantes
 
-- **Pacote oficial:** `@azure-devops/mcp`
-- **Autenticação:** OAuth via browser (padrão) — na primeira vez que uma ferramenta ADO for usada, o browser abre para login com a conta Microsoft
-- **PATs não são suportados** por este MCP
-- **Múltiplas orgs:** cada org vira uma entrada separada `azure-devops-{org}`
-- **Método de registro:** usar **exclusivamente** o comando `claude mcp add` (NÃO editar arquivos JSON manualmente)
+- **Servidor local oficial:** `@azure-devops/mcp`
+- **Servidor remoto oficial:** `https://mcp.dev.azure.com/{org}`
+- **Remoto vs local:**
+  - Remoto HTTP: recomendado quando o cliente suporta o fluxo Entra/OAuth do Azure DevOps.
+  - Local stdio: opção mais portável para Claude Code, Cursor, Gemini CLI e outros clientes MCP.
+- **Autenticação local:** OAuth via browser por padrão; opcionalmente Azure CLI com `--authentication azcli`.
+- **Autenticação remota:** Microsoft Entra/OAuth pelo cliente.
+- **Múltiplas orgs:** cada org deve ter um nome de servidor próprio, como `azure-devops-{org}`.
+- **Referência de clientes:** seguir `MCP/CLIENTS.md`.
 
 ---
 
 ## Pré-requisitos
 
-Verificar antes de iniciar:
+Para modo local:
 
 ```bash
 node --version   # requer >= 20
 npx --version
 ```
 
-Se Node.js não estiver instalado ou for menor que 20:
-```
-❌ Node.js não encontrado ou versão incompatível.
+Se usar `--authentication azcli`:
 
-Instale em: https://nodejs.org (versão LTS recomendada — 20+)
-Após instalar, rode novamente: /setup-mcp-azure-devops
+```bash
+az --version
+az login
 ```
+
+Para modo remoto, validar apenas que o cliente escolhido suporta servidor MCP HTTP e autenticação Microsoft Entra.
 
 ---
 
 ## Processo
 
-### Passo 1: Coletar o Nome da Organização
+### Passo 1: Carregar Contexto do Projeto
+
+Verificar se existe `.ai-project` para identificar o projeto ativo.
+
+Ler:
+- `MAPS/{projeto}/map.json`
+- `MAPS/{projeto}/context.md`
+
+Se `map.tooling.project-management.type == "azure-devops"`, usar `workitems-project` e `repos-project` como contexto para o teste final. Se o map não tiver organização, pedir ao dev.
+
+---
+
+### Passo 2: Coletar Organização
 
 Perguntar:
 
-```
+```text
 Qual é o nome da sua organização no Azure DevOps?
 
 Exemplo: se a URL é https://dev.azure.com/minha-empresa/...
 O nome da org é: minha-empresa
 ```
 
-Validar que o dev informou apenas o nome (sem URL, sem barras).
+Validar que o dev informou apenas o nome curto, sem URL e sem barras.
 
 ---
 
-### Passo 2: Detectar o Sistema Operacional e Montar o Comando
+### Passo 3: Escolher Cliente MCP
 
-> ⚠️ **CRÍTICO — Windows requer `npx.cmd`**
-> No Windows, o Claude Code não consegue executar `npx` diretamente — é necessário usar `npx.cmd`.
-> Detectar automaticamente a plataforma e escolher o comando correto.
+Perguntar:
 
-**Regra:**
-- Se a plataforma for **Windows** (`win32`): usar `npx.cmd`
-- Se a plataforma for **Linux/macOS**: usar `npx`
+```text
+Em qual cliente você quer configurar este MCP?
 
-Com o nome da org em `{org}` e o comando correto em `{npx_cmd}`, apresentar ao dev:
-
+1. Claude Code
+2. Cursor
+3. Gemini CLI
+4. GitHub Copilot / VS Code
+5. Outro cliente MCP compatível
 ```
-📋 Configuração que será registrada:
 
-Nome: azure-devops-{org}
-Comando: {npx_cmd} -y @azure-devops/mcp {org}
-Plataforma detectada: {Windows|Linux|macOS}
-Scope: user (disponível em todos os projetos)
-
-Aplicar? (s/n)
-```
+Usar `MCP/CLIENTS.md` para paths, comandos e formato do arquivo.
 
 ---
 
-### Passo 3: Verificar se já existe e Registrar via CLI
+### Passo 4: Escolher Modo de Conexão
 
-> 🚨 **CRÍTICO — NÃO edite arquivos JSON manualmente.**
-> O único método correto é usar o comando `claude mcp add`.
-> O arquivo `~/.claude/mcp.json` NÃO é lido pelo Claude Code.
-> O `claude mcp add` registra no `~/.claude.json`, que é o arquivo que o Claude Code realmente carrega.
+Perguntar:
 
-#### 3a. Verificar se já existe
+```text
+Como você quer conectar ao Azure DevOps?
 
-Rodar:
-```bash
-claude mcp list 2>&1
+1. Local stdio via @azure-devops/mcp (mais portável)
+2. Remoto HTTP via https://mcp.dev.azure.com/{org}
 ```
 
-Se a saída contiver `azure-devops-{org}`, informar:
-```
-⚠️ Já existe uma configuração para azure-devops-{org}.
-Deseja sobrescrever? (s/n)
-```
-
-Se sim, remover primeiro:
-```bash
-claude mcp remove azure-devops-{org} -s user 2>&1
-claude mcp remove azure-devops-{org} -s local 2>&1
-```
-
-#### 3b. Registrar o servidor MCP
-
-Rodar os dois comandos para garantir cobertura em ambos os scopes:
-
-```bash
-claude mcp add -s user azure-devops-{org} -- {npx_cmd} -y @azure-devops/mcp {org}
-claude mcp add -s local azure-devops-{org} -- {npx_cmd} -y @azure-devops/mcp {org}
-```
-
-Onde:
-- `-s user`: registra no nível global (disponível em todos os projetos)
-- `-s local`: registra no projeto atual (garante que aparece na sessão corrente)
-- `--`: separa os argumentos do `claude mcp add` dos argumentos do comando MCP
-
-Verificar que ambos retornaram mensagens de sucesso contendo "Added stdio MCP server".
+Recomendação:
+- Para GitHub Copilot / VS Code, sugerir remoto HTTP primeiro.
+- Para Claude Code, Cursor, Gemini CLI e outros clientes, sugerir local stdio primeiro.
+- Se o remoto falhar por autenticação Entra no cliente, usar local stdio.
 
 ---
 
-### Passo 4: Confirmar e Orientar
+### Passo 5: Opções do Servidor Local
 
+Se o modo escolhido for local stdio, perguntar:
+
+```text
+Quer limitar os domínios carregados?
+
+1. Sim, carregar apenas core, work e work-items
+2. Sim, escolher domínios manualmente
+3. Não, carregar todos os domínios
 ```
-✅ MCP azure-devops-{org} registrado com sucesso!
 
-🔄 PRÓXIMO PASSO OBRIGATÓRIO:
-   Reinicie o Claude Code para que o MCP seja carregado.
+Domínios disponíveis:
+`core`, `work`, `work-items`, `repositories`, `wiki`, `pipelines`, `search`, `test-plans`, `advanced-security`.
 
-   Após reiniciar, teste com:
-   /mcp (deve listar o servidor)
-   "Liste os projetos ADO"
+Perguntar também:
 
-   Na primeira execução de uma ferramenta ADO, o browser vai abrir
-   para login com sua conta Microsoft — é o comportamento normal do OAuth.
+```text
+Usar autenticação via Azure CLI?
 
-📌 Para adicionar outra organização, rode /setup-mcp-azure-devops novamente.
-   Cada org vira uma entrada separada e independente.
+1. Não, usar OAuth via browser
+2. Sim, adicionar --authentication azcli
 ```
+
+Se escolher Azure CLI, confirmar que `az login` já foi executado.
+
+---
+
+### Passo 6: Escolher Escopo
+
+Perguntar o escopo conforme o cliente escolhido:
+
+- Claude Code: `local`, `project` ou `user`
+- Cursor: projeto (`.cursor/mcp.json`) ou global (`~/.cursor/mcp.json`)
+- Gemini CLI: `project` ou `user`
+- GitHub Copilot / VS Code: workspace (`.vscode/mcp.json`) ou user profile
+- Outro: gerar instrução portável
+
+Para Azure DevOps local/remoto não é necessário salvar token manualmente no arquivo.
+
+---
+
+### Passo 7: Gerar Especificação Portável
+
+#### Local stdio
+
+Com `{org}` e opções escolhidas:
+
+```json
+{
+  "name": "azure-devops-{org}",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@azure-devops/mcp", "{org}"]
+}
+```
+
+Se usar Azure CLI:
+
+```json
+{
+  "name": "azure-devops-{org}",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@azure-devops/mcp", "{org}", "--authentication", "azcli"]
+}
+```
+
+Se limitar domínios:
+
+```json
+{
+  "name": "azure-devops-{org}",
+  "transport": "stdio",
+  "command": "npx",
+  "args": ["-y", "@azure-devops/mcp", "{org}", "-d", "core", "work", "work-items"]
+}
+```
+
+No Windows, se o cliente falhar ao iniciar `npx`, trocar `command` para `npx.cmd`.
+
+#### Remoto HTTP
+
+```json
+{
+  "name": "azure-devops-{org}",
+  "transport": "http",
+  "url": "https://mcp.dev.azure.com/{org}"
+}
+```
+
+Exibir a especificação ao dev e pedir confirmação antes de aplicar.
+
+---
+
+### Passo 8: Aplicar no Cliente Escolhido
+
+Aplicar conforme `MCP/CLIENTS.md`.
+
+#### Claude Code
+
+Local stdio:
+
+```bash
+claude mcp add --transport stdio --scope {local|project|user} azure-devops-{org} -- npx -y @azure-devops/mcp {org}
+```
+
+Remoto HTTP:
+
+```bash
+claude mcp add --transport http --scope {local|project|user} azure-devops-{org} https://mcp.dev.azure.com/{org}
+```
+
+Verificar:
+
+```bash
+claude mcp list
+```
+
+#### Cursor
+
+Projeto: `.cursor/mcp.json`.
+Global: `~/.cursor/mcp.json`.
+
+Local stdio:
+
+```json
+{
+  "mcpServers": {
+    "azure-devops-{org}": {
+      "command": "npx",
+      "args": ["-y", "@azure-devops/mcp", "{org}"]
+    }
+  }
+}
+```
+
+Remoto HTTP:
+
+```json
+{
+  "mcpServers": {
+    "azure-devops-{org}": {
+      "type": "http",
+      "url": "https://mcp.dev.azure.com/{org}"
+    }
+  }
+}
+```
+
+#### Gemini CLI
+
+Local stdio:
+
+```bash
+gemini mcp add --scope {project|user} azure-devops-{org} npx -y @azure-devops/mcp {org}
+```
+
+Remoto HTTP:
+
+```bash
+gemini mcp add --scope {project|user} --transport http azure-devops-{org} https://mcp.dev.azure.com/{org}
+```
+
+Verificar:
+
+```bash
+gemini mcp list
+```
+
+#### GitHub Copilot / VS Code
+
+Workspace: `.vscode/mcp.json`.
+User profile: comando `MCP: Open User Configuration`.
+
+Local stdio:
+
+```json
+{
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name"
+    }
+  ],
+  "servers": {
+    "azure-devops": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@azure-devops/mcp", "${input:ado_org}"]
+    }
+  }
+}
+```
+
+Remoto HTTP:
+
+```json
+{
+  "servers": {
+    "azure-devops-{org}": {
+      "type": "http",
+      "url": "https://mcp.dev.azure.com/{org}"
+    }
+  }
+}
+```
+
+Verificar com `MCP: List Servers`.
+
+#### Outro Cliente
+
+Entregar a especificação portável e orientar a converter para o formato esperado pelo cliente.
+
+---
+
+### Passo 9: Confirmar e Orientar Teste
+
+```text
+MCP azure-devops-{org} configurado.
+
+Resumo:
+  - Cliente: {cliente}
+  - Escopo: {escopo}
+  - Modo: {local stdio|remoto http}
+  - Servidor: azure-devops-{org}
+
+Teste sugerido:
+  "Liste meus projetos no Azure DevOps"
+```
+
+Se for local OAuth, avisar que a primeira execução de uma ferramenta pode abrir o browser para login com a conta Microsoft.
 
 ---
 
 ## Troubleshooting
 
-**MCP não aparece após reiniciar (`/mcp` mostra vazio):**
-- Confirmar que usou `claude mcp add` (e NÃO editou `~/.claude/mcp.json` manualmente — esse arquivo NÃO é lido)
-- Re-executar: `claude mcp add -s user azure-devops-{org} -- {npx_cmd} -y @azure-devops/mcp {org}`
-- Verificar se Node.js 20+ está instalado: `node --version`
-- **No Windows:** verificar se o command está como `npx.cmd` (e NÃO `npx`)
+**Servidor não aparece:**
+- Verificar se aplicou no escopo correto do cliente.
+- Recarregar/reiniciar o cliente.
+- Usar o comando de listagem do cliente (`claude mcp list`, `gemini mcp list`, `MCP: List Servers`, Settings > MCP).
 
-**Browser não abre / erro de autenticação:**
-- Tentar rodar manualmente no terminal para ver o erro: `npx -y @azure-devops/mcp {org}`
-- Se tiver políticas de tenant bloqueando OAuth, usar az CLI: adicionar `--authentication azcli` nos args e rodar `az login` antes:
-  ```bash
-  claude mcp add -s user azure-devops-{org} -- {npx_cmd} -y @azure-devops/mcp {org} --authentication azcli
-  ```
+**`npx` não encontrado no Windows:**
+- Trocar `command` de `npx` para `npx.cmd`.
+- Verificar `node --version` e `npx --version`.
+
+**Browser não abre / erro de autenticação no modo local:**
+- Rodar manualmente: `npx -y @azure-devops/mcp {org}`.
+- Tentar Azure CLI: adicionar `--authentication azcli` e executar `az login`.
 
 **Erro de organização não encontrada:**
-```
-Error fetching projects: Failed to find api location for area...
-```
-- O nome da org está errado ou com URL completa — usar apenas o nome curto (`contoso`, não `https://dev.azure.com/contoso`)
+- Usar apenas o nome curto da organização (`contoso`, não `https://dev.azure.com/contoso`).
 
-**Conta pessoal não funciona:**
-- Contas pessoais (não vinculadas ao Entra ID) não são suportadas pelo MCP
-
-**Muitas ferramentas carregadas (limite de 128):**
-- Adicionar `-d` com domínios específicos nos args:
+**Muitas ferramentas carregadas:**
+- Adicionar `-d` com domínios específicos, por exemplo:
   ```bash
-  claude mcp add -s user azure-devops-{org} -- {npx_cmd} -y @azure-devops/mcp {org} -d core work work-items
+  npx -y @azure-devops/mcp {org} -d core work work-items
   ```
-  Domínios disponíveis: `core`, `work`, `work-items`, `repositories`, `wiki`, `pipelines`, `search`, `test-plans`, `advanced-security`
 
 ---
 
 ## Referências
 
-- Repositório oficial: https://github.com/microsoft/azure-devops-mcp
-- Documentação getting started: https://github.com/microsoft/azure-devops-mcp/blob/main/docs/GETTINGSTARTED.md
-- Configuração MCP no Claude Code: https://docs.anthropic.com/claude-code/mcp
+- Guia de clientes: `MCP/CLIENTS.md`
+- Servidor local oficial: https://github.com/microsoft/azure-devops-mcp
+- Servidor remoto oficial: https://learn.microsoft.com/azure/devops/mcp-server/remote-mcp-server
