@@ -11,6 +11,8 @@ ai-flow/
   CLAUDE/SKILLS/          Skills para Claude Code (adapters)
   GEMINI/SKILLS/          Skills para Gemini (adapters)
   COPILOT/SKILLS/         Skills para GitHub Copilot CLI (adapters)
+  CURSOR/SKILLS/          Skills para Cursor (adapters para Commands/Agent)
+  CURSOR/RULES/           Regras opcionais para contexto persistente no Cursor
   SKILLS/SHARED/          Lógica central das skills (agnóstica de provider)
   BOILERPLATES/
     BACK/                 Boilerplates de backend (dotnet-api, dotnet-worker, ...)
@@ -29,11 +31,12 @@ ai-flow/
 
 As skills são instruções para a IA executar tarefas padronizadas (code review, implementação, planejamento, etc.).
 
-Cada skill tem quatro camadas:
+Cada skill tem uma lógica central e adapters por ferramenta:
 - **SHARED:** lógica central reutilizável, sem contexto de projeto embutido
 - **CLAUDE/SKILLS:** adapter com frontmatter e sintaxe do Claude Code
 - **GEMINI/SKILLS:** adapter com sintaxe do Gemini
 - **COPILOT/SKILLS:** adapter com sintaxe do GitHub Copilot CLI (Windows/PowerShell)
+- **CURSOR/SKILLS:** adapter em Markdown para Cursor Commands/Agent
 
 ### 2. Maps
 
@@ -103,6 +106,7 @@ Consulte `CONVENTIONS.md` para detalhes e regras de nomenclatura.
 2. Crie o adapter em `CLAUDE/SKILLS/nome-skill/SKILL.md`
 3. Crie o adapter em `GEMINI/SKILLS/nome-skill/SKILL.md`
 4. Crie o adapter em `COPILOT/SKILLS/nome-skill/SKILL.md`
-5. Documente na tabela acima
+5. Crie o adapter em `CURSOR/SKILLS/nome-skill/SKILL.md`
+6. Documente na tabela acima
 
 Consulte `CONVENTIONS.md` para o template e regras de escrita.

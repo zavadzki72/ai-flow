@@ -8,13 +8,14 @@ Guia de como escrever e manter skills, maps e boilerplates neste repositório.
 
 ### Estrutura de uma Skill
 
-Toda skill tem três camadas:
+Toda skill tem uma lógica central e um adapter por ferramenta:
 
 ```
 SKILLS/SHARED/nome-skill.md     ← lógica central, agnóstica de provider
 CLAUDE/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Claude Code
 GEMINI/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Gemini
 COPILOT/SKILLS/nome-skill/SKILL.md  ← adapter com sintaxe GitHub Copilot CLI
+CURSOR/SKILLS/nome-skill/SKILL.md   ← adapter em Markdown para Cursor Commands/Agent
 ```
 
 ### Como as Skills Acessam Contexto de Projeto
@@ -38,7 +39,7 @@ Após identificar o projeto:
 ### Regras para Escrever Skills
 
 - **Sem contexto de projeto embutido.** Todo contexto vem do map.
-- **Lógica central em SHARED.** Os adapters de Claude/Gemini apenas traduzem sintaxe.
+- **Lógica central em SHARED.** Os adapters de Claude/Gemini/Copilot/Cursor apenas traduzem sintaxe.
 - **Perguntas obrigatórias primeiro.** Se a skill precisa de PRD, PLAN ou branch, peça antes de agir.
 - **Passos numerados e explícitos.** O dev deve conseguir acompanhar o que a skill está fazendo.
 - **Saída estruturada.** Relatórios e resultados devem ter formato consistente.
@@ -51,6 +52,19 @@ name: nome-skill
 description: Uma linha descrevendo quando e para que a skill é usada.
 ---
 ```
+
+### Adapter Cursor
+
+O adapter Cursor deve ser Markdown simples, sem frontmatter obrigatório, para poder ser usado como Custom Command em `.cursor/commands/{nome-skill}.md`.
+
+Todo adapter Cursor deve incluir:
+- Trigger esperado no chat (`/nome-skill`)
+- Referência ao processo completo em `SKILLS/SHARED/{nome-skill}.md`
+- Seção `Notas Específicas do Cursor`
+- Orientação para usar o Agent do Cursor para leitura/edição e o terminal integrado apenas para build, testes e git
+- Adaptação de comandos para PowerShell quando o ambiente for Windows
+
+Instruções persistentes de comportamento do Cursor devem ficar em `CURSOR/RULES/*.mdc`.
 
 ---
 
@@ -114,4 +128,5 @@ Cada boilerplate deve conter um `README.md` explicando:
 2. Crie o adapter em `CLAUDE/SKILLS/nome-skill/SKILL.md`
 3. Crie o adapter em `GEMINI/SKILLS/nome-skill/SKILL.md`
 4. Crie o adapter em `COPILOT/SKILLS/nome-skill/SKILL.md`
-5. Documente na tabela em `README.md`
+5. Crie o adapter em `CURSOR/SKILLS/nome-skill/SKILL.md`
+6. Documente na tabela em `README.md`
