@@ -69,6 +69,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow (map.json, context.md, .ai-project) |
+| `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
 
 ---
 
