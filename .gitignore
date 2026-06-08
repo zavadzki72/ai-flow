@@ -2,6 +2,8 @@
 MAPS/*
 !MAPS/_template
 !MAPS/_template/**
+!MAPS/copa-draft
+!MAPS/copa-draft/**
 
 # OS
 .DS_Store

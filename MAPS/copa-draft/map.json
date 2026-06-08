@@ -1,0 +1,41 @@
+{
+  "project": {
+    "name": "Copa Draft",
+    "description": "Jogo de Copa do Mundo estilo Brasfoot, 100% no navegador. O jogador monta um time dos sonhos rolando um dado e disputa um mata-mata simulado minuto a minuto com narração em português.",
+    "team": "Personal",
+    "status": "active"
+  },
+  "stack": {
+    "backend": [],
+    "frontend": ["html", "css", "javascript", "react-cdn", "babel"],
+    "infra": []
+  },
+  "architecture": {
+    "pattern": "SPA sem build",
+    "style": "state-machine"
+  },
+  "repositories": {
+    "game": {
+      "path": "C:/Projects/Personal/copa-draft",
+      "url": "https://github.com/zavadzki72/copa-draft.git",
+      "branch": "main",
+      "boilerplate": "",
+      "contexts": ["draft", "match", "engine", "ui", "achievements", "store"]
+    }
+  },
+  "tooling": {
+    "project-management": {
+      "type": "none",
+      "workitems-project": "",
+      "repos-project": ""
+    }
+  },
+  "docs": {
+    "business": "docs/business/",
+    "architecture": "docs/architecture/",
+    "code-review": "docs/code-review/",
+    "prd": "prd/",
+    "plan": "plan/",
+    "adr": "adr/"
+  }
+}
