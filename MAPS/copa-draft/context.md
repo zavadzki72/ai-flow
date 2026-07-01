@@ -14,6 +14,8 @@ O jogador monta um time dos sonhos rolando um dado — a cada vaga, uma seleçã
 - **Idioma:** português (PT-BR).
 - **Design:** Marccu's Copa Design System (dark, verde/amarelo/azul, fonte Archivo, rótulos code-token). Tokens em `styles/colors_and_type.css` e `styles/kit.css`.
 
+> **Multiplayer online (PRD_004 v4 — implementado e iterado na branch `feature/multiplayer-online`; ESTADO ATUAL e retomada: ver `plan/PLAN_004` seção ⭐):** o projeto é um **mono-repo**: `frontend/` (o jogo SPA sem build — todos os paths da seção "Estrutura de Arquivos" abaixo agora vivem sob `frontend/`) e `backend/` (**.NET 10**: ASP.NET Core + SignalR + EF Core + PostgreSQL). O multiplayer é **server-authoritative**: engine **portado para C#** com paridade validada por vetores-ouro (`backend/CopaDraft.Engine.Tests/golden/`, gerados por `tools/gen-*.js`), contas via Google, salas/lobby em tempo real e torneio multi-grupo simulado no servidor (humanos em grupos distintos, IA completa). O **modo solo permanece 100% no navegador e offline**. Dados de elencos compartilhados via `squads.json` (raiz, gerado de `frontend/data/squads.js` — fonte única). Stack completa: `docker compose up` (front+api+postgres). **Regra nova de paridade:** qualquer mudança de regra no engine JS deve regenerar os vetores-ouro e passar nos testes C# (`dotnet test backend/CopaDraft.slnx`).
+
 ---
 
 ## Arquitetura

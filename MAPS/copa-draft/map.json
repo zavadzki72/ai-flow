@@ -1,26 +1,26 @@
 {
   "project": {
     "name": "Copa Draft",
-    "description": "Jogo de Copa do Mundo estilo Brasfoot, 100% no navegador. O jogador monta um time dos sonhos rolando um dado e disputa um mata-mata simulado minuto a minuto com narração em português.",
+    "description": "Jogo de Copa do Mundo estilo Brasfoot. Mono-repo: frontend 100% no navegador (monta um time dos sonhos rolando um dado e disputa um mata-mata simulado minuto a minuto com narração em PT-BR) + backend .NET 10 para o modo multiplayer online (salas, contas, torneio simulado no servidor em tempo real).",
     "team": "Personal",
     "status": "active"
   },
   "stack": {
-    "backend": [],
+    "backend": ["csharp", "dotnet-10", "aspnet-core", "signalr", "ef-core", "postgresql"],
     "frontend": ["html", "css", "javascript", "react-cdn", "babel"],
-    "infra": []
+    "infra": ["docker", "nginx", "vps"]
   },
   "architecture": {
-    "pattern": "SPA sem build",
-    "style": "state-machine"
+    "pattern": "Mono-repo (frontend SPA sem build + backend .NET) | SPA sem build no frontend",
+    "style": "state-machine (frontend) + server-authoritative realtime (backend)"
   },
   "repositories": {
     "game": {
-      "path": "C:/Projects/Personal/copa-draft",
+      "path": "/Users/zavadzki72/Projects/Personal/copa-draft",
       "url": "https://github.com/zavadzki72/copa-draft.git",
       "branch": "main",
       "boilerplate": "",
-      "contexts": ["draft", "match", "engine", "ui", "achievements", "store"]
+      "contexts": ["draft", "match", "engine", "ui", "achievements", "store", "multiplayer", "lobby", "auth", "realtime", "backend", "tournament"]
     }
   },
   "tooling": {
