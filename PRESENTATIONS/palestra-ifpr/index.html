@@ -764,6 +764,19 @@
   body.scroll-mode .mode-toggle .label-slides { display: none; }
   body.scroll-mode .mode-toggle .label-scroll { display: inline; }
 
+  /* group HUD buttons so layout stays balanced */
+  .hud-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
+
+  /* language toggle label visibility */
+  #langToggle .label-en { display: none; }
+  body.lang-en #langToggle .label-pt { display: none; }
+  body.lang-en #langToggle .label-en { display: inline; }
+
   /* ============ SCROLL MODE ============ */
   html.scroll-mode,
   body.scroll-mode {
@@ -930,14 +943,28 @@
       document.body.classList.add('scroll-mode');
     }
   } catch (e) {}
+
+  // restore language preference ASAP to avoid toggle-label flicker
+  try {
+    if (localStorage.getItem('ai-flow-lang') === 'en-US') {
+      document.documentElement.lang = 'en-US';
+      document.body.classList.add('lang-en');
+    }
+  } catch (e) {}
 </script>
 
 <div class="hud">
   <div class="brand">ai<span>-</span>flow<span class="full"> · marccus zavadzki</span></div>
-  <button class="mode-toggle" id="modeToggle" title="Alternar entre slide e scroll" aria-label="Alternar modo de visualização">
-    <span class="label-slides">▦ slides</span>
-    <span class="label-scroll">≣ scroll</span>
-  </button>
+  <div class="hud-tools">
+    <button class="mode-toggle" id="langToggle" title="Mudar idioma" aria-label="Mudar idioma">
+      <span class="label-pt">🌐 PT-BR</span>
+      <span class="label-en">🌐 EN-US</span>
+    </button>
+    <button class="mode-toggle" id="modeToggle" title="Alternar entre slide e scroll" aria-label="Alternar modo de visualização">
+      <span class="label-slides">▦ slides</span>
+      <span class="label-scroll">≣ scroll</span>
+    </button>
+  </div>
   <div class="counter"><b id="cur">01</b> / <span id="total">29</span></div>
 </div>
 
@@ -1774,6 +1801,714 @@ MAPS/meu-projeto</code></pre>
   modeToggle.addEventListener('click', e => {
     e.stopPropagation();
     setScrollMode(!inScrollMode());
+  });
+
+  // ============ LANGUAGE TOGGLE (PT-BR / EN-US) ============
+  const langToggle = document.getElementById('langToggle');
+  const LANG_KEY = 'ai-flow-lang';
+  const metaDesc = document.querySelector('meta[name="description"]');
+  const navHintEl = document.querySelector('.nav-hint');
+  const swipeHintEl = document.querySelector('.swipe-hint');
+
+  // static UI strings (outside the deck) per language
+  const UI = {
+    'pt-BR': {
+      title: 'IA não entende seu sistema, até você ensinar ela',
+      desc: 'Palestra: como aumentar produtividade em grandes codebases com IA. Por Marccus Zavadzki.',
+      navHint: '<span class="key">←</span> <span class="key">→</span> ou <span class="key">space</span> · <span class="key">Home</span> <span class="key">End</span> · <span class="key">F</span> fullscreen',
+      swipe: 'deslize ← → para navegar',
+      modeTitle: 'Alternar entre slide e scroll',
+      langTitle: 'Mudar idioma',
+    },
+    'en-US': {
+      title: "AI doesn't get your system, until you teach it",
+      desc: 'Talk: how to boost productivity in large codebases with AI. By Marccus Zavadzki.',
+      navHint: '<span class="key">←</span> <span class="key">→</span> or <span class="key">space</span> · <span class="key">Home</span> <span class="key">End</span> · <span class="key">F</span> fullscreen',
+      swipe: 'swipe ← → to navigate',
+      modeTitle: 'Toggle slide / scroll mode',
+      langTitle: 'Switch language',
+    },
+  };
+
+  // capture the original PT-BR inner HTML of every slide (DOM ships in PT-BR)
+  const PT_SLIDES = Array.from(slides).map(s => s.innerHTML);
+
+  // English inner HTML, one entry per slide, mirroring the PT-BR structure
+  const EN_SLIDES = [
+    // 1: TITLE
+    `<h1>AI <span class="strike">doesn't get</span><br>your system<br><span class="gradient">until you teach it.</span></h1>
+    <p class="lead">How to boost productivity in <b>large codebases</b> with Artificial Intelligence.</p>
+    <div class="title-meta">
+      <div><span class="neon-pink">→</span> Marccus Zavadzki</div>
+      <div><span class="neon-cyan">→</span> Software Engineer</div>
+      <div><span class="neon-purple">→</span> Payabli</div>
+    </div>
+    <div class="title-meta">
+      <a href="https://marccusz.com" target="_blank">marccusz.com</a>
+      <a href="https://blog.marccusz.com" target="_blank">blog.marccusz.com</a>
+      <a href="https://github.com/zavadzki72/ai-flow" target="_blank">github.com/zavadzki72/ai-flow</a>
+    </div>`,
+    // 2: about me
+    `<span class="kicker">slide 02 · about me</span>
+    <h2>But first... <span class="gradient">who am I?</span> 👋</h2>
+    <div class="about-grid">
+      <div class="photo-wrap">
+        <div class="photo-frame">
+          <img src="me.jpg" alt="Marccus Zavadzki" class="photo"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="photo-placeholder">
+            <div class="ph-icon">📸</div>
+            <div class="ph-text">replace with<br><code>me.jpg</code></div>
+          </div>
+        </div>
+        <div class="photo-name">
+          <div class="photo-name-main">Marccus Zavadzki</div>
+          <div class="photo-name-sub">Software Engineer</div>
+        </div>
+      </div>
+      <div class="about-content">
+        <div class="card purple">
+          <h3>Who I am</h3>
+          <ul>
+            <li>💻 Software Engineer</li>
+            <li>⚽ Football lover — 10 e Faixa</li>
+            <li>🇾🇪 <b>São Paulo FC</b> at heart</li>
+            <li>🥩 A good barbecue enthusiast</li>
+          </ul>
+          <div class="chips" style="margin-top: 14px;">
+            <span class="chip cyan">.NET</span>
+            <span class="chip green">C#</span>
+            <span class="chip pink">AI</span>
+            <span class="chip yellow">Docker</span>
+            <span class="chip purple">Architecture</span>
+          </div>
+        </div>
+        <div class="card green">
+          <h3>What I do today</h3>
+          <p>I work as a Software Engineer at an American fintech: <b class="neon-cyan">Payabli</b>. </p>
+          <p>I handle <b class="neon-cyan">millions</b> of data points, across different contexts, having to be <b class="neon-cyan">100% accurate</b>. </p>
+          <p style="margin-top: 8px;">Then I realized: <b class="neon-green">AI is good</b>... but <b class="neon-pink">you need to know how to use it</b> first. 🚀</p>
+        </div>
+      </div>
+    </div>`,
+    // 3: an experience every dev has had
+    `<span class="kicker">slide 03</span>
+    <h2>An experience <span class="gradient">EVERY dev</span> has had.</h2>
+    <div class="cols">
+      <div class="card green">
+        <h3>At the start of the project</h3>
+        <ul>
+          <li>You ask for a feature</li>
+          <li>The AI gets it fast</li>
+          <li>The code works on the first try</li>
+          <li>It all feels <b class="neon-green">magical</b> ✨</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>When the project grows</h3>
+        <ul>
+          <li>The AI "forgets" what you agreed on</li>
+          <li>Invents functions that don't exist</li>
+          <li>Mixes different patterns</li>
+          <li>Repeats code that already existed</li>
+          <li>Breaks things that <b class="neon-pink">were working</b> 💥</li>
+        </ul>
+      </div>
+    </div>`,
+    // 4: mistake #1
+    `<span class="kicker">slide 04 · mistake #1</span>
+    <h2>Trying to do <span class="gradient">everything at once</span>.</h2>
+    <div class="terminal">
+      <span class="prompt">$</span> <span class="cmd">you</span>: "build me a complete e-commerce:<br>
+      &nbsp;&nbsp;login + cart + payment + admin + reports.<br>
+      &nbsp;&nbsp;it needs to be done."
+    </div>
+    <div class="cols">
+      <div class="card red">
+        <h3>What the AI does</h3>
+        <ul>
+          <li>Tries everything at once</li>
+          <li>Loses details along the way</li>
+          <li>Mixes patterns</li>
+          <li>Throws in a random library</li>
+          <li>Delivers <b class="neon-pink">30%</b> that <b class="neon-yellow">looks like 100%</b></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Why?</h3>
+        <p>The AI has a <b class="neon-pink">limited context window</b>.</p>
+        <p>Too much input at once = it <b class="neon-yellow">drowns</b>.</p>
+        <p class="small" style="margin-top: 10px;">→ We'll come back to this concept soon. 👀</p>
+      </div>
+    </div>`,
+    // 5: mistake #2
+    `<span class="kicker">slide 05 · mistake #2</span>
+    <h2>Each conversation <span class="strike">remembers</span> the last one.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>Monday</h3>
+        <p>You patiently explain:</p>
+        <ul>
+          <li>Project pattern</li>
+          <li>Where to create files</li>
+          <li>Which libs to use</li>
+          <li>Business rules</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>Tuesday</h3>
+        <p>New conversation. You explain:</p>
+        <ul>
+          <li>Project pattern <b class="neon-pink">again</b></li>
+          <li>Where to create files <b class="neon-pink">again</b></li>
+          <li>Which libs to use <b class="neon-pink">again</b></li>
+          <li>Business rules <b class="neon-pink">again</b></li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 24px;">The AI <span class="neon-pink">has no memory</span> between sessions.</h2>`,
+    // 6: mistake #3
+    `<span class="kicker">slide 06 · mistake #3</span>
+    <h2>Your company <span class="gradient">is not</span> your personal project.</h2>
+    <div class="cols">
+      <div>
+        <h3>Multiple repos</h3>
+<pre class="with-dots"><code><span class="tok-fn">frontend/</span>
+<span class="tok-fn">api/</span>
+<span class="tok-fn">worker/</span>
+<span class="tok-fn">infra/</span></code></pre>
+        <p class="small">→ Where should the AI create the file?</p>
+      </div>
+      <div>
+        <h3>And there's also</h3>
+        <div class="chips">
+          <span class="chip pink">Custom architecture</span>
+          <span class="chip cyan">Business rules</span>
+          <span class="chip purple">Internal conventions</span>
+          <span class="chip green">Permissions</span>
+          <span class="chip yellow">Hidden flows</span>
+          <span class="chip pink">Historical decisions</span>
+          <span class="chip cyan">Code review standards</span>
+        </div>
+      </div>
+    </div>
+    <h2 style="margin-top: 24px;">The AI <span class="neon-pink">has no way</span> to guess this.</h2>`,
+    // 7: the insight
+    `<span class="kicker">slide 07 · the insight</span>
+    <div class="megaword strike">Prompts don't scale.</div>
+    <div class="megaword gradient">Systems scale.</div>
+    <div class="megaword" style="font-size: clamp(2rem, 6vw, 4.5rem); margin-top: 18px;">And deep down, it's all <span class="gradient">context</span>.</div>
+    <p class="small" style="margin-top: 22px;">→ And none of this works without <b class="neon-pink">human review</b>. We'll get back to that. 🚨</p>`,
+    // 8: concept #1
+    `<span class="kicker">slide 08 · concept #1</span>
+    <h2>What is <span class="gradient">context</span>?</h2>
+    <p class="lead">Everything the AI needs to <b class="neon-cyan">know</b> to answer well.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Includes</h3>
+        <ul>
+          <li>Conversation history</li>
+          <li>Project code</li>
+          <li>Business rules</li>
+          <li>Team patterns</li>
+          <li>Documentation</li>
+          <li>Tech stack</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Analogy</h3>
+        <p>Imagine a <b class="neon-cyan">new dev</b> joining the team today.</p>
+        <p>You say: <em>"implement the checkout"</em>.</p>
+        <p>Without showing the repo. Without explaining anything.</p>
+        <p style="margin-top: 12px;"><b class="neon-pink">What code will they deliver?</b></p>
+      </div>
+    </div>
+    <h2 style="margin-top: 20px;">AI <span class="neon-pink">without context</span> = a new dev in the dark.</h2>`,
+    // 9: concept #2
+    `<span class="kicker">slide 09 · concept #2</span>
+    <h2>Context <span class="gradient">window</span>.</h2>
+    <p class="lead">Every AI has a <b class="neon-pink">reading limit</b>.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Typical capacity</h3>
+        <ul>
+          <li>GPT-4 → ~128k tokens</li>
+          <li>Claude → ~200k tokens</li>
+          <li>Gemini → up to 1M tokens</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">~ 1 token ≈ 0.75 word</p>
+      </div>
+      <div class="card red">
+        <h3>The real problem</h3>
+        <p>The MORE you throw in at once:</p>
+        <ul>
+          <li>The greater the chance it <b class="neon-pink">gets lost</b></li>
+          <li>Middle details <b class="neon-yellow">disappear</b></li>
+          <li>Answers become <b class="neon-pink">inconsistent</b></li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 16px;">Solution: give <span class="neon-green">only what matters</span>, at the right time.</h2>`,
+    // 10: concept #3 RAG
+    `<span class="kicker">slide 10 · concept #3</span>
+    <h2><span class="gradient">RAG</span> — Retrieval Augmented Generation.</h2>
+    <p class="lead">The technique that solves the <b class="neon-cyan">context window</b>.</p>
+    <div class="cols">
+      <div class="card red">
+        <h3>❌ Without RAG</h3>
+        <p>You throw EVERYTHING in the prompt:</p>
+        <ul>
+          <li>The whole repo</li>
+          <li>All the documentation</li>
+          <li>All the rules</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">→ AI drowns, costs a lot, slow</p>
+      </div>
+      <div class="card green">
+        <h3>✅ With RAG</h3>
+        <p>The AI <b class="neon-cyan">fetches</b> only what it needs:</p>
+        <ul>
+          <li>Indexes everything in a database</li>
+          <li>Queries what's relevant</li>
+          <li>Loads only what's needed</li>
+        </ul>
+      </div>
+    </div>
+    <h2 style="margin-top: 20px;">Analogy: <span class="neon-pink">a book's index</span> vs reading the whole book.</h2>`,
+    // 11: concept #4 Skills
+    `<span class="kicker">slide 11 · concept #4</span>
+    <h2><span class="gradient">Skills</span> — reusable behavior.</h2>
+    <p class="lead">An "ability" the AI <b class="neon-cyan">loads when needed</b>.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Think of a skill as</h3>
+        <ul>
+          <li>🧠 A temporary "personality"</li>
+          <li>📋 A set of rules + instructions</li>
+          <li>🎯 Focused on a specific task</li>
+          <li>♻️ Reusable in any project</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>Example</h3>
+        <p>Skill <b class="neon-cyan">/code-review</b>:</p>
+        <ul>
+          <li>Knows what to check</li>
+          <li>Knows the output format</li>
+          <li>Follows a fixed checklist</li>
+        </ul>
+        <p class="small" style="margin-top: 10px;">→ The AI <b class="neon-pink">becomes</b> a code reviewer.</p>
+      </div>
+    </div>`,
+    // 12: what is ai-flow
+    `<span class="kicker">slide 12</span>
+    <h2>What is <span class="gradient">ai-flow</span>?</h2>
+    <p class="lead">"An <b class="neon-cyan">operating system</b> for AI-assisted development."</p>
+    <div class="cols">
+      <div class="card red">
+        <h3>The goal was NOT to</h3>
+        <ul>
+          <li>Create a better prompt</li>
+          <li>Build an AI package</li>
+          <li>Add more random automation</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>The goal was</h3>
+        <div class="megaword neon-green" style="font-size: clamp(2rem, 4.5vw, 3.4rem);">CONTINUOUS<br>PROCESS</div>
+      </div>
+    </div>`,
+    // 13: architecture
+    `<span class="kicker">slide 13</span>
+    <h2>The <span class="gradient">ai-flow</span> architecture.</h2>
+    <div class="stack">
+      <div class="stack-node">👨‍💻 Dev</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">⚡ Skills</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">🗺️ Maps</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">📦 Project Context</div>
+      <div class="stack-arrow">↓</div>
+      <div class="stack-node">📁 Repositories</div>
+    </div>`,
+    // 14: Maps
+    `<span class="kicker">slide 14</span>
+    <h2><span class="neon-pink">Maps</span> = the AI's persistent memory.</h2>
+    <div class="cols">
+      <div>
+        <h3>Structure</h3>
+<pre class="with-dots"><code>MAPS/<span class="tok-fn">{project}</span>/
+  ├── map.json
+  ├── context.md
+  ├── prd/
+  ├── plan/
+  └── adr/</code></pre>
+        <h3 style="margin-top: 18px;">Multi-repo? Solved.</h3>
+<pre class="with-dots"><code><span class="tok-str">"contexts"</span>: [
+  <span class="tok-str">"backend"</span>,
+  <span class="tok-str">"database"</span>,
+  <span class="tok-str">"business-rules"</span>
+]</code></pre>
+      </div>
+      <div>
+        <h3>The map stores</h3>
+        <div class="chips">
+          <span class="chip pink">Stack</span>
+          <span class="chip cyan">Repositories</span>
+          <span class="chip green">Paths</span>
+          <span class="chip yellow">Boilerplates</span>
+          <span class="chip purple">Rules</span>
+          <span class="chip pink">Architecture</span>
+          <span class="chip cyan">Conventions</span>
+          <span class="chip green">Glossary</span>
+        </div>
+        <h2 style="margin-top: 24px;">The AI stops <span class="strike">improvising</span>.</h2>
+        <p class="small">Remember <b class="neon-cyan">RAG</b>? The maps are <b class="neon-pink">what the AI queries</b>. 🎯</p>
+      </div>
+    </div>`,
+    // 15: .ai-project
+    `<span class="kicker">slide 15</span>
+    <h2>Active project.</h2>
+    <p class="lead">Each repository has a <code class="highlight">.ai-project</code> file.</p>
+<pre class="with-dots"><code><span class="tok-com"># .ai-project</span>
+MAPS/my-project</code></pre>
+    <h3 style="margin-top: 28px;">Result</h3>
+    <ul>
+      <li>The AI knows <b class="neon-cyan">where it is</b></li>
+      <li>The AI knows <b class="neon-pink">which context to load</b></li>
+      <li>The dev <b class="neon-green">doesn't have to repeat everything</b></li>
+    </ul>`,
+    // 16: artifacts
+    `<span class="kicker">slide 16 · artifacts</span>
+    <h2>The ai-flow <span class="gradient">artifacts</span>.</h2>
+    <p class="lead">Three documents the workflow generates and consults.</p>
+    <div class="cols cols-three">
+      <div class="card">
+        <h3>📄 PRD</h3>
+        <p class="small"><b class="neon-pink">Product Requirements Document</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">WHAT</b> needs to be done.</p>
+        <ul>
+          <li>Problem</li>
+          <li>Solution</li>
+          <li>Acceptance criteria</li>
+          <li>Edge cases</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Generated by <code>/spec</code></p>
+      </div>
+      <div class="card purple">
+        <h3>📋 PLAN</h3>
+        <p class="small"><b class="neon-purple">Execution Plan</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">HOW</b> it will be done.</p>
+        <ul>
+          <li>Break into baby steps</li>
+          <li>Paths and commands</li>
+          <li>Implementation order</li>
+          <li>Definition of "done"</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Generated by <code>/planejar</code></p>
+      </div>
+      <div class="card green">
+        <h3>📐 ADR</h3>
+        <p class="small"><b class="neon-green">Architecture Decision Record</b></p>
+        <p style="margin-top: 10px;"><b class="neon-cyan">WHY</b> this decision.</p>
+        <ul>
+          <li>Decision context</li>
+          <li>Alternatives considered</li>
+          <li>Trade-offs</li>
+          <li>Consequences</li>
+        </ul>
+        <p class="small" style="margin-top: 8px;">→ Grows with the project</p>
+      </div>
+    </div>`,
+    // 17: the cycle
+    `<span class="kicker">slide 17 · the cycle</span>
+    <h2>The <span class="gradient">cycle</span> — not an assembly line.</h2>
+    <div class="flow" style="justify-content: center; margin: 28px 0;">
+      <div class="pill"><span class="neon-pink">/spec</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-cyan">/planejar</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-green">/implementar</span></div>
+      <span class="arrow">→</span>
+      <div class="pill"><span class="neon-yellow">/code-review</span></div>
+      <span class="loop">↻</span>
+    </div>
+    <p class="lead" style="text-align: center;">Each iteration <b class="neon-cyan">refines</b> and <b class="neon-pink">expands</b> the system.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>Each step feeds the next</h3>
+        <ul>
+          <li>The <b class="neon-pink">PRD</b> informs the PLAN</li>
+          <li>The <b class="neon-cyan">PLAN</b> guides the implementation</li>
+          <li>The <b class="neon-green">context.md</b> keeps consistency</li>
+          <li>The <b class="neon-yellow">review</b> validates everything</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>The secret</h3>
+        <div class="megaword gradient" style="font-size: clamp(1.6rem, 3vw, 2.4rem);">Persistent context<br>&gt; random prompts.</div>
+      </div>
+    </div>`,
+    // 18: /spec
+    `<span class="kicker">slide 18 · step 1</span>
+    <h2><code class="highlight neon-pink">/spec</code> — The dev describes the feature.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>The skill generates</h3>
+        <ul>
+          <li>Problem</li>
+          <li>Solution</li>
+          <li>Acceptance criteria</li>
+          <li>Edge cases</li>
+          <li>System impacts</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>Result</h3>
+        <div class="terminal">
+          <span class="prompt">$</span> <span class="cmd">/spec</span> "create a login screen"<br>
+          <span class="prompt">→</span> PRD_001_Login_Screen_Feature.md ✅
+        </div>
+      </div>
+    </div>`,
+    // 19: /planejar
+    `<span class="kicker">slide 19 · step 2</span>
+    <h2><code class="highlight neon-cyan">/planejar</code> — Break into <span class="gradient">baby steps</span>.</h2>
+    <p class="lead">Remember the <b class="neon-pink">context window</b>? That's why we break it into pieces.</p>
+<pre class="with-dots"><code><span class="tok-key">### Step 1 — Entity</span>
+<span class="tok-com">- Create Product</span>
+<span class="tok-com">- Create repository</span>
+
+<span class="tok-key">### Step 2 — Commands</span>
+<span class="tok-com">- CreateProductCommand</span>
+<span class="tok-com">- Handler</span>
+<span class="tok-com">- Validator</span></code></pre>
+    <h2 style="margin-top: 8px;">Each step <span class="neon-green">fits in the context window</span>.</h2>`,
+    // 20: /implementar
+    `<span class="kicker">slide 20 · step 3</span>
+    <h2><code class="highlight neon-green">/implementar</code> — The skill does the work.</h2>
+    <div class="cols">
+      <div class="card green">
+        <h3>What the skill does</h3>
+        <ul>
+          <li>Finds the correct repo</li>
+          <li>Creates a branch</li>
+          <li>Implements</li>
+          <li>Follows the patterns</li>
+          <li>Runs tests</li>
+          <li>Commits</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <h3>Without having to repeat</h3>
+        <ul>
+          <li>"use this pattern"</li>
+          <li>"put it in this path"</li>
+          <li>"don't use this library"</li>
+        </ul>
+        <h2 style="margin-top: 14px;">The context <span class="neon-green">already exists</span>. ✨</h2>
+      </div>
+    </div>`,
+    // 21: /code-review
+    `<span class="kicker">slide 21 · step 4</span>
+    <h2><code class="highlight neon-yellow">/code-review</code> — The AI validates what was done.</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>The AI validates</h3>
+        <ul>
+          <li>PRD criteria</li>
+          <li>PLAN rules</li>
+          <li>Project standards</li>
+          <li>Security</li>
+          <li>Performance</li>
+          <li>Readability</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>+ SonarQube</h3>
+        <ul>
+          <li>Quality Gate</li>
+          <li>Test coverage</li>
+          <li>Vulnerabilities</li>
+          <li>Bugs</li>
+          <li>Code Smells</li>
+        </ul>
+        <p class="small" style="margin-top: 12px;">All in the <b class="neon-cyan">same flow</b>.</p>
+      </div>
+    </div>`,
+    // 22: MCP
+    `<span class="kicker">slide 22</span>
+    <h2><span class="gradient">MCP</span> — Model Context Protocol.</h2>
+    <p class="lead">The standard that makes the AI <b class="neon-cyan">act</b>, not just chat.</p>
+    <div class="cols">
+      <div class="card">
+        <h3>🔧 Azure DevOps</h3>
+        <ul>
+          <li>Read work items</li>
+          <li>Create branch</li>
+          <li>Open PR</li>
+          <li>Check the sprint</li>
+        </ul>
+      </div>
+      <div class="card purple">
+        <h3>📊 SonarQube</h3>
+        <ul>
+          <li>Read metrics</li>
+          <li>Validate Quality Gate</li>
+          <li>Collect vulnerabilities</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top: 18px;">→ The <b class="neon-cyan">skills</b> use the <b class="neon-pink">MCPs</b> to perform real actions in your systems.</p>`,
+    // 23: workflow > model
+    `<span class="kicker">slide 23 · the MOST important point</span>
+    <h2>The workflow matters <span class="gradient">more</span> than the model.</h2>
+    <div class="chips" style="justify-content: center; margin-top: 24px;">
+      <span class="chip pink">Claude</span>
+      <span class="chip cyan">Gemini</span>
+      <span class="chip green">Codex</span>
+    </div>
+    <div class="megaword" style="margin-top: 24px;">They all become a <span class="strike">detail</span>.</div>
+    <p class="lead" style="margin-top: 16px;">Because the real differentiator is:</p>
+    <div class="chips" style="justify-content: center;">
+      <span class="chip yellow">process</span>
+      <span class="chip purple">context</span>
+      <span class="chip pink">consistency</span>
+    </div>`,
+    // 24: vibe coding
+    `<span class="kicker">slide 24 · ⚠️ warning</span>
+    <h2>The danger of <span class="gradient">"vibe coding"</span>.</h2>
+    <p class="lead">AI also accelerates messes. 🚨</p>
+    <div class="card red">
+      <h3>Dangers</h3>
+      <ul>
+        <li>Code without understanding</li>
+        <li>Inconsistent architecture</li>
+        <li>Dependency on AI</li>
+        <li>Devs without technical foundation</li>
+        <li>Code impossible to maintain</li>
+      </ul>
+    </div>
+    <h2 style="margin-top: 24px;">Human review <span class="neon-pink">is not optional</span>.</h2>`,
+    // 25: AI doesn't replace engineering
+    `<span class="kicker">slide 25</span>
+    <h2>AI <span class="neon-pink">does not replace</span> engineering.</h2>
+    <p class="lead">The human <b class="neon-cyan">stays in control</b>. 🧠</p>
+    <div class="chips">
+      <span class="chip">Less code</span>
+      <span class="chip cyan">More context</span>
+      <span class="chip pink">More architecture</span>
+      <span class="chip green">More code review</span>
+    </div>
+    <h2 style="margin-top: 32px;">The next generation of devs<br><span class="strike">won't compete by typing faster</span>.</h2>
+    <div class="megaword gradient" style="font-size: clamp(2rem, 5vw, 4rem); margin-top: 12px;">They'll compete by<br>structuring better. 🚀</div>`,
+    // 26: getting started
+    `<span class="kicker">slide 26 · getting started</span>
+    <h2>ai-flow is an <span class="gradient">aggregator</span>, not a competitor.</h2>
+    <div class="cols">
+      <div class="card red">
+        <h3>❌ What it is NOT</h3>
+        <ul>
+          <li>Just another AI</li>
+          <li>A replacement for Claude/Cursor</li>
+          <li>A competitor to Copilot</li>
+        </ul>
+      </div>
+      <div class="card green">
+        <h3>✅ What it IS</h3>
+        <ul>
+          <li>Orchestrates Claude, Cursor, Gemini, Codex</li>
+          <li>Structures the workflow</li>
+          <li>Persists the context</li>
+          <li>Standardizes the skills</li>
+        </ul>
+      </div>
+    </div>
+    <h3 style="margin-top: 24px;">Start in 3 commands</h3>
+    <div class="terminal">
+      <span class="prompt">$</span> <span class="cmd">git clone</span> https://github.com/zavadzki72/ai-flow<br>
+      <span class="prompt">$</span> <span class="cmd">/setup-project</span> <span style="color: var(--text-dim); font-style: italic;"># the skill itself guides you</span><br>
+      <span class="prompt">$</span> <span class="cmd">/spec</span> "your first feature"
+    </div>
+    <p class="small" style="margin-top: 10px;">→ Full repo: <a href="https://github.com/zavadzki72/ai-flow" target="_blank" style="color: var(--neon-cyan);">github.com/zavadzki72/ai-flow</a></p>`,
+    // 27: demo
+    `<span class="kicker">slide 27 · live demo 🎬</span>
+    <h2>Let's see it in action?</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>/spec</h3>
+        <p>Generating a PRD</p>
+      </div>
+      <div class="card purple">
+        <h3>/planejar</h3>
+        <p>Creating the execution plan</p>
+      </div>
+      <div class="card green">
+        <h3>/implementar</h3>
+        <p>Generating code following patterns</p>
+      </div>
+      <div class="card red">
+        <h3>/code-review</h3>
+        <p>Validating quality automatically</p>
+      </div>
+    </div>`,
+    // 28: conclusion
+    `<span class="kicker">slide 28 · conclusion</span>
+    <div class="megaword">The problem <span class="strike">was never</span> the AI.</div>
+    <div class="megaword gradient">The problem was always context.</div>`,
+    // 29: thank you
+    `<span class="kicker">slide 29 · the end</span>
+    <h1 class="gradient">Thank you!</h1>
+    <p class="lead">Questions? 🙋</p>
+    <div class="thanks-grid">
+      <a href="https://ai-flow.marccusz.com" target="_blank" class="qr-wrap" title="Open the presentation">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=https%3A%2F%2Fai-flow.marccusz.com&margin=2&ecc=M" alt="QR Code for ai-flow.marccusz.com" class="qr-img">
+        <span class="qr-label">📲 Open the presentation</span>
+        <span class="qr-url">ai-flow.marccusz.com</span>
+      </a>
+      <div class="title-meta thanks-contacts">
+        <div>🌐 <a href="https://marccusz.com" target="_blank">marccusz.com</a></div>
+        <div>🌐 <a href="https://blog.marccusz.com" target="_blank">blog.marccusz.com</a></div>
+        <div>💻 <a href="https://github.com/zavadzki72/ai-flow" target="_blank">github.com/zavadzki72/ai-flow</a></div>
+        <div>💼 <span class="neon-cyan">linkedin.com/in/marccus-zavadzki</span></div>
+      </div>
+    </div>
+    <p class="small" style="margin-top: 28px;">Made with coffee, AI, and lots of context. ☕</p>`,
+  ];
+
+  function applyLang(lang) {
+    const isEn = lang === 'en-US';
+    const data = isEn ? EN_SLIDES : PT_SLIDES;
+    slides.forEach((s, i) => {
+      if (data[i] != null) s.innerHTML = data[i];
+    });
+    document.documentElement.lang = lang;
+    document.body.classList.toggle('lang-en', isEn);
+    const ui = UI[lang];
+    document.title = ui.title;
+    if (metaDesc) metaDesc.setAttribute('content', ui.desc);
+    if (navHintEl) navHintEl.innerHTML = ui.navHint;
+    if (swipeHintEl) swipeHintEl.textContent = ui.swipe;
+    modeToggle.title = ui.modeTitle;
+    langToggle.title = ui.langTitle;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    // swapping innerHTML rebuilds the active slide's nodes — refresh its state
+    update();
+  }
+
+  function currentLang() {
+    return document.body.classList.contains('lang-en') ? 'en-US' : 'pt-BR';
+  }
+
+  // apply persisted language on load (DOM ships PT-BR, so only act for EN)
+  let savedLang = 'pt-BR';
+  try { savedLang = localStorage.getItem(LANG_KEY) || 'pt-BR'; } catch (e) {}
+  if (savedLang === 'en-US') applyLang('en-US');
+
+  langToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    applyLang(currentLang() === 'en-US' ? 'pt-BR' : 'en-US');
   });
 </script>
 
