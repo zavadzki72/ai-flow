@@ -14,6 +14,8 @@ ai-flow/
   CURSOR/SKILLS/          Skills para Cursor (adapters para Commands/Agent)
   CURSOR/RULES/           Regras opcionais para contexto persistente no Cursor
   SKILLS/SHARED/          Lógica central das skills (agnóstica de provider)
+  AGENTS/SHARED/          Personas por papel (agnóstico) + lenses/ de linguagem
+  CLAUDE/AGENTS/          Agentes para Claude Code (adapters → .claude/agents/)
   BOILERPLATES/
     BACK/                 Boilerplates de backend (dotnet-api, dotnet-worker, ...)
     FRONT/                Boilerplates de frontend (react, angular, ...)
@@ -70,6 +72,30 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow (map.json, context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
+| `feature-workflow` | `/feature-workflow` | Orquestra o ciclo por feature delegando a cada agente por papel (PM → Arquiteto → Dev → Tech Lead) com gates humanos |
+
+---
+
+## Agentes Disponíveis
+
+Personas por papel que **usam as skills** acima. **Agente ≠ Skill:** a skill é o processo; o agente é
+quem o executa (mindset + model + tools + especialização). Cada agente roda em **janela de contexto
+isolada** e se comunica por consulta + handoff em arquivo. Detalhes em `AGENTS/DESIGN.md`.
+
+| Agente | Papel | Skill que executa |
+|--------|-------|-------------------|
+| `product-manager` | Product Manager / Owner | `/spec` |
+| `arquiteto-senior` | Arquiteto de Software Sênior | `/planejar` |
+| `dev-senior` | Dev Sênior (lê a stack do map + lente de linguagem) | `/implementar` |
+| `tech-lead` | Tech Lead (guardião de engenharia, read-only) | `/code-review` |
+
+Orquestração: `/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead com gate humano entre artefatos.
+
+**Instalação (Claude Code):** copie os adapters de `CLAUDE/AGENTS/*.md` para `.claude/agents/` do
+repositório (ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**.
+`.claude/agents/` também é lido nativamente por Cursor e Copilot (VS Code).
+
+> 1º corte: **só Claude Code**. Gemini (`.gemini/agents/`) fica para quando for cobrir essa ferramenta.
 
 ---
 

@@ -488,6 +488,14 @@ Gerar relatório no formato abaixo:
 **Justificativa**: [Parágrafo explicando a decisão]
 
 **Próximos Passos**: [O que o dev deve fazer]
+
+---
+
+## HANDOFF
+
+- **De / Para**: Tech Lead → Dev Sênior (se ❌ REQUER ALTERAÇÕES) / — (se aprovado)
+- **Bloqueios (🔴)**: [lista dos itens que travam o merge, ou "nenhum"]
+- **Recomendações**: [o que endereçar antes / depois do merge]
 ```
 
 ---

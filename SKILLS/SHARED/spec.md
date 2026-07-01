@@ -217,6 +217,14 @@ Com base no contexto do projeto (docs/ carregados no Passo 0) e no código anali
 
 **IMPORTANTE:** Não assuma nada. Pergunte até ter clareza total.
 
+#### Execução como Agente (modo ask-upfront)
+
+Quando esta skill roda dentro de um **agente isolado** (persona `product-manager` via
+`/feature-workflow`), a janela do agente **não** tem `AskUserQuestion`. Nesse caso, **não pergunte
+inline**: reúna **todas** as dúvidas e **retorne uma lista estruturada** ao orquestrador, que as
+leva ao humano e re-invoca o agente com as respostas. Rodando direto com o dev na sessão principal,
+pergunte normalmente.
+
 ---
 
 ### Passo 5: Análise Técnica

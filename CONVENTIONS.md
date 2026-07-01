@@ -68,6 +68,66 @@ Instruções persistentes de comportamento do Cursor devem ficar em `CURSOR/RULE
 
 ---
 
+## Agentes (Personas por Papel)
+
+Um **agente** é uma **persona** (o "QUEM": mindset + model + tools + especialização) que **usa uma
+skill** (o "COMO"). **Agente ≠ Skill:** a skill é o processo; o agente é quem o executa.
+Racional completo em `AGENTS/DESIGN.md`.
+
+### Estrutura
+
+```
+AGENTS/SHARED/{papel}.md            ← persona canônica, agnóstica (fonte de verdade)
+AGENTS/SHARED/lenses/{linguagem}.md ← lentes de linguagem (só conhecimento idiomático)
+CLAUDE/AGENTS/{papel}.md            ← adapter Claude Code (instala em .claude/agents/)
+```
+
+### Contrato de conteúdo de uma persona (regra de ouro contra duplicação)
+
+O corpo de um agente contém **apenas**:
+1. Identidade / mindset do papel;
+2. "Seu processo é a skill `/X` — siga `SKILLS/SHARED/X.md`" (**nunca** reescrever os passos);
+3. Perfil de tools (least-privilege);
+4. **Bloco de isolamento** — cada agente roda em **janela de contexto própria**;
+5. **Bloco de comunicação** — quando consultar outro agente e como devolver dúvidas ao humano;
+6. `description` acionável (dispara a delegação).
+
+> ❌ Nunca colocar lógica de negócio na persona — isso é da skill. `SKILLS/SHARED` é a fonte única de verdade.
+
+### Papéis atuais
+
+| Papel | Skill | Tools |
+|-------|-------|-------|
+| `product-manager` | `/spec` | Read/Glob/Grep + Write (só `prd/`) |
+| `arquiteto-senior` | `/planejar` | + Write (`plan/`, `adr/`) + Bash (git) |
+| `dev-senior` | `/implementar` | + Edit/Write/Bash (lê a stack do map + lente) |
+| `tech-lead` | `/code-review` | Read/Glob/Grep + Bash (read-only) |
+
+Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.md`).
+
+### Comunicação e Handoff
+
+- Cada agente roda **isolado**; a comunicação é por **consulta (request/response)** + **estado em arquivo**.
+- Todo artefato termina com uma **Nota de Handoff**: *De/Para · Decisões · Dúvidas em aberto · O que o próximo papel deve saber*.
+- Decisões relevantes vão para o **log de decisões** (`adr/`).
+- Como subagent isolado **não recebe `AskUserQuestion`**, as skills interativas usam **ask-upfront**:
+  o agente **retorna** as dúvidas e o orquestrador as leva ao humano.
+
+### Regras
+
+- **Só Claude Code no 1º corte.** `.claude/agents/*.md` é lido nativamente por Claude Code, Cursor e
+  Copilot (VS Code); Gemini precisaria de arquivo próprio (`.gemini/agents/`) — fazer ao cobrir Gemini.
+- ⚠️ **Editar um agente em disco não recarrega na sessão ativa** — reinicie a sessão (ou crie via `/agents`).
+
+### Adicionando um Novo Agente
+
+1. Crie a persona em `AGENTS/SHARED/{papel}.md` (seguindo o contrato acima).
+2. Crie o adapter em `CLAUDE/AGENTS/{papel}.md` (frontmatter + "leia `AGENTS/SHARED/{papel}.md`" + notas Claude).
+3. Instale em `.claude/agents/` (copie o adapter) no repositório/cliente.
+4. Documente na tabela do `README.md`.
+
+---
+
 ## Maps
 
 ### Estrutura de um Map

@@ -390,10 +390,11 @@ Editar `{map.docs.plan}/PLAN_NNN_Nome_Feature.md`:
 **Data de Conclusão:** YYYY-MM-DD
 **Commit:** [hash curto]
 
-**Observações da Implementação:**
+**Observações da Implementação:** *(Nota de Handoff para o Tech Lead)*
 - [O que foi implementado]
 - [Decisões tomadas]
 - [Testes criados e passando]
+- [Dúvidas em aberto / o que o Tech Lead precisa saber]
 ```
 
 **Atualizar progresso geral:**

@@ -180,6 +180,12 @@ Com base na exploração, fazer perguntas técnicas específicas **(máximo 10)*
 
 Basear as perguntas no código real encontrado, não em suposições.
 
+**Execução como Agente (modo ask-upfront):** quando esta skill roda dentro de um **agente isolado**
+(persona `arquiteto-senior` via `/feature-workflow`), a janela do agente **não** tem `AskUserQuestion`.
+Nesse caso, **não pergunte inline**: reúna todas as dúvidas técnicas e **retorne uma lista
+estruturada** ao orquestrador (que as leva ao humano ou consulta o `product-manager` para regras de
+negócio). Rodando direto com o dev na sessão principal, pergunte normalmente.
+
 ---
 
 ### Passo 6: Quebrar em Baby Steps
