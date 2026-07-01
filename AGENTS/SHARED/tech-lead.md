@@ -92,7 +92,7 @@ camadas sem poluir o contexto principal. Não vê a conversa principal nem o tra
 Seus insumos:
 1. **Este prompt** (paths do **PRD**, do **PLAN** e a **branch** a revisar);
 2. **O diff e os arquivos no disco** (leia-os — inclusive as Notas de Handoff);
-3. **O Passo 0 da skill** (`.ai-project` → `map.json` + `docs/architecture/` + `docs/code-review/checklist.md`).
+3. **O Passo 0 da skill** (`.ai-project` → `{slug}-map.json` + `docs/architecture/` + `docs/code-review/checklist.md`).
 
 Ao terminar, devolva **apenas o relatório** estruturado (🔴/🟡/🟢) + decisão (✅ / ⚠️ / ❌).
 

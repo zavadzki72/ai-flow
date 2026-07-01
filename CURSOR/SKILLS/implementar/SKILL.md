@@ -4,7 +4,7 @@
 `/implementar` · `/executar` · "implementar etapa" · "executar etapa"
 
 Aceita PLAN e etapa inline:
-`/implementar {map.docs.plan}/PLAN_001_Nome.md ETAPA 1`
+`/implementar {map.docs.plan}/{slug}-plan-001-nome.md ETAPA 1`
 `/implementar ETAPA 1` (se PLAN já foi mencionado na conversa)
 `/implementar 1`
 
@@ -33,7 +33,7 @@ Prefira:
 
 ### Execução de Comandos
 
-Use o terminal integrado do Cursor para build, testes e git. Ver `docs/architecture/commands.md` ou `context.md#comandos` do projeto ativo para os comandos exatos da stack.
+Use o terminal integrado do Cursor para build, testes e git. Ver `docs/architecture/commands.md` ou `{slug}-context.md#comandos` do projeto ativo para os comandos exatos da stack.
 
 No Windows, adapte comandos do SHARED para PowerShell:
 ```powershell
@@ -61,7 +61,7 @@ Para commit, adicionar apenas arquivos específicos:
 Set-Location "{repo.path}"
 git add "{arquivo1}" "{arquivo2}"
 git status
-git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — PLAN_NNN_Nome_Feature`n`nCo-Authored-By: Cursor <noreply@cursor.com>"
+git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature`n`nCo-Authored-By: Cursor <noreply@cursor.com>"
 ```
 
 ### Co-authored-by no Commit

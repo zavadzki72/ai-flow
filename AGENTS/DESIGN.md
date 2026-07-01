@@ -109,7 +109,7 @@ isolada**. Um agente **NÃO vê** a conversa principal, **NÃO vê** o que outro
 Os únicos insumos de um agente são:
 1. **O prompt de invocação** (passe **paths** do PRD/PLAN/branch e as decisões relevantes — não o conteúdo inteiro);
 2. **Os arquivos no disco** (ele lê o que precisar);
-3. **O Passo 0 da sua skill** (`.ai-project` → `map.json` + `context.md` + `docs/`);
+3. **O Passo 0 da sua skill** (`.ai-project` → `{slug}-map.json` + `{slug}-context.md` + `docs/`);
 4. **CLAUDE.md** e a hierarquia de memória (herdados automaticamente).
 
 E a única saída de volta ao orquestrador é o **resumo final** (o trabalho intermediário fica
@@ -310,7 +310,7 @@ orquestrador (ask-upfront). Ao fim, anexe a Nota de Handoff ao PLAN e registre d
 ---
 name: dev-senior
 description: Dev Sênior especialista. Use para implementar UM baby step do PLAN (/implementar).
-  Descobre a linguagem/stack pelo map.json e aplica a lente idiomática correspondente.
+  Descobre a linguagem/stack pelo {slug}-map.json e aplica a lente idiomática correspondente.
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
 ---
@@ -322,7 +322,7 @@ estilo do código existente, sem adicionar complexidade não pedida. Roda build 
 É a skill /implementar — siga `SKILLS/SHARED/implementar.md`. Uma etapa por vez.
 
 ## Especialização por linguagem (lente)
-Linguagem é DADO, não persona: descubra a stack no Passo 0 (map.json → stack.backend/frontend/infra).
+Linguagem é DADO, não persona: descubra a stack no Passo 0 ({slug}-map.json → stack.backend/frontend/infra).
 Carregue a lente em `AGENTS/SHARED/lenses/{lang}.md` como apoio idiomático.
 ⚠️ **Precedência:** `docs/architecture/` DO PROJETO sempre vence a lente.
 
@@ -382,7 +382,7 @@ dispara a próxima fase. Também faz a **ponte de comunicação** (§4.2) e de p
 ```
 /feature-workflow   (sessão principal = maestro + broker; humano-no-loop)
   │
-  ├─ Passo 0: carregar contexto (map.json + context.md do projeto ativo)
+  ├─ Passo 0: carregar contexto ({slug}-map.json + {slug}-context.md do projeto ativo)
   │
   ├─ FASE 1 · delega → [subagent product-manager]  (janela própria)  → roda /spec
   │      ↑ perguntas ao humano voltam pelo broker;  ↓ retorna PRD + Nota de Handoff
@@ -416,7 +416,7 @@ Regras do orquestrador:
 
 **Decisão:** um único `dev-senior` (core) + **lentes** de linguagem.
 
-**Racional:** linguagem é **DADO** (já está em `map.json` → `stack.*`; ex.: `velox` = .NET 8 +
+**Racional:** linguagem é **DADO** (já está em `{slug}-map.json` → `stack.*`; ex.: `velox` = .NET 8 +
 React 18, `fake-bet` = .NET 10 + React 19), não persona. Um dev que lê a stack do map preserva a
 regra "sem contexto de projeto embutido"; N agentes fixos por linguagem duplicariam arquivos e
 reintroduziriam stack hard-coded.
@@ -442,7 +442,7 @@ reintroduziriam stack hard-coded.
 ## 10. AGENTS.md (camada de contexto — complementar)
 
 `AGENTS.md` é **contexto de repo** ("README para agentes"), **não** persona — camadas ortogonais.
-Hoje `map.json` + `context.md` + `.ai-project` já cumprem esse papel no ai-flow.
+Hoje `{slug}-map.json` + `{slug}-context.md` + `.ai-project` já cumprem esse papel no ai-flow.
 
 **Opcional / futuro:** gerar um `AGENTS.md` **fino** por repo-alvo (ao lado do `.ai-project`) que
 só aponta para o map. Bônus: Codex/Cursor/Copilot/Gemini leem de graça. Manter enxuto (limite de
@@ -479,7 +479,7 @@ Ideias que **não** estavam no pedido, mas fortalecem o design. Marcadas por qua
    testes e validar cenários" do dev. Entra depois de o pipeline dos 4 estar sólido.
 
 8. **`memory: project` no tech-lead e no arquiteto (evolução).** Acumula recorrências/decisões do
-   projeto entre execuções — alinhado ao `context.md`.
+   projeto entre execuções — alinhado ao `{slug}-context.md`.
 
 9. **Contrato de fase explícito (evolução).** Cada fase declara pré-condições (artefato anterior
    aprovado) e pós-condições (artefato + Nota de Handoff). Formaliza o publish/subscribe.

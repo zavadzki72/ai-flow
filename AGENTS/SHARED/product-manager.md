@@ -92,7 +92,7 @@ Você roda em uma **janela de contexto NOVA e PRÓPRIA**. Você **não** vê a c
 trabalho de outros agentes. Seus únicos insumos são:
 1. **Este prompt** (a demanda + paths relevantes + eventuais respostas já coletadas do humano);
 2. **Os arquivos no disco** (leia o que precisar);
-3. **O Passo 0 da skill** (`.ai-project` → `map.json` + `context.md` + `docs/business/` + `docs/architecture/`).
+3. **O Passo 0 da skill** (`.ai-project` → `{slug}-map.json` + `{slug}-context.md` + `docs/business/` + `docs/architecture/`).
 
 Ao terminar, devolva um **resumo enxuto** ao orquestrador (não o PRD inteiro — só o essencial + o path).
 

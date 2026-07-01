@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Revisa código implementado validando PLAN, aderência ao PRD e padrões do projeto (via context.md). Analisa git diff, verifica checklist específico do projeto, code smells, segurança e performance. Gera relatório estruturado (🔴 crítico / 🟡 importante / 🟢 nice-to-have) e opcionalmente cria Pull Request.
+description: Revisa código implementado validando PLAN, aderência ao PRD e padrões do projeto (via {slug}-context.md). Analisa git diff, verifica checklist específico do projeto, code smells, segurança e performance. Gera relatório estruturado (🔴 crítico / 🟡 importante / 🟢 nice-to-have) e opcionalmente cria Pull Request.
 ---
 
 # Skill: Code Review

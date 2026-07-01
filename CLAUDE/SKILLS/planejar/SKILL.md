@@ -1,6 +1,6 @@
 ---
 name: planejar
-description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via map.json e todos os docs/ do projeto, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
+description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via {slug}-map.json e todos os docs/ do projeto, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
 ---
 
 # Skill: Planejar (Criar Plano de Execução)
@@ -21,7 +21,7 @@ Leia e siga: `SKILLS/SHARED/planejar.md`
 ### Leitura de Arquivos e Exploração de Código
 
 Use as ferramentas nativas do Claude Code:
-- `Read` — ler arquivos individuais (PRD, context.md, arquivos de código)
+- `Read` — ler arquivos individuais (PRD, {slug}-context.md, arquivos de código)
 - `Glob` — listar estrutura de pastas e encontrar arquivos por padrão
 - `Grep` — buscar padrões no código (nome de entidade, handlers, etc.)
 

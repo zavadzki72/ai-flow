@@ -17,9 +17,9 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 - Se existir: ler o caminho do map (ex: `MAPS/project`)
 - Se não existir: perguntar ao dev `Qual projeto estamos trabalhando? (ex: projeto-1, projeto-2)`
 
-**0.2. Ler `map.json`**
+**0.2. Ler `{slug}-map.json`**
 
-Carregar `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
+Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 - `repositories`: paths locais, URLs, branches e contexts
 - `docs.plan`: caminho onde os PLANs estão salvos
 
@@ -42,7 +42,7 @@ Ler cada arquivo encontrado antes de escrever qualquer linha de código. Não pu
 🔴 OBRIGATÓRIO: Informe o PLAN e a ETAPA:
 
 Formato:
-/implementar {map.docs.plan}/PLAN_001_Nome_Feature.md ETAPA 1
+/implementar {map.docs.plan}/{slug}-plan-001-nome-da-feature.md ETAPA 1
 
 Ou apenas:
 /implementar ETAPA 1
@@ -54,7 +54,7 @@ Se não informado:
 ❌ PLAN ou ETAPA não informados.
 
 Por favor, use:
-/implementar {map.docs.plan}/PLAN_001_Nome.md ETAPA 1
+/implementar {map.docs.plan}/{slug}-plan-001-nome.md ETAPA 1
 ```
 
 ---
@@ -94,7 +94,7 @@ Use: /implementar ETAPA 1
 
 **2.4. Apresentar resumo e confirmar:**
 ```
-✅ PLAN Carregado: PLAN_001_Nome_Feature
+✅ PLAN Carregado: {slug}-plan-001-nome-da-feature
 
 📋 ETAPA N: [Nome da etapa]
 
@@ -351,7 +351,7 @@ Mensagem sugerida:
 - [detalhe 2]
 - [testes criados]
 
-Refs: ETAPA N — PLAN_NNN_Nome_Feature"
+Refs: ETAPA N — {slug}-plan-NNN-nome-da-feature"
 
 Confirmar commit? (s/n)
 ```
@@ -369,7 +369,7 @@ git commit -m "feat: [descrição curta]
 - [detalhe 1]
 - [detalhe 2]
 
-Refs: ETAPA N — PLAN_NNN_Nome_Feature
+Refs: ETAPA N — {slug}-plan-NNN-nome-da-feature
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
@@ -380,7 +380,7 @@ git status
 
 ### Passo 8: Atualizar PLAN
 
-Editar `{map.docs.plan}/PLAN_NNN_Nome_Feature.md`:
+Editar `{map.docs.plan}/{slug}-plan-NNN-nome-da-feature.md`:
 
 **Marcar etapa como concluída:**
 ```markdown
@@ -477,7 +477,7 @@ Próximas etapas pendentes:
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto via `map.json` e `docs/architecture/` antes de escrever código
+- Carrega contexto via `{slug}-map.json` e `docs/architecture/` antes de escrever código
 - Lê PLAN e verifica dependências entre etapas
 - Atualiza repositório e gerencia branch (cria ou usa existente)
 - Verifica working tree antes de implementar

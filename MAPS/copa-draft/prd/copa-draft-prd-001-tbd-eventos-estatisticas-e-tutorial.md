@@ -392,8 +392,8 @@ Contratos **internos** (formato do `log` do engine, snapshot do run) são estend
 
 ## 14. REFERÊNCIAS
 
-- Contexto do projeto: `MAPS/copa-draft/context.md`
-- Mapa do projeto: `MAPS/copa-draft/map.json`
+- Contexto do projeto: `MAPS/copa-draft/copa-draft-context.md`
+- Mapa do projeto: `MAPS/copa-draft/copa-draft-map.json`
 - Código-fonte: `config.js`, `lib/engine.js`, `lib/ratings.js`, `lib/team.js`, `lib/store.js`, `lib/achievements.js`, `ui/match.jsx`, `ui/penalty.jsx`, `ui/post.jsx`, `ui/home.jsx`, `ui/components.jsx`, `app.jsx`, `index.html`
 - Ticket/story: TBD
 

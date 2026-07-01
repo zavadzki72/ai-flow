@@ -1,7 +1,7 @@
 # Plano de Execução: Fase de Grupos, Tela Final em Modais e Ajustes de Jogabilidade
 
 ## Informações
-- **PRD Relacionado**: `prd/PRD_002_TBD_FaseDeGruposTelaFinalEAjustes.md`
+- **PRD Relacionado**: `prd/copa-draft-prd-002-tbd-fase-de-grupos-tela-final-e-ajustes.md`
 - **Repositório(s)**: `game` (`C:/Projects/Personal/copa-draft`)
 - **Domínio(s)**: engine, team, match, ui, store, draft, sound
 - **Branch Base**: `main`
@@ -476,7 +476,7 @@ Redesenhar a tela de fim de campanha: hero + modais (Estatísticas da Copa, Camp
 - [ ] App carrega no preview sem erros de console (`python3 -m http.server 8000`).
 - [ ] `node tests/team.test.js` passa (e os testes do PRD_001 continuam verdes).
 
-### Padrões de Código (context.md)
+### Padrões de Código (copa-draft-context.md)
 - [ ] Nenhum número mágico fora de `config.js` (grupos, escala, viés, velocidades).
 - [ ] Atributos só via `lib/derive.js`.
 - [ ] Componentes novos (`group.jsx`, `modal.jsx`) expostos em `window` e `<script>` em ordem no `index.html`.
@@ -580,10 +580,10 @@ Redesenhar a tela de fim de campanha: hero + modais (Estatísticas da Copa, Camp
 
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
-- **PRD**: `prd/PRD_002_TBD_FaseDeGruposTelaFinalEAjustes.md`
-- **PRD anterior (implementado)**: `prd/PRD_001_TBD_EventosEstatisticasETutorial.md` · **PLAN**: `plan/PLAN_001_EventosEstatisticasETutorial.md`
-- **Contexto do Projeto**: `MAPS/copa-draft/context.md`
-- **Arquitetura**: `context.md` (não há `docs/architecture/` físico)
+- **PRD**: `prd/copa-draft-prd-002-tbd-fase-de-grupos-tela-final-e-ajustes.md`
+- **PRD anterior (implementado)**: `prd/copa-draft-prd-001-tbd-eventos-estatisticas-e-tutorial.md` · **PLAN**: `plan/copa-draft-plan-001-eventos-estatisticas-e-tutorial.md`
+- **Contexto do Projeto**: `MAPS/copa-draft/copa-draft-context.md`
+- **Arquitetura**: `copa-draft-context.md` (não há `docs/architecture/` físico)
 - **Código relacionado**: `config.js`, `lib/team.js` (`buildBracket`/`drawOpponents`/`squadAvg`), `lib/engine.js` (`simulateMatch`), `lib/sound.js` (`PATTERNS`), `lib/store.js`, `ui/match.jsx` (`MatchScreen`/`DURATION_MS`/ticker), `ui/draft.jsx` (`doDraw`/`randomFill`), `ui/post.jsx` (`PostMatchScreen`/`CampaignEndScreen`/`BracketScreen`), `ui/home.jsx` (`Segmented`/`HomeScreen`), `ui/howto.jsx` (padrão de overlay), `app.jsx`, `index.html`, `styles/kit.css` (`.overlay`/`.modal`), `game.css` (`.tk.*`, `.howto-overlay`)
 
 ---
@@ -617,7 +617,7 @@ Após cada etapa concluída:
 ## OBSERVAÇÕES
 
 1. **Implementar uma etapa por vez** — garantir testes passando antes de avançar.
-2. **Seguir os padrões do projeto** — ver `context.md` (config central, engine puro, exposição em `window`, ordem dos scripts).
+2. **Seguir os padrões do projeto** — ver `copa-draft-context.md` (config central, engine puro, exposição em `window`, ordem dos scripts).
 3. **Code review contínuo** — usar `/code-review` após cada etapa, em especial na fase de grupos (ETAPAS 6–8).
 4. **Ganhos rápidos primeiro** — ETAPAS 2–5 são independentes e podem ser entregues/commitadas isoladamente, reduzindo risco antes da fase de grupos.
 

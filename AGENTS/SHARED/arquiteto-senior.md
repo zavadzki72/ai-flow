@@ -92,7 +92,7 @@ Você roda em uma **janela de contexto NOVA e PRÓPRIA**. Não vê a conversa pr
 outros agentes. Seus insumos:
 1. **Este prompt** (o **path do PRD** + eventuais respostas do humano);
 2. **O código e os artefatos no disco** (leia-os — inclusive a Nota de Handoff do PRD);
-3. **O Passo 0 da skill** (`.ai-project` → `map.json` + `docs/architecture/`).
+3. **O Passo 0 da skill** (`.ai-project` → `{slug}-map.json` + `docs/architecture/`).
 
 Ao terminar, devolva um **resumo enxuto** (nº de etapas, riscos, path do PLAN).
 

@@ -50,9 +50,9 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 - Se existir: ler o caminho do map (ex: `MAPS/project`)
 - Se não existir: perguntar ao dev `Qual projeto estamos trabalhando? (ex: projeto-1, projeto-2)`
 
-**0.2. Ler `map.json`**
+**0.2. Ler `{slug}-map.json`**
 
-Carregar o arquivo `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
+Carregar o arquivo `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 - `project`: nome, descrição
 - `stack`: tecnologias de backend/frontend
 - `architecture`: padrão e estilo
@@ -85,7 +85,7 @@ Opção B) Via {tooling.type} — você fornece o ID do item e eu busco automati
 Qual opção você prefere?
 ```
 
-Se o projeto não tiver `tooling` configurado no `map.json`, oferecer apenas a Opção A.
+Se o projeto não tiver `tooling` configurado no `{slug}-map.json`, oferecer apenas a Opção A.
 
 ---
 
@@ -270,10 +270,11 @@ Verificar impacto nos serviços listados em `docs/business/`.
 
 Determinar caminho e nome do arquivo:
 - Pasta: `{map.docs.prd}` (relativo à pasta do map do projeto)
-- Nomenclatura: `PRD_NNN_ID_Nome_Feature.md`
-  - NNN = próximo número sequencial (verificar último PRD na pasta)
-  - ID = número do ticket (ou TBD se não houver)
-  - Nome_Feature = nome descritivo em PascalCase
+- Nomenclatura: `{slug}-prd-NNN-id-nome-da-feature.md`
+  - `{slug}` = mesmo slug do projeto (nome da pasta em `MAPS/{slug}/`)
+  - NNN = próximo número sequencial, zero-padded a 3 dígitos (verificar último PRD na pasta)
+  - id = número do ticket (ou `tbd` se não houver)
+  - nome-da-feature = nome descritivo em kebab-case (minúsculo, hífen — nunca PascalCase/underscore)
 
 Usar o template abaixo, preenchendo as seções com base nas informações coletadas e na análise técnica.
 
@@ -505,7 +506,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ### Passo 7: Atualizar Item no Sistema de Gestão (se aplicável)
 
-Se o projeto tiver `tooling` configurado em `map.json` e um ID de item foi fornecido:
+Se o projeto tiver `tooling` configurado em `{slug}-map.json` e um ID de item foi fornecido:
 
 1. Adicionar comentário no item com:
    - Caminho do PRD gerado
@@ -521,7 +522,7 @@ Se o projeto tiver `tooling` configurado em `map.json` e um ID de item foi forne
 ```
 ✅ PRD Criado com Sucesso!
 
-📄 Arquivo: {map.docs.prd}/NNN_ID_Nome_Feature.md
+📄 Arquivo: {map.docs.prd}/{slug}-prd-NNN-id-nome-da-feature.md
 
 📊 Resumo da Análise Técnica:
 - Complexidade: 🟢/🟡/🔴
@@ -589,9 +590,9 @@ Antes de entregar, verificar:
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto do projeto a partir do `map.json` e `docs/`
+- Carrega contexto do projeto a partir do `{slug}-map.json` e `docs/`
 - Coleta informações via perguntas manuais ou integração com ferramenta de gestão
-- Identifica repositórios afetados usando os `contexts` do `map.json`
+- Identifica repositórios afetados usando os `contexts` do `{slug}-map.json`
 - Atualiza repositórios e analisa código existente
 - Faz perguntas contextualizadas baseadas no código e no contexto do projeto
 - Realiza análise técnica estruturada (impacto, complexidade, riscos, dependências)

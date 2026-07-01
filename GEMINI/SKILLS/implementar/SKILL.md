@@ -4,7 +4,7 @@
 `/implementar` · `/executar` · "implementar etapa" · "executar etapa"
 
 Aceita PLAN e etapa inline:
-`/implementar {map.docs.plan}/PLAN_001_Nome.md ETAPA 1`
+`/implementar {map.docs.plan}/{slug}-plan-001-nome.md ETAPA 1`
 `/implementar ETAPA 1` (se PLAN já foi mencionado na conversa)
 
 ## Processo Completo
@@ -22,7 +22,7 @@ Sempre ler um arquivo antes de editá-lo.
 ### Execução de Comandos
 
 Use a capacidade de execução de comandos do Gemini para build, testes e git.
-Consultar `context.md#comandos` para os comandos exatos da stack do projeto ativo.
+Consultar `{slug}-context.md#comandos` para os comandos exatos da stack do projeto ativo.
 
 ### Próximos Skills na Sequência
 - Continuar: `/implementar ETAPA N+1`

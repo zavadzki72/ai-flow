@@ -7,7 +7,7 @@ alwaysApply: true
 # ai-flow no Cursor
 
 - Antes de executar qualquer skill, localize o projeto ativo por `.ai-project`.
-- Leia `MAPS/{projeto}/map.json` e `MAPS/{projeto}/context.md` antes de planejar, implementar ou revisar.
+- Leia `MAPS/{projeto}/{slug}-map.json` e `MAPS/{projeto}/{slug}-context.md` antes de planejar, implementar ou revisar.
 - Use `SKILLS/SHARED` como fonte de verdade da lógica da skill.
 - Use `CURSOR/SKILLS` apenas como adapter para a forma de trabalhar no Cursor.
 - Use o Agent do Cursor para leitura, busca e edição de arquivos.

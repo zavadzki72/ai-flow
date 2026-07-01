@@ -42,8 +42,8 @@ Projetos a usar:
 ### Leitura de Arquivos
 
 Use o Agent do Cursor para ler arquivos locais:
-- `map.json`
-- `context.md`
+- `{slug}-map.json`
+- `{slug}-context.md`
 - docs do projeto
 - arquivos de código relacionados à feature
 

@@ -49,8 +49,8 @@ Após instalar e iniciar o Docker Desktop, rode novamente: /setup-mcp-sonarqube
 Verificar se existe `.ai-project` para identificar o projeto ativo.
 
 Ler:
-- `MAPS/{projeto}/map.json`
-- `MAPS/{projeto}/context.md`
+- `MAPS/{projeto}/{slug}-map.json`
+- `MAPS/{projeto}/{slug}-context.md`
 
 Se `map.tooling.sonar.project-key` e `map.tooling.sonar.mcp-server` existirem, usar como contexto para sugerir nome e teste final.
 

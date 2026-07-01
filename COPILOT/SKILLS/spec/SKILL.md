@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Cria PRD (Product Requirements Document) para nova feature. Lê contexto do projeto via map.json e context.md, coleta informações via perguntas ou integração com ferramenta de gestão (Azure DevOps, Jira), analisa repositórios e código, e gera PRD completo com critérios BDD, escopo técnico e definição de pronto.
+description: Cria PRD (Product Requirements Document) para nova feature. Lê contexto do projeto via {slug}-map.json e {slug}-context.md, coleta informações via perguntas ou integração com ferramenta de gestão (Azure DevOps, Jira), analisa repositórios e código, e gera PRD completo com critérios BDD, escopo técnico e definição de pronto.
 ---
 
 # Skill: Spec (Criar PRD)

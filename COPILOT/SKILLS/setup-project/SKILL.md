@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Cria um novo projeto no ai-flow. Coleta todas as informações necessárias via perguntas guiadas em blocos (projeto, stack, arquitetura, repositórios, tooling e contexto opcional), gera a estrutura completa em MAPS/{slug}/ com map.json e context.md preenchidos, e configura o .ai-project nos repositórios locais informados.
+description: Cria um novo projeto no ai-flow. Coleta todas as informações necessárias via perguntas guiadas em blocos (projeto, stack, arquitetura, repositórios, tooling e contexto opcional), gera a estrutura completa em MAPS/{slug}/ com {slug}-map.json e {slug}-context.md preenchidos, e configura o .ai-project nos repositórios locais informados.
 ---
 
 # Skill: Setup Project (Criar Novo Projeto)
@@ -23,7 +23,7 @@ Agrupe as perguntas de cada bloco e use `choices` quando houver opções predefi
 ### Criação de Arquivos e Pastas
 
 Use as ferramentas nativas — nunca powershell para criar arquivos de texto:
-- `create` — para criar `map.json`, `context.md` e `.ai-project`
+- `create` — para criar `{slug}-map.json`, `{slug}-context.md` e `.ai-project`
 - `powershell` — apenas para criar as pastas e os `.gitkeep`
 
 Para as pastas do map, executar via powershell:

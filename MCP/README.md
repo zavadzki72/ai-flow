@@ -32,11 +32,11 @@ Consulte `MCP/CLIENTS.md` para os formatos e comandos por cliente.
 ## Como Usar
 
 Cada pasta contém:
-- **`SKILL.md`** — skill guiada que lê o `map.json` do projeto ativo, gera a configuração pré-preenchida e aplica com confirmação
+- **`SKILL.md`** — skill guiada que lê o `{slug}-map.json` do projeto ativo, gera a configuração pré-preenchida e aplica com confirmação
 - **`config-template.json`** — template de referência da configuração MCP
 
 Para configurar um MCP:
-1. Certifique-se de que o projeto ativo tem `.ai-project` apontando para o `map.json` correto
+1. Certifique-se de que o projeto ativo tem `.ai-project` apontando para o `{slug}-map.json` correto
 2. Invoque a skill: `/setup-mcp-azure-devops` ou `/setup-mcp-sonarqube`
 3. Escolha o cliente de IA que receberá a configuração
 4. Siga o processo guiado

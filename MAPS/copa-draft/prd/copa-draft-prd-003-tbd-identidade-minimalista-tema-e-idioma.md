@@ -297,7 +297,7 @@ Nenhum contrato externo. **Breaking change?** Não.
 - [ ] Preferências de tema e idioma persistidas e reaplicadas
 - [ ] Novo ícone e nome "Seu Draft" (localizado) em todos os pontos de identidade
 - [ ] Nenhuma cor hardcoded fora dos tokens; nenhuma comparação de fluxo por texto traduzível
-- [ ] Code review realizado (checklist de `context.md`)
+- [ ] Code review realizado (checklist de `copa-draft-context.md`)
 - [ ] Build/preview funcionando na branch principal
 - [ ] PRD atendido 100%
 
@@ -305,9 +305,9 @@ Nenhum contrato externo. **Breaking change?** Não.
 
 ## 14. REFERÊNCIAS
 
-- Contexto do projeto: `MAPS/copa-draft/context.md` (arquitetura, design system, padrões frontend, checklist de code review)
-- `map.json` (stack, repositório `game`, docs)
-- PRDs relacionados: `PRD_001_TBD_EventosEstatisticasETutorial.md`, `PRD_002_TBD_FaseDeGruposTelaFinalEAjustes.md`
+- Contexto do projeto: `MAPS/copa-draft/copa-draft-context.md` (arquitetura, design system, padrões frontend, checklist de code review)
+- `copa-draft-map.json` (stack, repositório `game`, docs)
+- PRDs relacionados: `copa-draft-prd-001-tbd-eventos-estatisticas-e-tutorial.md`, `copa-draft-prd-002-tbd-fase-de-grupos-tela-final-e-ajustes.md`
 - Código-fonte relevante: `lib/engine.js`, `lib/achievements.js`, `lib/derive.js`, `ui/components.jsx`, `config.js`, `app.jsx`, `styles/colors_and_type.css`, `lib/store.js`
 - Ticket/story: TBD (projeto sem ferramenta de gestão configurada)
 

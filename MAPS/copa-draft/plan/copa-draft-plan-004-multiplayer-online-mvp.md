@@ -1,7 +1,7 @@
 # Plano de Execução: Multiplayer Online — Salas, Torneio com Amigos (MVP)
 
 ## Informações
-- **PRD Relacionado**: `prd/PRD_004_TBD_MultiplayerOnlineMVP.md`
+- **PRD Relacionado**: `prd/copa-draft-prd-004-tbd-multiplayer-online-mvp.md`
 - **Repositório(s)**: `game` (mono-repo) — front no **root** durante o MVP; backend novo em **`backend/`**; migração para `frontend/` na última etapa
 - **Domínio(s)**: multiplayer, lobby, auth, engine (porte JS→C#), draft, match, realtime, tournament
 - **Branch Base**: `main`
@@ -915,7 +915,7 @@ Suportar os desfechos do MP reaproveitando hero + modais: avanço às fases, **e
 - `tools/*.js` apontados para `frontend/` (saídas inalteradas: `squads.json` na raiz, goldens no backend) — regeneração validada **idempotente**.
 - `docker-compose.yml`: web passa a buildar com `context: ./frontend` (Dockerfile interno inalterado — COPYs relativos); `.dockerignore` do front reescrito. Backend continua com contexto na raiz (embute `squads.json`) — caminho `..\..\squads.json` do csproj segue válido.
 - `tests/_shim.js` não precisou de ajuste (resolve `..` relativo, que agora é `frontend/`).
-- README atualizado (estrutura mono-repo + como rodar solo e stack completa); `context.md` do ai-flow atualizado (paths sob `frontend/`, regra de paridade dos vetores-ouro).
+- README atualizado (estrutura mono-repo + como rodar solo e stack completa); `copa-draft-context.md` do ai-flow atualizado (paths sob `frontend/`, regra de paridade dos vetores-ouro).
 - **Regressão completa:** testes node (engine 30, i18n 12, stats 10, team 11 + crash pré-existente do harness), `dotnet test` **133/133**, docker rebuild + smoke via nginx (health, index, mp-realtime.js servido, negotiate 401). Stack derrubada após validação.
 
 **Objetivo:** Concluir o mono-repo (front em `frontend/`), sem regressão.
@@ -1104,9 +1104,9 @@ Login Google passou a ser exigido **só para criar salas**; quem entra numa sala
 
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
-- **PRD**: `prd/PRD_004_TBD_MultiplayerOnlineMVP.md`
-- **Contexto do Projeto**: `context.md`
-- **Mapa**: `map.json`
+- **PRD**: `prd/copa-draft-prd-004-tbd-multiplayer-online-mvp.md`
+- **Contexto do Projeto**: `copa-draft-context.md`
+- **Mapa**: `copa-draft-map.json`
 - **Código de referência (porte)**: `lib/engine.js`, `lib/rng.js`, `lib/derive.js`, `lib/i18n.js` (narração PT), `lib/team.js` (`buildGroup`/`buildBracket`/`drawScaledOpponents`/`groupStandings`/`roundRobin`), `config.js`, `data/squads.js`
 - **Testes existentes (base dos vetores-ouro)**: `tests/_shim.js`, `tests/engine.test.js`, `tests/team.test.js`
 

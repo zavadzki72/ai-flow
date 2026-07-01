@@ -16,7 +16,7 @@ Leia e siga: `SKILLS/SHARED/planejar.md`
 ### Leitura de Arquivos e Exploração de Código
 
 Use as capacidades nativas do Gemini para:
-- Ler arquivos do sistema (PRD, context.md, arquivos de código)
+- Ler arquivos do sistema (PRD, {slug}-context.md, arquivos de código)
 - Listar estrutura de pastas dos repositórios
 - Buscar padrões no código por nome de arquivo ou conteúdo
 

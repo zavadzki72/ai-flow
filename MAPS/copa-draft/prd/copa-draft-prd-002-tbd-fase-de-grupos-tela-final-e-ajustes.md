@@ -435,9 +435,9 @@ Contratos **internos** (snapshot do run, perfil, formato do grupo) estendidos de
 
 ## 14. REFERÊNCIAS
 
-- Contexto do projeto: `MAPS/copa-draft/context.md`
-- Mapa do projeto: `MAPS/copa-draft/map.json`
-- PRD anterior (já implementado): `MAPS/copa-draft/prd/PRD_001_TBD_EventosEstatisticasETutorial.md`
+- Contexto do projeto: `MAPS/copa-draft/copa-draft-context.md`
+- Mapa do projeto: `MAPS/copa-draft/copa-draft-map.json`
+- PRD anterior (já implementado): `MAPS/copa-draft/prd/copa-draft-prd-001-tbd-eventos-estatisticas-e-tutorial.md`
 - Código-fonte: `config.js`, `lib/team.js` (`buildBracket`/`drawOpponents`/`squadAvg`), `lib/engine.js` (`simulateMatch`, eventos com `side`), `lib/sound.js` (`PATTERNS.goal`), `lib/store.js` (`DEFAULT_PROFILE`/run keys), `ui/match.jsx` (`MatchScreen`, `DURATION_MS`/`TICK`, ticker), `ui/draft.jsx` (`doDraw`/`randomFill`), `ui/post.jsx` (`PostMatchScreen`/`CampaignEndScreen`/`BracketScreen`), `ui/home.jsx` (`Segmented`/`HomeScreen`), `ui/howto.jsx` (padrão de overlay/modal), `app.jsx` (máquina de estados), `styles/kit.css` (`.overlay`/`.modal`), `game.css` (`.tk.*`, `.howto-overlay`), `index.html`
 - Ticket/story: TBD
 

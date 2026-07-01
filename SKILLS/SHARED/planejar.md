@@ -17,9 +17,9 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 - Se existir: ler o caminho do map (ex: `MAPS/project`)
 - Se não existir: perguntar ao dev `Qual projeto estamos trabalhando? (ex: projeto-1, projeto-2)`
 
-**0.2. Ler `map.json`**
+**0.2. Ler `{slug}-map.json`**
 
-Carregar `{AI_FLOW_ROOT}/{map-path}/map.json` e extrair:
+Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 - `repositories`: paths locais, branches e contexts de cada repo
 - `architecture`: padrão e estilo
 - `docs.prd`: caminho onde os PRDs ficam salvos
@@ -44,13 +44,13 @@ Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
 🔴 OBRIGATÓRIO: Qual PRD devo usar como base?
 
 Informe o caminho do arquivo ou apenas o nome/número:
-Exemplo: {map.docs.prd}/001_TBD_Nome_Feature.md
+Exemplo: {map.docs.prd}/{slug}-prd-001-tbd-nome-da-feature.md
 ```
 
 Se o PRD não for informado:
 ```
 ❌ PRD não informado. Por favor, execute /spec primeiro para criar o PRD,
-ou informe o caminho: /planejar {map.docs.prd}/001_Nome_Feature.md
+ou informe o caminho: /planejar {map.docs.prd}/{slug}-prd-001-nome-da-feature.md
 ```
 
 ---
@@ -208,7 +208,7 @@ Com base nas respostas e no código analisado, dividir a implementação em etap
 
 Determinar caminho e nome do arquivo:
 - Pasta: `{map.docs.plan}` (relativo à pasta do map do projeto)
-- Nomenclatura: `PLAN_NNN_Nome_Feature.md` (usar mesmo número do PRD)
+- Nomenclatura: `{slug}-plan-NNN-nome-da-feature.md` (usar mesmo número do PRD)
 
 Usar o template abaixo:
 
@@ -220,7 +220,7 @@ Usar o template abaixo:
 # Plano de Execução: [Nome da Feature]
 
 ## Informações
-- **PRD Relacionado**: {map.docs.prd}/NNN_ID_Nome_Feature.md
+- **PRD Relacionado**: {map.docs.prd}/{slug}-prd-NNN-id-nome-da-feature.md
 - **Repositório(s)**: [repos afetados]
 - **Domínio(s)**: [domínios]
 - **Branch Base**: {repo.branch}
@@ -402,7 +402,7 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
-- **PRD**: {map.docs.prd}/NNN_ID_Nome_Feature.md
+- **PRD**: {map.docs.prd}/{slug}-prd-NNN-id-nome-da-feature.md
 - **Contexto do Projeto**: docs/
 - **Arquitetura**: docs/architecture/
 - **Padrões**: docs/architecture/
@@ -446,7 +446,7 @@ Após cada etapa concluída:
 ```
 ✅ Plano de Execução Criado!
 
-📄 Arquivo: {map.docs.plan}/PLAN_NNN_Nome_Feature.md
+📄 Arquivo: {map.docs.plan}/{slug}-plan-NNN-nome-da-feature.md
 
 📊 Resumo:
 - Total de Etapas: N
@@ -503,7 +503,7 @@ Alguma etapa ficou confusa ou precisa ser ajustada?
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto do projeto via `map.json` e `docs/`
+- Carrega contexto do projeto via `{slug}-map.json` e `docs/`
 - Lê e valida o PRD obrigatório
 - Atualiza repositório(s) antes de analisar
 - Explora código profundamente por camada

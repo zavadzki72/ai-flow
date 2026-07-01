@@ -20,7 +20,7 @@ No chat do Cursor, o comando fica disponível como `/planejar`.
 
 ### Leitura de Arquivos e Exploração de Código
 
-Use o Agent do Cursor para ler PRD, `map.json`, `context.md`, docs do projeto e arquivos de código.
+Use o Agent do Cursor para ler PRD, `{slug}-map.json`, `{slug}-context.md`, docs do projeto e arquivos de código.
 
 Prefira:
 - Busca do workspace para encontrar entidades, handlers, services, tests, migrations e componentes relacionados

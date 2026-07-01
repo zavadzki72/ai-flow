@@ -11,9 +11,9 @@ Sempre que o processo mandar "delegar para `SKILLS/SHARED/X.md`", carregue
 aquele arquivo e execute seus passos dentro desta conversa.
 
 Skills referenciadas:
-- `SKILLS/SHARED/setup-project.md` (Passo 4)
-- `SKILLS/SHARED/spec.md` (Passo 6)
-- `SKILLS/SHARED/planejar.md` (Passo 7)
+- `SKILLS/SHARED/setup-project.md` (Passo 6)
+- `SKILLS/SHARED/spec.md` (Passo 8)
+- `SKILLS/SHARED/planejar.md` (Passo 9)
 
 ---
 
@@ -44,8 +44,8 @@ MAPS/{slug}/
   prd/.gitkeep
   plan/.gitkeep
   adr/.gitkeep
-  map.json
-  context.md
+  {slug}-map.json
+  {slug}-context.md
 ```
 
 ### Listagem de Boilerplates

@@ -135,28 +135,44 @@ Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.m
 Cada projeto em `MAPS/` deve ter:
 
 ```
-MAPS/{projeto}/
-  map.json      ← configuração estruturada (obrigatório)
-  context.md    ← contexto em prosa (obrigatório)
+MAPS/{slug}/
+  {slug}-map.json      ← configuração estruturada (obrigatório)
+  {slug}-context.md    ← contexto em prosa (obrigatório)
   prd/          ← PRDs de features
   plan/         ← PLANs de execução
   adr/          ← Architectural Decision Records
 ```
 
+`{slug}` é o nome da pasta do projeto (mesmo valor usado em `MAPS/{slug}/` e
+no `.ai-project`) — sempre minúsculo, com hífen, sem acento (ex: `copa-draft`,
+`gestao-usuarios`). Todo arquivo dentro do map carrega esse prefixo para ficar
+único e identificável quando o repositório é aberto como vault do Obsidian
+(sem isso, cada projeto teria um `context.md`/`map.json` de nome idêntico,
+impossível de diferenciar na busca rápida ou no grafo).
+
 ### Schema do map.json
 
-Siga o template em `MAPS/_template/map.json`. Campos obrigatórios:
+Siga o template em `MAPS/_template/map.json` (ao copiar, renomear para
+`{slug}-map.json`). Campos obrigatórios:
 - `project.name`, `project.description`, `project.status`
 - `repositories` com ao menos um entry com `path`, `branch` e `contexts`
 - `stack` com ao menos `backend` ou `frontend`
 
 ### Nomenclatura de Documentos
 
-| Tipo | Padrão | Exemplo |
+Todos os nomes são `kebab-case` minúsculo, prefixados com `{slug}` do projeto.
+
+| Tipo | Padrão | Exemplo (`slug = gestao-usuarios`) |
 |------|--------|---------|
-| PRD | `PRD_NNN_Nome_Feature.md` | `PRD_001_Gestao_Usuarios.md` |
-| PLAN | `PLAN_NNN_Nome_Feature.md` | `PLAN_001_Gestao_Usuarios.md` |
-| ADR | `ADR_NNN_Titulo_Decisao.md` | `ADR_001_Escolha_ORM.md` |
+| Map | `{slug}-map.json` | `gestao-usuarios-map.json` |
+| Context | `{slug}-context.md` | `gestao-usuarios-context.md` |
+| PRD | `{slug}-prd-NNN-id-nome-da-feature.md` | `gestao-usuarios-prd-001-tbd-cadastro-de-usuario.md` |
+| PLAN | `{slug}-plan-NNN-nome-da-feature.md` (mesmo NNN do PRD) | `gestao-usuarios-plan-001-cadastro-de-usuario.md` |
+| ADR | `{slug}-adr-NNN-titulo-da-decisao.md` | `gestao-usuarios-adr-001-escolha-orm.md` |
+
+`id` no PRD é o número do ticket externo (Azure DevOps/Jira) ou `tbd` se não
+houver. `NNN` é sempre zero-padded a 3 dígitos, exceto no MVP inicial gerado
+pelo `/start-project` (`000001`, zero-padded a 6 dígitos — ver `start-project.md`).
 
 ---
 
@@ -175,10 +191,11 @@ Cada boilerplate deve conter um `README.md` explicando:
 
 ## Adicionando um Novo Projeto
 
-1. Copie `MAPS/_template/` para `MAPS/{nome-projeto}/`
-2. Preencha `map.json` com as informações do projeto
-3. Preencha `context.md` com arquitetura, padrões e glossário
-4. Crie o arquivo `.ai-project` na raiz de cada repositório do projeto apontando para `MAPS/{nome-projeto}`
+1. Copie `MAPS/_template/` para `MAPS/{slug}/`
+2. Renomeie `map.json` → `{slug}-map.json` e `context.md` → `{slug}-context.md`
+3. Preencha `{slug}-map.json` com as informações do projeto
+4. Preencha `{slug}-context.md` com arquitetura, padrões e glossário
+5. Crie o arquivo `.ai-project` na raiz de cada repositório do projeto apontando para `MAPS/{slug}`
 
 ---
 

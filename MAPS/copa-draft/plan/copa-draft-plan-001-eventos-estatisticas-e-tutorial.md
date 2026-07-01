@@ -1,7 +1,7 @@
 # Plano de Execução: Eventos com Impacto, Estatísticas da Copa e Aba "Como Jogar?"
 
 ## Informações
-- **PRD Relacionado**: `prd/PRD_001_TBD_EventosEstatisticasETutorial.md`
+- **PRD Relacionado**: `prd/copa-draft-prd-001-tbd-eventos-estatisticas-e-tutorial.md`
 - **Repositório(s)**: `game` (`C:/Projects/Personal/copa-draft`)
 - **Domínio(s)**: engine, match, ratings, ui, store, achievements, draft
 - **Branch Base**: `main`
@@ -483,7 +483,7 @@ Exibir as premiações na `CampaignEndScreen`, tanto na conquista do título qua
 - [ ] App carrega no preview sem erros de console (`python3 -m http.server 8000`).
 - [ ] `node tests/engine.test.js` e `node tests/stats.test.js` passam.
 
-### Padrões de Código (context.md)
+### Padrões de Código (copa-draft-context.md)
 - [ ] Nenhum número mágico fora de `config.js`.
 - [ ] Atributos só via `lib/derive.js`.
 - [ ] Componentes novos expostos em `window` e `<script>` em ordem no `index.html`.
@@ -575,9 +575,9 @@ Exibir as premiações na `CampaignEndScreen`, tanto na conquista do título qua
 
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
-- **PRD**: `prd/PRD_001_TBD_EventosEstatisticasETutorial.md`
-- **Contexto do Projeto**: `MAPS/copa-draft/context.md`
-- **Arquitetura**: `context.md` (não há `docs/architecture/` físico)
+- **PRD**: `prd/copa-draft-prd-001-tbd-eventos-estatisticas-e-tutorial.md`
+- **Contexto do Projeto**: `MAPS/copa-draft/copa-draft-context.md`
+- **Arquitetura**: `copa-draft-context.md` (não há `docs/architecture/` físico)
 - **Código relacionado**: `config.js`, `lib/engine.js`, `lib/ratings.js`, `lib/team.js`, `lib/rng.js`, `lib/store.js`, `lib/achievements.js`, `ui/match.jsx`, `ui/penalty.jsx`, `ui/post.jsx`, `ui/home.jsx`, `ui/components.jsx`, `app.jsx`, `index.html`
 
 ---
@@ -609,7 +609,7 @@ Após cada etapa concluída:
 ## OBSERVAÇÕES
 
 1. **Implementar uma etapa por vez** — garantir testes passando antes de avançar.
-2. **Seguir os padrões do projeto** — ver `context.md` (config central, engine puro, exposição em `window`, ordem dos scripts).
+2. **Seguir os padrões do projeto** — ver `copa-draft-context.md` (config central, engine puro, exposição em `window`, ordem dos scripts).
 3. **Code review contínuo** — usar `/code-review` após cada etapa, em especial nas etapas do engine (3–6).
 
 ---

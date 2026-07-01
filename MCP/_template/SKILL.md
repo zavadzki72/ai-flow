@@ -28,8 +28,8 @@ COMANDO_VERIFICACAO --version
 ### Passo 1: Carregar Contexto do Projeto
 
 Verificar se existe `.ai-project` para identificar o projeto ativo.
-Extrair de `map.json` os valores relevantes para pré-preencher a configuração:
-- [Campo do map.json relevante]
+Extrair de `{slug}-map.json` os valores relevantes para pré-preencher a configuração:
+- [Campo do {slug}-map.json relevante]
 
 ---
 

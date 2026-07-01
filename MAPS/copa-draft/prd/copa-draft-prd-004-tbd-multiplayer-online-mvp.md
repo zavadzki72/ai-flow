@@ -465,8 +465,8 @@ Entregar um **MVP de multiplayer online jogável ponta-a-ponta**:
 
 ## 14. REFERÊNCIAS
 
-- Contexto do projeto: `MAPS/copa-draft/context.md`
-- Mapa do projeto: `MAPS/copa-draft/map.json` (mono-repo: o repo `game` passa a ter `frontend/` + `backend/`; recomendável atualizar os `contexts` com `multiplayer`, `lobby`, `auth`, `realtime`, `backend`)
+- Contexto do projeto: `MAPS/copa-draft/copa-draft-context.md`
+- Mapa do projeto: `MAPS/copa-draft/copa-draft-map.json` (mono-repo: o repo `game` passa a ter `frontend/` + `backend/`; recomendável atualizar os `contexts` com `multiplayer`, `lobby`, `auth`, `realtime`, `backend`)
 - PRDs anteriores (implementados): `PRD_001`, `PRD_002` (fase de grupos/escala de força), `PRD_003`
 - Código-fonte de referência (frontend): `app.jsx` (máquina de estados), `lib/engine.js` (`simulateMatch`, RNG, eventos com `side`), `lib/team.js` (`buildGroup`, `groupStandings`, `buildBracket`, `drawScaledOpponents`, `squadAvg`, `bestXI`, `makeSide`), `lib/rng.js` (mulberry32), `config.js` (`GROUP_*`, `PHASE_STRENGTH`, `ROUNDS`, `FORMATIONS`, `MATCH_SPEEDS`), `data/squads.js`, `ui/draft.jsx`, `ui/match.jsx`, `ui/post.jsx`, `lib/store.js`, `index.html`
 - Ticket/story: TBD
@@ -500,7 +500,7 @@ Entregar um **MVP de multiplayer online jogável ponta-a-ponta**:
 - 🔗 **Credenciais Google OAuth** (client id/secret) configuradas.
 - 🔗 Engine/regra de jogo de `lib/engine.js` + `lib/team.js` (PRD_002) como base de paridade.
 - 🔗 `data/squads.js` espelhado no servidor.
-- 🔗 **Atualizar `map.json`**: como é mono-repo, **não há repo novo** — manter o repo `game` e expandir `contexts` (ex.: `multiplayer`, `lobby`, `auth`, `realtime`, `backend`) e a stack (`backend: ["csharp", "dotnet-10", "aspnet-core", "signalr", "ef-core", "postgresql"]`). Opcionalmente refletir as pastas `frontend/`/`backend/` no `context.md`.
+- 🔗 **Atualizar `copa-draft-map.json`**: como é mono-repo, **não há repo novo** — manter o repo `game` e expandir `contexts` (ex.: `multiplayer`, `lobby`, `auth`, `realtime`, `backend`) e a stack (`backend: ["csharp", "dotnet-10", "aspnet-core", "signalr", "ef-core", "postgresql"]`). Opcionalmente refletir as pastas `frontend/`/`backend/` no `copa-draft-context.md`.
 
 ---
 

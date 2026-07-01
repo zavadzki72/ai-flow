@@ -51,8 +51,8 @@ Para modo remoto, validar apenas que o cliente escolhido suporta servidor MCP HT
 Verificar se existe `.ai-project` para identificar o projeto ativo.
 
 Ler:
-- `MAPS/{projeto}/map.json`
-- `MAPS/{projeto}/context.md`
+- `MAPS/{projeto}/{slug}-map.json`
+- `MAPS/{projeto}/{slug}-context.md`
 
 Se `map.tooling.project-management.type == "azure-devops"`, usar `workitems-project` e `repos-project` como contexto para o teste final. Se o map não tiver organização, pedir ao dev.
 

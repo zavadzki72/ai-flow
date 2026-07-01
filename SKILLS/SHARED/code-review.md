@@ -17,7 +17,7 @@ Verificar se existe `.ai-project` na raiz do repositório atual:
 - Se existir: ler o caminho do map (ex: `MAPS/project`)
 - Se não existir: perguntar ao dev `Qual projeto estamos trabalhando? (ex: projeto-1, projeto-2)`
 
-**0.2. Ler `map.json`**
+**0.2. Ler `{slug}-map.json`**
 
 Extrair:
 - `repositories`: paths locais e branches
@@ -40,10 +40,10 @@ Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
 Para fazer o code review completo, preciso de:
 
 1️⃣ PRD: caminho do arquivo
-   Exemplo: {map.docs.prd}/001_TBD_Nome_Feature.md
+   Exemplo: {map.docs.prd}/{slug}-prd-001-tbd-nome-da-feature.md
 
 2️⃣ PLAN: caminho do arquivo
-   Exemplo: {map.docs.plan}/PLAN_001_Nome_Feature.md
+   Exemplo: {map.docs.plan}/{slug}-plan-001-nome-da-feature.md
 
 3️⃣ BRANCH: qual branch foi implementada?
    Exemplo: feature/nome-da-feature
@@ -223,7 +223,7 @@ Verificar usando `docs/architecture/`:
 
 #### 6.8. Análise SonarQube (se configurado)
 
-Verificar se `map.tooling.sonar.project-key` está preenchido no `map.json`.
+Verificar se `map.tooling.sonar.project-key` está preenchido no `{slug}-map.json`.
 
 **Se configurado**, perguntar ao dev:
 
@@ -330,7 +330,7 @@ Gerar relatório no formato abaixo:
 
 ## VERIFICAÇÃO DO PLAN
 
-**PLAN**: {map.docs.plan}/PLAN_NNN_Nome.md
+**PLAN**: {map.docs.plan}/{slug}-plan-NNN-nome.md
 - **Status**: ✅ Atualizado / ⚠️ Parcial / ❌ Desatualizado
 - **Progresso**: X/N etapas (%)
 - [Lista de etapas com status]
@@ -554,7 +554,7 @@ Se aprovação for ❌, **não criar PR** — listar o que precisa ser corrigido
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto via `map.json` e `docs/`
+- Carrega contexto via `{slug}-map.json` e `docs/`
 - Verifica PLAN atualizado
 - Valida aderência ao PRD (critérios, regras, specs)
 - Analisa diff via `git diff`

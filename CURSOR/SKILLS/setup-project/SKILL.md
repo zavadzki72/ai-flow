@@ -23,8 +23,8 @@ Quando houver opções predefinidas, apresente uma lista curta e peça uma escol
 ### Criação de Arquivos e Pastas
 
 Use o Agent do Cursor para criar e editar arquivos de texto:
-- `map.json`
-- `context.md`
+- `{slug}-map.json`
+- `{slug}-context.md`
 - `.ai-project`
 
 Use o terminal integrado apenas para criar pastas, `.gitkeep` e validar paths.

@@ -1,6 +1,6 @@
 ---
 name: start-project
-description: Orquestrador end-to-end para iniciar um projeto do zero. Conduz uma conversa de descoberta, recorta um MVP_000001 enxuto, escolhe boilerplate interativamente, registra o projeto no ai-flow (delega para /setup-project), faz bootstrap físico (git init, deps), gera PRD_000001_MVP (delega para /spec) e PLAN_000001_MVP (delega para /planejar). Ao final, o projeto está pronto para /implementar ETAPA 1.
+description: Orquestrador end-to-end para iniciar um projeto do zero. Conduz uma conversa de descoberta, recorta um MVP_000001 enxuto, escolhe boilerplate interativamente, registra o projeto no ai-flow (delega para /setup-project), faz bootstrap físico (git init, deps), gera {slug}-prd-000001-mvp (delega para /spec) e {slug}-plan-000001-mvp (delega para /planejar). Ao final, o projeto está pronto para /implementar ETAPA 1.
 ---
 
 # Skill: Start Project (Zero ao MVP_000001 Rodando)
@@ -16,9 +16,9 @@ Sempre que o processo mandar "delegar para `SKILLS/SHARED/X.md`", carregue
 aquele arquivo e execute seus passos dentro desta conversa.
 
 Skills referenciadas:
-- `SKILLS/SHARED/setup-project.md` (Passo 4)
-- `SKILLS/SHARED/spec.md` (Passo 6)
-- `SKILLS/SHARED/planejar.md` (Passo 7)
+- `SKILLS/SHARED/setup-project.md` (Passo 6)
+- `SKILLS/SHARED/spec.md` (Passo 8)
+- `SKILLS/SHARED/planejar.md` (Passo 9)
 
 ---
 
@@ -42,7 +42,7 @@ com a tool `Read`. Não confie na memória — leia o conteúdo atualizado.
 ### Criação de Arquivos e Pastas
 
 Use as ferramentas nativas — nunca bash para escrever arquivos de texto:
-- `Write` — para `map.json`, `context.md`, `.ai-project`, `README.md`, `.gitignore`
+- `Write` — para `{slug}-map.json`, `{slug}-context.md`, `.ai-project`, `README.md`, `.gitignore`
 - `Bash` — apenas para `mkdir`, copiar boilerplate, `git init`, `restore/install`
 
 Para criar a estrutura do map:

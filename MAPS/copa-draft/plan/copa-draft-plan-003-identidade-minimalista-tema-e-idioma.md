@@ -1,7 +1,7 @@
 # Plano de Execução: Identidade Minimalista, Tema Claro/Escuro e Multi-idioma (PT/EN/ES)
 
 ## Informações
-- **PRD Relacionado**: prd/PRD_003_TBD_IdentidadeMinimalistaTemaEIdioma.md
+- **PRD Relacionado**: prd/copa-draft-prd-003-tbd-identidade-minimalista-tema-e-idioma.md
 - **Repositório(s)**: `game` (C:/Projects/Personal/copa-draft)
 - **Domínio(s)**: ui, engine, achievements, store
 - **Branch Base**: main
@@ -552,7 +552,7 @@ Aplicar o refino visual minimalista geral consumindo os tokens e chaves já exis
 - [ ] `node tests/i18n.test.js` passando (se criado)
 - [ ] Preview estático sem erros de console (`python3 -m http.server 8000`)
 
-### Padrões de Código (context.md — bloqueadores absolutos)
+### Padrões de Código (copa-draft-context.md — bloqueadores absolutos)
 - [ ] Nenhum número mágico fora de `config.js`
 - [ ] Atributos vindos de `lib/derive.js` (não escritos à mão)
 - [ ] Componentes novos expostos em `window` e `<script>` em ordem no `index.html`
@@ -648,9 +648,9 @@ Aplicar o refino visual minimalista geral consumindo os tokens e chaves já exis
 
 ## DOCUMENTAÇÃO DE REFERÊNCIA
 
-- **PRD**: prd/PRD_003_TBD_IdentidadeMinimalistaTemaEIdioma.md
-- **Contexto do Projeto**: MAPS/copa-draft/context.md
-- **Arquitetura/Padrões**: context.md (design system, padrões frontend, checklist de code review)
+- **PRD**: prd/copa-draft-prd-003-tbd-identidade-minimalista-tema-e-idioma.md
+- **Contexto do Projeto**: MAPS/copa-draft/copa-draft-context.md
+- **Arquitetura/Padrões**: copa-draft-context.md (design system, padrões frontend, checklist de code review)
 - **Código relacionado**: `lib/engine.js`, `lib/i18n.js` (novo), `config.js`, `app.jsx`, `lib/store.js`, `lib/derive.js`, `lib/achievements.js`, `ui/components.jsx`, `styles/colors_and_type.css`, `styles/kit.css`, `game.css`, `tests/_shim.js`, `tests/engine.test.js`
 
 ---
@@ -690,7 +690,7 @@ Após cada etapa concluída:
 ## OBSERVAÇÕES
 
 1. **Implementar uma etapa por vez** — garantir testes/preview OK antes de avançar
-2. **Seguir os padrões do projeto** — ver context.md (bloqueadores absolutos)
+2. **Seguir os padrões do projeto** — ver copa-draft-context.md (bloqueadores absolutos)
 3. **Code review contínuo** — usar `/code-review` após cada etapa
 4. **Etapas 1 e 2 são independentes** entre si — podem ser feitas em paralelo; tudo a partir da 3 depende delas
 

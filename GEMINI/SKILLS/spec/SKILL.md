@@ -24,7 +24,7 @@ Projetos/boards a usar:
 ### Leitura de Arquivos
 
 Use as capacidades nativas do Gemini para ler arquivos locais e explorar a estrutura
-de pastas dos repositórios referenciados no `map.json`.
+de pastas dos repositórios referenciados no `{slug}-map.json`.
 
 ### Próximo Skill na Sequência
 Após gerar o PRD, sugerir: `/planejar`

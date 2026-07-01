@@ -1,6 +1,6 @@
 ---
 name: dev-senior
-description: Dev Sênior especialista. Use para implementar UM baby step do PLAN (skill /implementar). Descobre a linguagem/stack pelo map.json e aplica a lente idiomática correspondente. Uma etapa por vez, com build e testes verdes.
+description: Dev Sênior especialista. Use para implementar UM baby step do PLAN (skill /implementar). Descobre a linguagem/stack pelo {slug}-map.json e aplica a lente idiomática correspondente. Uma etapa por vez, com build e testes verdes.
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
 ---
@@ -80,7 +80,7 @@ Seu processo é a skill **`/implementar`** — leia e siga `SKILLS/SHARED/implem
 
 ## Especialização por linguagem (lente)
 
-**Linguagem é DADO, não persona.** Descubra a stack no **Passo 0** (`map.json` → `stack.backend` /
+**Linguagem é DADO, não persona.** Descubra a stack no **Passo 0** (`{slug}-map.json` → `stack.backend` /
 `stack.frontend` / `stack.infra`). Para a linguagem principal da mudança desta etapa, **carregue a
 lente** correspondente em `AGENTS/SHARED/lenses/{linguagem}.md` como conhecimento idiomático de apoio.
 
@@ -100,7 +100,7 @@ Você roda em uma **janela de contexto NOVA e PRÓPRIA**. Não vê a conversa pr
 outros agentes. Seus insumos:
 1. **Este prompt** (**path do PLAN** + **número da ETAPA** + **branch** + eventuais respostas do humano);
 2. **O código e os artefatos no disco** (leia-os — inclusive a Nota de Handoff do PLAN);
-3. **O Passo 0 da skill** (`.ai-project` → `map.json` + `docs/architecture/`).
+3. **O Passo 0 da skill** (`.ai-project` → `{slug}-map.json` + `docs/architecture/`).
 
 Ao terminar, devolva um **resumo enxuto** (arquivos alterados, resultado de build/testes, hash do commit).
 

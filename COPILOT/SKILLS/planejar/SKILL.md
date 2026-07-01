@@ -1,6 +1,6 @@
 ---
 name: planejar
-description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via map.json e todos os docs/ do projeto, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
+description: Cria plano de execução técnico detalhado baseado em PRD existente. Lê contexto via {slug}-map.json e todos os docs/ do projeto, atualiza repositório(s), explora código profundamente por camada, identifica componentes técnicos com paths completos, quebra implementação em baby steps independentes e gera arquivo PLAN completo.
 ---
 
 # Skill: Planejar (Criar Plano de Execução)
@@ -21,7 +21,7 @@ Leia e siga: `SKILLS/SHARED/planejar.md`
 ### Leitura de Arquivos e Exploração de Código
 
 Use as ferramentas nativas do Copilot CLI — nunca powershell para leitura de arquivos:
-- `view` — ler arquivos individuais (PRD, map.json, arquivos de código)
+- `view` — ler arquivos individuais (PRD, {slug}-map.json, arquivos de código)
 - `glob` — listar estrutura de pastas e encontrar arquivos por padrão
 - `grep` — buscar padrões no código (nome de entidade, handlers, etc.)
 

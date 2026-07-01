@@ -14,8 +14,8 @@ e configura o arquivo `.ai-project` em cada repositório local informado.
 - Coleta informações do projeto via perguntas guiadas em blocos
 - Deriva o slug automaticamente a partir do nome do projeto
 - Suporta múltiplos repositórios por projeto
-- Cria `MAPS/{slug}/map.json` preenchido com tudo que foi coletado
-- Cria `MAPS/{slug}/context.md` com estrutura padrão (seções opcionais preenchidas se o dev fornecer)
+- Cria `MAPS/{slug}/{slug}-map.json` preenchido com tudo que foi coletado
+- Cria `MAPS/{slug}/{slug}-context.md` com estrutura padrão (seções opcionais preenchidas se o dev fornecer)
 - Cria as pastas `prd/`, `plan/`, `adr/` dentro do map
 - Cria `.ai-project` nos repositórios locais cujo path existir
 
@@ -127,7 +127,7 @@ Para o primeiro repositório:
 ```
 🗂️ BLOCO 4 — Repositório 1
 
-1. Nome/alias do repositório (chave no map.json):
+1. Nome/alias do repositório (chave no {slug}-map.json):
    [ex: backend, frontend, api, worker]
 
 2. Caminho local completo:
@@ -185,7 +185,7 @@ Se `none`, registrar `tooling` com campos vazios.
 ```
 📝 BLOCO 6 — Contexto do Projeto (Opcional)
 
-Estas informações preencherão o context.md.
+Estas informações preencherão o {slug}-context.md.
 Você pode responder agora ou preencher depois diretamente no arquivo.
 
 1. Visão geral detalhada:
@@ -218,8 +218,8 @@ Exibir resumo de tudo que será criado:
 ✅ Resumo — O que será criado:
 
 📁 MAPS/{slug}/
-   ├── map.json
-   ├── context.md
+   ├── {slug}-map.json
+   ├── {slug}-context.md
    ├── prd/
    ├── plan/
    └── adr/
@@ -244,7 +244,7 @@ Criar as seguintes pastas (com `.gitkeep` se necessário para rastrear no git):
 - `MAPS/{slug}/plan/`
 - `MAPS/{slug}/adr/`
 
-#### 8.2. Criar `map.json`
+#### 8.2. Criar `{slug}-map.json`
 
 Preencher com todos os dados coletados:
 
@@ -292,7 +292,7 @@ Preencher com todos os dados coletados:
 }
 ```
 
-#### 8.3. Criar `context.md`
+#### 8.3. Criar `{slug}-context.md`
 
 Usar o template abaixo, preenchendo as seções com o que foi fornecido no Passo 6.
 Seções não preenchidas devem manter os placeholders do template (comentados com `> A preencher`).
@@ -301,7 +301,7 @@ Seções não preenchidas devem manter os placeholders do template (comentados c
 # Context: {nome do projeto}
 
 > Este arquivo contém o contexto rico do projeto. É a fonte de verdade para as skills de IA.
-> Referencie seções específicas pelo âncora no map.json (ex: `context.md#arquitetura`).
+> Referencie seções específicas pelo âncora no {slug}-map.json (ex: `{slug}-context.md#arquitetura`).
 
 ---
 
@@ -451,8 +451,8 @@ Para cada repositório informado:
 ✅ Projeto "{nome}" criado com sucesso!
 
 📁 Estrutura criada em MAPS/{slug}/:
-   ✅ map.json
-   ✅ context.md
+   ✅ {slug}-map.json
+   ✅ {slug}-context.md
    ✅ prd/
    ✅ plan/
    ✅ adr/
@@ -463,7 +463,7 @@ Para cada repositório informado:
    ⚠️  {path3} — caminho não encontrado, configure manualmente
 
 📝 Próximos passos:
-   1. Complete as seções marcadas com "> A preencher" em MAPS/{slug}/context.md
+   1. Complete as seções marcadas com "> A preencher" em MAPS/{slug}/{slug}-context.md
    2. Em qualquer repositório do projeto, invoque /spec para criar seu primeiro PRD
 ```
 
@@ -472,7 +472,7 @@ Para cada repositório informado:
 ## Regras
 
 - O slug deve ser derivado automaticamente — nunca perguntar diretamente ao dev
-- Campos opcionais com valor vazio geram strings vazias `""` ou arrays `[]` no `map.json`
-- O `context.md` nunca deve ter seções em branco — use placeholders `> A preencher` nas seções não fornecidas
-- Nunca sobrescrever um `map.json` existente sem confirmação explícita do dev
+- Campos opcionais com valor vazio geram strings vazias `""` ou arrays `[]` no `{slug}-map.json`
+- O `{slug}-context.md` nunca deve ter seções em branco — use placeholders `> A preencher` nas seções não fornecidas
+- Nunca sobrescrever um `{slug}-map.json` existente sem confirmação explícita do dev
 - Se `MAPS/{slug}/` já existir, avisar o dev e perguntar se deseja prosseguir (pode ser uma reconfiguração)

@@ -40,7 +40,7 @@ SHARED da sua fase. É análoga ao `start-project`, que também reusa skills SHA
 
 ### Passo 0: Carregar Contexto e Confirmar Escopo
 
-**0.1.** Identificar projeto ativo (`.ai-project`) e ler `map.json` + `context.md` (igual às demais skills).
+**0.1.** Identificar projeto ativo (`.ai-project`) e ler `{slug}-map.json` + `{slug}-context.md` (igual às demais skills).
 
 **0.2.** Confirmar com o dev o ponto de entrada:
 

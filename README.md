@@ -42,9 +42,13 @@ Cada skill tem uma lógica central e adapters por ferramenta:
 
 ### 2. Maps
 
-O map é o "appsettings" de cada projeto. Contém:
-- **`map.json`:** config estruturada — repos, stack, paths, boilerplates, links para docs
-- **`context.md`:** prosa rica — arquitetura, padrões, glossário, integrações
+O map é o "appsettings" de cada projeto, em `MAPS/{slug}/`. Contém:
+- **`{slug}-map.json`:** config estruturada — repos, stack, paths, boilerplates, links para docs
+- **`{slug}-context.md`:** prosa rica — arquitetura, padrões, glossário, integrações
+
+Os arquivos levam o slug do projeto no nome (não apenas `map.json`/`context.md`) porque o
+repositório também funciona como vault do Obsidian — sem o prefixo, todo projeto teria um
+arquivo de nome idêntico, impossível de diferenciar na busca rápida ou no grafo.
 
 As skills **nunca** têm contexto de projeto embutido. Elas leem o map do projeto ativo antes de agir.
 
@@ -70,7 +74,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `planejar` | `/planejar` | Cria um PLAN de execução a partir de um PRD |
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
-| `setup-project` | `/setup-project` | Cria novo projeto no ai-flow (map.json, context.md, .ai-project) |
+| `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
 | `feature-workflow` | `/feature-workflow` | Orquestra o ciclo por feature delegando a cada agente por papel (PM → Arquiteto → Dev → Tech Lead) com gates humanos |
 
@@ -112,7 +116,7 @@ As skills em `MCP/` são agnósticas de cliente e geram configuração para Clau
 Para configurar:
 1. Certifique-se de ter o projeto ativo configurado (`.ai-project`)
 2. Invoque a skill correspondente: `/setup-mcp-azure-devops`
-3. Siga o processo guiado — a skill lê o `map.json`, gera uma especificação MCP portável e aplica no cliente escolhido
+3. Siga o processo guiado — a skill lê o `{slug}-map.json`, gera uma especificação MCP portável e aplica no cliente escolhido
 
 Consulte `MCP/README.md` e `MCP/CLIENTS.md` para mais detalhes.
 
@@ -120,9 +124,10 @@ Consulte `MCP/README.md` e `MCP/CLIENTS.md` para mais detalhes.
 
 ## Adicionando um Novo Projeto
 
-1. Copie `MAPS/_template/` para `MAPS/{nome-projeto}/`
-2. Preencha `map.json` e `context.md`
-3. Crie `.ai-project` na raiz de cada repositório do projeto
+1. Copie `MAPS/_template/` para `MAPS/{slug}/`
+2. Renomeie `map.json` → `{slug}-map.json` e `context.md` → `{slug}-context.md`
+3. Preencha os dois arquivos
+4. Crie `.ai-project` na raiz de cada repositório do projeto
 
 Consulte `CONVENTIONS.md` para detalhes e regras de nomenclatura.
 

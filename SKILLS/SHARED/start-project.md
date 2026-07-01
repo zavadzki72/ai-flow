@@ -30,8 +30,8 @@ no contexto desta conversa contínua.
 - Registra o projeto no ai-flow invocando o processo de `SKILLS/SHARED/setup-project.md`
 - Faz `git init` no(s) repositório(s) local(is) (com confirmação)
 - Roda `restore/install` da stack escolhida (com confirmação)
-- Gera o PRD_000001_MVP invocando o processo de `SKILLS/SHARED/spec.md`
-- Gera o PLAN_000001_MVP invocando o processo de `SKILLS/SHARED/planejar.md`
+- Gera o {slug}-prd-000001-mvp invocando o processo de `SKILLS/SHARED/spec.md`
+- Gera o {slug}-plan-000001-mvp invocando o processo de `SKILLS/SHARED/planejar.md`
 - Entrega o projeto pronto para `/implementar ETAPA 1`
 
 ### ❌ NÃO FAZ:
@@ -164,7 +164,7 @@ Sem limite duro — se o dev escolher "manter como está", seguir adiante.
 **Capturar ideias futuras:**
 
 Tudo que o dev mencionou e ficou de fora deve ser anotado para virar `MVP_000002+`
-como nota em `context.md` (seção "Roadmap / MVPs Futuros") no Passo 6.
+como nota em `{slug}-context.md` (seção "Roadmap / MVPs Futuros") no Passo 6.
 
 ---
 
@@ -279,7 +279,7 @@ Regras para a proposta:
 
 **Pular esta seção inteiramente se o MVP não tiver persistência** (ex: SPA
 100% client-side, sem backend/DB na stack do Passo 3). Nesse caso, registrar
-em `context.md`: "Sem persistência — estado vive no cliente."
+em `{slug}-context.md`: "Sem persistência — estado vive no cliente."
 
 Caso contrário, derivar entidades candidatas a partir de cada fluxo do
 MVP (Passo 2) e propor um rascunho de schema:
@@ -311,7 +311,7 @@ entidades ou mudar alguma relação?
 ```
 
 Regras:
-- Nomear entidades e campos em inglês (convenção do map.json/código), mas discutir em português.
+- Nomear entidades e campos em inglês (convenção do {slug}-map.json/código), mas discutir em português.
 - Incluir apenas os campos necessários para os fluxos do MVP_000001 — o que sobrou pro roadmap (Passo 2) não precisa de modelagem agora.
 - Se o dev não souber responder algum detalhe técnico (tipo de dado, se é 1:N ou N:N), a IA decide e explica o porquê em 1 linha — não travar esperando uma resposta técnica que o dev não tem.
 - Perguntar explicitamente sobre dados sensíveis aqui (ex: senha, CPF, dados de pagamento) — se houver, marcar o campo com uma nota `(sensível)` para reaproveitar no Passo 5.
@@ -359,7 +359,7 @@ Perguntar em bloco único, mantendo curto — não é uma auditoria exaustiva:
    que já se sabe de cara?
 ```
 
-Capturar as respostas — elas viram a seção de restrições do `context.md` e
+Capturar as respostas — elas viram a seção de restrições do `{slug}-context.md` e
 informam os critérios de aceitação não-funcionais do PRD (Passo 8).
 
 #### 5.3. Glossário
@@ -401,9 +401,9 @@ Como já temos as respostas do Passo 1 e 3, **pular os blocos perguntados** do
 | Bloco 6 (Contexto) | Preencher automaticamente com o que veio do Passo 1-2 |
 
 Confirmar resumo e executar o Passo 8 do `setup-project.md` (criar
-`MAPS/{slug}/`, `map.json`, `context.md`, pastas `prd/plan/adr`, `.ai-project`).
+`MAPS/{slug}/`, `{slug}-map.json`, `{slug}-context.md`, pastas `prd/plan/adr`, `.ai-project`).
 
-**Acréscimo ao context.md gerado:**
+**Acréscimo ao {slug}-context.md gerado:**
 
 O template padrão do `setup-project.md` deixa várias seções como
 "A preencher" — como já temos conteúdo real vindo do brainstorm (Passos 4 e 5),
@@ -434,7 +434,7 @@ substituir os placeholders dessas seções em vez de deixá-los vazios:
 - MVP_000003: [descrição do que ficou de fora 2]
 ```
 
-Nenhuma seção do `context.md` deve sobrar como "A preencher" ao final deste
+Nenhuma seção do `{slug}-context.md` deve sobrar como "A preencher" ao final deste
 passo, exceto `## Padrões Backend` / `## Padrões Frontend` (esses só ganham
 conteúdo real conforme o código é escrito — natural ficarem abertos aqui).
 
@@ -513,7 +513,7 @@ Se o boilerplate não tiver manifestos, pular este passo.
 
 ---
 
-### Passo 8: Gerar PRD_000001_MVP
+### Passo 8: Gerar {slug}-prd-000001-mvp
 
 **Delegar para `SKILLS/SHARED/spec.md` em modo "MVP guiado".**
 
@@ -530,25 +530,25 @@ Numeração: usar `000001` (zero-padded a 6 dígitos para indicar que é o prime
 MVP — convenção desta skill). Os PRDs futuros (criados via `/spec`) podem
 seguir a numeração regular do projeto.
 
-Arquivo gerado: `MAPS/{slug}/prd/PRD_000001_MVP.md`
+Arquivo gerado: `MAPS/{slug}/prd/{slug}-prd-000001-mvp.md`
 
 Executar o processo completo de `spec.md` (incluindo critérios de aceitação BDD,
 fluxos de dados, etc.) mas evitar redundância de perguntas que já foram feitas.
 
 ---
 
-### Passo 9: Gerar PLAN_000001_MVP
+### Passo 9: Gerar {slug}-plan-000001-mvp
 
 **Delegar para `SKILLS/SHARED/planejar.md`.**
 
-- PRD base: `MAPS/{slug}/prd/PRD_000001_MVP.md` (do Passo 8)
+- PRD base: `MAPS/{slug}/prd/{slug}-prd-000001-mvp.md` (do Passo 8)
 - Repositórios: já criados e prontos no Passo 7
 - Arquitetura e modelo de dados: já definidos no Passo 4 — usar como insumo direto
 
 Executar o processo completo de `planejar.md`:
 - Passo 4 (Exploração técnica) — em projeto novo, a "exploração" é leve: a arquitetura e o modelo de dados já vêm prontos do Passo 4 desta skill; só confirma a estrutura física do boilerplate/bootstrap
 - Passo 6 (Baby steps) — quebrar o MVP em etapas pequenas
-- Passo 7 (Gerar arquivo) — salvar como `MAPS/{slug}/plan/PLAN_000001_MVP.md`
+- Passo 7 (Gerar arquivo) — salvar como `MAPS/{slug}/plan/{slug}-plan-000001-mvp.md`
 
 **HARD STOP do `planejar.md` se aplica aqui também:** ao final, NÃO implementar.
 
@@ -561,11 +561,11 @@ Executar o processo completo de `planejar.md`:
 
 📁 Estrutura ai-flow:
    MAPS/{slug}/
-   ├── map.json
-   ├── context.md       (arquitetura, modelo de dados, integrações,
+   ├── {slug}-map.json
+   ├── {slug}-context.md       (arquitetura, modelo de dados, integrações,
    │                      restrições não-funcionais e roadmap já preenchidos)
-   ├── prd/PRD_000001_MVP.md
-   ├── plan/PLAN_000001_MVP.md
+   ├── prd/{slug}-prd-000001-mvp.md
+   ├── plan/{slug}-plan-000001-mvp.md
    ├── adr/
    └── ...
 
@@ -582,7 +582,7 @@ Executar o processo completo de `planejar.md`:
    /implementar ETAPA 1
 
 📝 Quando o MVP_000001 estiver rodando:
-   • Use /spec pra criar o PRD do próximo incremento (MVP_000002 já está em context.md)
+   • Use /spec pra criar o PRD do próximo incremento (MVP_000002 já está em {slug}-context.md)
    • Use /planejar pra gerar o PLAN
 ```
 
@@ -594,7 +594,7 @@ Executar o processo completo de `planejar.md`:
 - **Não criar repositório remoto.** Apenas `git init` local. Push manual ou skill futura.
 - **Confirmar antes de comandos pesados.** `restore`, `install`, `git init` sempre passam por confirmação.
 - **MVP_000001 é uma convenção desta skill.** Numeração `000001` zero-padded é exclusiva do MVP inicial; PRDs/PLANs futuros usam a numeração regular do projeto (`001`, `002`...).
-- **Roadmap em context.md.** Ideias que ficaram de fora do MVP_000001 viram bullets em `## Roadmap / MVPs Futuros` no `context.md`, não PRDs vazios.
+- **Roadmap em {slug}-context.md.** Ideias que ficaram de fora do MVP_000001 viram bullets em `## Roadmap / MVPs Futuros` no `{slug}-context.md`, não PRDs vazios.
 - **Propor antes de perguntar em aberto.** Nos Passos 4 e 5, a IA sempre chega com uma proposta concreta (arquitetura, entidades, integrações) baseada no que já foi dito — nunca um campo vazio. O dev corrige.
 - **Modelo de dados é opcional, não pulado por padrão.** Só pular o Passo 4.2 quando o MVP genuinamente não tiver persistência (SPA client-side, sem stack de backend/DB definida no Passo 3).
 - **Pular o que já foi perguntado.** Ao delegar para `setup-project`/`spec`/`planejar`, não repetir perguntas cujas respostas já foram capturadas.
@@ -617,13 +617,13 @@ Padrão/camadas + entidades/tabelas definidos
    ↓ (Passo 5 — integrações + restrições não-funcionais + glossário)
 Integrações, NFRs e termos de domínio capturados
    ↓ (Passo 6 — delega para setup-project.md)
-MAPS/{slug}/ criado + .ai-project (context.md já rico, sem placeholders)
+MAPS/{slug}/ criado + .ai-project ({slug}-context.md já rico, sem placeholders)
    ↓ (Passo 7 — bootstrap físico)
 Pastas locais + boilerplate + git init + deps
    ↓ (Passo 8 — delega para spec.md)
-PRD_000001_MVP.md
+{slug}-prd-000001-mvp.md
    ↓ (Passo 9 — delega para planejar.md)
-PLAN_000001_MVP.md
+{slug}-plan-000001-mvp.md
    ↓ (Passo 10 — entrega)
 "/implementar ETAPA 1"
 ```
