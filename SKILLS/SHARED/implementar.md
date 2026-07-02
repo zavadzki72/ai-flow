@@ -111,13 +111,20 @@ Prosseguir com implementação?
 
 ---
 
-### Passo 3: Preparar Ambiente
+### Passo 3: Preparar Ambiente (Git Worktree — OBRIGATÓRIO)
+
+**Por quê:** duas sessões de orquestrador podem estar ativas no mesmo projeto ao mesmo tempo (duas
+rodadas de `/feature-workflow`, ou este `/implementar` rodando enquanto um `/test-e2e` testa outra
+branch). Se ambas fizerem `git checkout` no mesmo diretório, uma pisa no working tree da outra.
+**Cada branch trabalhada vive em seu próprio `git worktree` — nunca no clone principal.** Ver
+`CONVENTIONS.md` § Git Worktree para a regra completa.
 
 **3.1. Identificar repositório**
 
-Cruzar o(s) repositório(s) do PLAN com `map.repositories` para obter o path local.
+Cruzar o(s) repositório(s) do PLAN com `map.repositories` para obter `path` e, se definido,
+`worktrees-path` (senão usar o padrão `{path}-worktrees/`).
 
-**3.2. Atualizar repositório**
+**3.2. Atualizar o clone principal (fetch apenas — nunca checkout aqui)**
 
 ```bash
 cd {repo.path}
@@ -135,24 +142,39 @@ git fetch origin
 Informe o nome: (ex: feature/nome-da-feature)
 ```
 
-Após o dev informar, verificar e fazer checkout:
+**3.4. Criar ou reutilizar o worktree**
+
+Calcular `{worktree.path} = {worktrees-path}/{branch-slug}` (branch com `/` trocado por `-`).
 
 ```bash
-cd {repo.path}
+# Já existe um worktree para esta branch (retomando trabalho)?
+git -C {repo.path} worktree list
 
-# Se branch existe localmente:
-git checkout {branch}
+# Se não existe — branch já existe localmente:
+git -C {repo.path} worktree add "{worktree.path}" {branch}
 
-# Se existe apenas no remoto:
-git checkout -b {branch} origin/{branch}
+# Se não existe — branch só existe no remoto:
+git -C {repo.path} worktree add "{worktree.path}" -b {branch} origin/{branch}
 
-# Se não existe:
-git checkout -b {branch}
+# Se não existe — branch nova:
+git -C {repo.path} worktree add "{worktree.path}" -b {branch}
 ```
 
-**3.4. Verificar working tree**
+**Se o Git recusar** com `branch already checked out at ...`: a branch já está em uso por **outro
+worktree/orquestrador rodando agora**. Não force — informe ao dev:
+```
+⚠️ A branch "{branch}" já está em uso em outro worktree ({path indicado pelo Git}).
+Provavelmente outra sessão de /implementar ou /feature-workflow está trabalhando nela agora.
+
+Escolha outra branch ou aguarde a outra sessão terminar.
+```
+
+**A partir daqui, todas as operações rodam dentro de `{worktree.path}` — nunca mais em `{repo.path}`.**
+
+**3.5. Verificar working tree**
 
 ```bash
+cd {worktree.path}
 git status --porcelain
 ```
 
@@ -173,11 +195,11 @@ Qual opção?
 
 Aguardar resposta e executar a ação escolhida.
 
-**3.5. Confirmar ambiente:**
+**3.6. Confirmar ambiente:**
 ```
 ✅ Ambiente Preparado!
 
-📁 Repositório: {repo.path}
+📁 Worktree: {worktree.path}
 🌿 Branch: {branch}
 📊 Status: working tree clean
 
@@ -203,8 +225,8 @@ Buscar arquivos do mesmo tipo e domínio para entender o padrão exato adotado n
 
 ```bash
 # Adaptar o padrão de busca conforme a stack (docs/architecture/)
-# Exemplos genéricos:
-find {repo.path} -name "*{Tipo}*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "*/.git/*"
+# Exemplos genéricos — sempre dentro do worktree, nunca do clone principal:
+find {worktree.path} -name "*{Tipo}*" -not -path "*/bin/*" -not -path "*/obj/*" -not -path "*/.git/*"
 ```
 
 **Ler os arquivos encontrados** para entender:
@@ -359,7 +381,7 @@ Confirmar commit? (s/n)
 Se confirmado:
 
 ```bash
-cd {repo.path}
+cd {worktree.path}
 
 # Adicionar apenas arquivos desta etapa — nunca git add -A sem verificar
 git add {arquivo1} {arquivo2} {arquivoDeTeste}
@@ -479,7 +501,8 @@ Próximas etapas pendentes:
 ### ✅ FAZ:
 - Carrega contexto via `{slug}-map.json` e `docs/architecture/` antes de escrever código
 - Lê PLAN e verifica dependências entre etapas
-- Atualiza repositório e gerencia branch (cria ou usa existente)
+- Cria ou reutiliza um **git worktree isolado por branch** (nunca checkout no clone principal —
+  evita colidir com outro orquestrador trabalhando no mesmo projeto)
 - Verifica working tree antes de implementar
 - Lê código similar existente para replicar o estilo do projeto
 - Implementa exatamente o que está no PLAN, seguindo `docs/architecture/`

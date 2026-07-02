@@ -46,6 +46,29 @@ Usar Glob para listar e ler **todos** os arquivos `.md` de:
 - As ferramentas de automação de browser (Playwright MCP) estão disponíveis nesta sessão? Se não,
   informar o dev e parar — **sem** subir containers à toa.
 
+**0.5. Resolver Worktree da Branch (OBRIGATÓRIO)**
+
+Mesma regra do `/implementar` (ver `CONVENTIONS.md` § Git Worktree): o teste E2E precisa do código
+real da branch no disco para subir o ambiente, então **nunca roda contra o clone principal**
+(`repositories.{repo}.path`) — sempre contra um `git worktree` dedicado à branch.
+
+```bash
+# Já existe um worktree para esta branch (ex.: criado pelo /implementar)?
+git -C {repo.path} worktree list
+```
+
+- **Se já existe** (caso comum — o `/implementar` que terminou o PLAN já criou um): **reutilizar**.
+- **Se não existe** (ex.: QA rodando isolado, sem `/implementar` nesta sessão): criar um.
+```bash
+cd {repo.path}
+git fetch origin
+git worktree add "{worktree.path}" {branch}
+```
+- **Se o Git recusar** (`branch already checked out at ...`): outro processo está usando a branch
+  agora — informar o dev e parar, igual ao `/implementar`.
+
+A partir daqui, **todas as operações de disco/docker rodam em `{worktree.path}`**.
+
 ---
 
 ### Passo 1: Coletar PRD, PLAN e Branch
@@ -131,7 +154,7 @@ Não seguir para o Passo 4 sem confirmação — evita rodar (e derrubar) ambien
 ### Passo 4: Subir Ambiente Local
 
 ```bash
-cd {environments.local.compose-context ou repo.path}
+cd {worktree.path}
 docker compose -f {environments.local.compose-path} up -d
 ```
 
@@ -196,11 +219,15 @@ achado à imagem exata.
 **Sempre executar**, mesmo se o Passo 4 ou o Passo 5 falharem/lançarem erro:
 
 ```bash
+cd {worktree.path}
 docker compose -f {environments.local.compose-path} down -v
 ```
 
 Ou o comando de `environments.local.teardown-command`, se definido. Confirmar que as portas foram
 liberadas antes de seguir para o relatório.
+
+**Nota:** derrubar o ambiente Docker é incondicional; **remover o worktree não é** — mesma regra do
+`/implementar` (o dev decide quando, tipicamente depois do merge).
 
 ---
 
@@ -343,6 +370,8 @@ Evidências: X screenshots capturados
 ### ✅ FAZ:
 - Carrega contexto via `{slug}-map.json` (incluindo `environments.local`) e `docs/`
 - Verifica pré-requisitos (ambiente configurado, MCP de browser disponível) antes de agir
+- Reutiliza ou cria o **git worktree** da branch testada (nunca roda contra o clone principal —
+  evita colidir com outro orquestrador trabalhando no mesmo projeto)
 - Deriva cenários de teste do PRD (critérios de aceitação) e do diff (impacto/regressão)
 - Confirma o Plano de Teste com o dev antes de subir qualquer ambiente
 - Sobe o ambiente local via Docker Compose e aguarda healthcheck

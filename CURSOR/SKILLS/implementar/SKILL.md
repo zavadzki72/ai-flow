@@ -35,30 +35,41 @@ Prefira:
 
 Use o terminal integrado do Cursor para build, testes e git. Ver `docs/architecture/commands.md` ou `{slug}-context.md#comandos` do projeto ativo para os comandos exatos da stack.
 
-No Windows, adapte comandos do SHARED para PowerShell:
+### Git Worktree (Obrigatório)
+
+**Nunca faça checkout no clone principal.** Crie ou reutilize um worktree por branch (ver
+`CONVENTIONS.md` § Git Worktree). No Windows, adapte para PowerShell:
 ```powershell
-# Verificar working tree
+# Clone principal: só fetch, nunca checkout
 Set-Location "{repo.path}"
+git fetch origin
+
+# Já existe worktree para esta branch?
+git worktree list
+
+# Não existe — branch já existe localmente:
+git worktree add "{worktree.path}" {branch}
+
+# Não existe — branch só existe no remoto:
+git worktree add "{worktree.path}" -b {branch} origin/{branch}
+
+# Não existe — branch nova:
+git worktree add "{worktree.path}" -b {branch}
+```
+Se o Git recusar com `branch already checked out at ...`, outra sessão está usando a branch agora —
+informe o dev e pare, não force.
+
+Todas as operações seguintes rodam em `{worktree.path}`:
+```powershell
+Set-Location "{worktree.path}"
 git status --porcelain
-
-# Checkout de branch existente
-Set-Location "{repo.path}"
-git checkout {branch}
-
-# Criar nova branch
-Set-Location "{repo.path}"
-git checkout -b {branch}
-
-# Branch a partir do remoto
-Set-Location "{repo.path}"
-git checkout -b {branch} origin/{branch}
 ```
 
 Antes de qualquer `git add`, mostrar ao dev os arquivos que serão incluídos.
 
 Para commit, adicionar apenas arquivos específicos:
 ```powershell
-Set-Location "{repo.path}"
+Set-Location "{worktree.path}"
 git add "{arquivo1}" "{arquivo2}"
 git status
 git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature`n`nCo-Authored-By: Cursor <noreply@cursor.com>"

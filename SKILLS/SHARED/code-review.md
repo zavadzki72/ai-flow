@@ -111,6 +111,9 @@ Status: ✅ PRD 100% atendido / ⚠️ Parcialmente atendido / ❌ Não atendido
 
 ### Passo 4: Identificar Arquivos Alterados
 
+> Este passo **não precisa de git worktree** (ver `CONVENTIONS.md` § Git Worktree): `git diff` só
+> compara duas referências, não faz checkout nem altera o working tree do clone principal.
+
 ```bash
 cd {repo.path}
 

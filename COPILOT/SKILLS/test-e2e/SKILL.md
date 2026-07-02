@@ -20,10 +20,22 @@ Leia e siga: `SKILLS/SHARED/test-e2e.md`
 Verificar se um MCP de automação de browser (ex: Playwright MCP) está configurado no Copilot CLI
 **antes** de subir qualquer ambiente. Se não estiver, orientar o dev a configurar e parar.
 
+### Git Worktree (Obrigatório)
+
+**Nunca suba o ambiente contra o clone principal.** Resolva o worktree da branch antes de subir o
+ambiente (ver `CONVENTIONS.md` § Git Worktree):
+```powershell
+Set-Location "{repo.path}"
+git worktree list                                              # já existe (ex.: do /implementar)?
+git worktree add "{worktree.path}" {branch}                     # se não existe
+```
+Se o Git recusar com `branch already checked out at ...`, outra sessão está usando a branch agora —
+informe o dev e pare, não force.
+
 ### Subir/Derrubar Ambiente via PowerShell
 
 ```powershell
-Set-Location "{repo.path}"
+Set-Location "{worktree.path}"
 docker compose -f {environments.local.compose-path} up -d
 docker compose -f {environments.local.compose-path} down -v
 ```

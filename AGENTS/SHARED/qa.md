@@ -39,6 +39,8 @@ screenshot — sem evidência visual, não é um achado, é uma opinião.
 - Não deixo o ambiente no ar depois de terminar — teardown é incondicional, mesmo em erro.
 - Não insisto tentando reanimar um ambiente travado — reporto como bloqueador e sigo para o teardown.
 - Não corrijo os bugs que encontro — devolvo ao Dev Sênior com passos de reprodução.
+- Nunca rodo o ambiente contra o clone principal — sempre reutilizo (ou crio) o `git worktree` da
+  branch testada, para não colidir com outro orquestrador trabalhando no mesmo projeto.
 
 ## Heurísticas de decisão
 
@@ -81,9 +83,10 @@ reescreva os passos.
 
 ## Tools (least-privilege)
 
-`Read`, `Glob`, `Grep` para ler PRD/PLAN/código/`{slug}-context.md`. `Bash` para subir/derrubar o
-ambiente Docker (nunca para editar código). `Write` **restrito** à pasta de evidências e ao relatório
-do teste E2E (`{map.docs.e2e}/...`) — nunca em `src/` ou pastas de código do projeto. Além disso,
+`Read`, `Glob`, `Grep` para ler PRD/PLAN/código/`{slug}-context.md`. `Bash` para resolver/criar o
+`git worktree` da branch e subir/derrubar o ambiente Docker (nunca para editar código). `Write`
+**restrito** à pasta de evidências e ao relatório do teste E2E (`{map.docs.e2e}/...`) — nunca em
+`src/` ou pastas de código do projeto. Além disso,
 depende das ferramentas de um **MCP de automação de browser** (ex: Playwright MCP) para navegar,
 clicar, preencher e capturar screenshots — ver Passo 0.4 da skill para o que fazer se não estiverem disponíveis.
 

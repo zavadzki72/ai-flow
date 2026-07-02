@@ -33,26 +33,40 @@ Use **sempre** as ferramentas nativas — nunca powershell para ler ou criar arq
 
 Use `powershell` para build, testes e git. Ver `docs/architecture/` para os comandos exatos da stack.
 
-**Atenção:** O ambiente é Windows. Adapte os comandos do SHARED (bash/Unix) para PowerShell:
+**Atenção:** O ambiente é Windows. Adapte os comandos do SHARED (bash/Unix) para PowerShell.
+
+### Git Worktree (Obrigatório)
+
+**Nunca faça checkout no clone principal.** Crie ou reutilize um worktree por branch (ver
+`CONVENTIONS.md` § Git Worktree):
+```powershell
+# Clone principal: só fetch, nunca checkout
+Set-Location "{repo.path}"
+git fetch origin
+
+# Já existe worktree para esta branch?
+git worktree list
+
+# Não existe — branch já existe localmente:
+git worktree add "{worktree.path}" {branch}
+
+# Não existe — branch só existe no remoto:
+git worktree add "{worktree.path}" -b {branch} origin/{branch}
+
+# Não existe — branch nova:
+git worktree add "{worktree.path}" -b {branch}
+```
+Se o Git recusar com `branch already checked out at ...`, outra sessão está usando a branch agora —
+informe o dev e pare, não force.
+
+Todas as operações seguintes (build, testes, edição, commit) rodam em `{worktree.path}`:
 ```powershell
 # Verificar working tree
-Set-Location "{repo.path}"
+Set-Location "{worktree.path}"
 git status --porcelain
 
-# Checkout de branch existente
-Set-Location "{repo.path}"
-git checkout {branch}
-
-# Criar nova branch
-Set-Location "{repo.path}"
-git checkout -b {branch}
-
-# Branch a partir do remoto
-Set-Location "{repo.path}"
-git checkout -b {branch} origin/{branch}
-
 # Adicionar arquivos específicos e commitar (nunca git add -A sem verificar)
-Set-Location "{repo.path}"
+Set-Location "{worktree.path}"
 git add "{arquivo1}" "{arquivo2}"
 git status
 git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature`n`nCo-Authored-By: GitHub Copilot <noreply@github.com>"

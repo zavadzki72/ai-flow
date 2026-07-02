@@ -184,6 +184,46 @@ pelo `/start-project` (`000001`, zero-padded a 6 dígitos — ver `start-project
 
 ---
 
+## Git Worktree (Isolamento entre Orquestradores)
+
+**Regra obrigatória:** toda skill que faz `checkout` de uma branch ou executa a aplicação a partir
+do código no disco (`/implementar`, `/test-e2e`) **nunca opera no clone principal**
+(`repositories.{repo}.path`). Sempre cria ou reutiliza um `git worktree` dedicado à branch.
+
+### Por quê
+
+Duas sessões de orquestrador podem estar ativas no mesmo projeto ao mesmo tempo (duas rodadas de
+`/feature-workflow`, ou um `/implementar` rodando enquanto um `/test-e2e` testa outra branch). Se
+ambas fizerem `git checkout` no mesmo diretório, uma pisa no working tree da outra — a branch troca
+por trás, ou mudanças não commitadas se misturam entre os dois processos. Um `git worktree` por
+branch elimina essa classe de colisão: cada branch vive em seu próprio diretório, e o próprio Git
+recusa dar 2 worktrees para a mesma branch (`fatal: branch already checked out`), servindo como
+trava natural contra dois orquestradores disputando a mesma branch.
+
+### Convenção de path
+
+```
+{repositories.{repo}.worktrees-path ou "{path}-worktrees/"}/{branch-slug}
+```
+
+`branch-slug` é a branch com `/` trocado por `-` (ex.: `feature/nome-da-feature` →
+`feature-nome-da-feature`). `worktrees-path` é **opcional** em `map.json` — se ausente, usa o padrão
+`{path}-worktrees/` (irmão do clone principal, fora do repositório em si).
+
+### Regras
+
+- O clone principal (`repositories.{repo}.path`) só recebe `git fetch` — **nunca `git checkout`**.
+- Antes de criar um worktree novo, checar se já existe um para a branch (`git worktree list`) e
+  **reutilizá-lo** — não recriar a cada execução.
+- Se o Git recusar a criação (`branch already checked out at ...`), **não forçar**: informar ao dev
+  que outra sessão está usando a branch agora e parar.
+- Remoção de worktree (`git worktree remove`) **nunca é automática** — mesma regra de nunca fazer
+  push/merge automático. O dev decide quando remover, tipicamente depois do merge.
+- Skills que só leem (`git diff` sem checkout, ex. `/code-review`) **não precisam** de worktree —
+  comparar duas referências não altera o working tree do clone principal.
+
+---
+
 ## Boilerplates
 
 Boilerplates ficam em `BOILERPLATES/BACK/` e `BOILERPLATES/FRONT/`.

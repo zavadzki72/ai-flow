@@ -24,6 +24,13 @@ Sempre ler um arquivo antes de editá-lo.
 Use a capacidade de execução de comandos do Gemini para build, testes e git.
 Consultar `{slug}-context.md#comandos` para os comandos exatos da stack do projeto ativo.
 
+### Git Worktree (Obrigatório)
+
+**Nunca faça checkout no clone principal.** Crie ou reutilize um worktree por branch (Passo 3 da
+skill, ver `CONVENTIONS.md` § Git Worktree) — `git fetch` no clone, `git worktree add` para a
+branch, e todas as operações seguintes rodando dentro do worktree. Se o Git recusar com
+`branch already checked out at ...`, outra sessão está usando a branch agora — informe o dev e pare.
+
 ### Próximos Skills na Sequência
 - Continuar: `/implementar ETAPA N+1`
 - Revisar tudo: `/code-review`

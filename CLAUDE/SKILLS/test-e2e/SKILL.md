@@ -22,10 +22,22 @@ Verificar via `ToolSearch` se as ferramentas `mcp__playwright__*` (ou equivalent
 estão disponíveis **antes** do Passo 0.4 subir qualquer ambiente. Se não estiverem, orientar o dev a
 configurar o MCP e parar.
 
+### Git Worktree (Obrigatório)
+
+**Nunca suba o ambiente contra o clone principal.** Resolva o worktree da branch antes do Passo 4
+(Passo 0.5 da skill, ver `CONVENTIONS.md` § Git Worktree):
+```bash
+git -C {repo.path} worktree list                                    # já existe (ex.: do /implementar)?
+git -C {repo.path} worktree add "{worktree.path}" {branch}          # se não existe
+```
+Se o Git recusar com `branch already checked out at ...`, outra sessão está usando a branch agora —
+informe o dev e pare, não force.
+
 ### Subir/Derrubar Ambiente
 
-Usar `Bash` para os comandos de `environments.local` do `{slug}-map.json`:
+Usar `Bash` para os comandos de `environments.local` do `{slug}-map.json`, sempre a partir de `{worktree.path}`:
 ```bash
+cd {worktree.path}
 docker compose -f {environments.local.compose-path} up -d
 docker compose -f {environments.local.compose-path} down -v
 ```

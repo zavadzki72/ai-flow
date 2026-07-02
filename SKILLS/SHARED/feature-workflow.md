@@ -33,6 +33,12 @@ SHARED da sua fase. É análoga ao `start-project`, que também reusa skills SHA
 5. **Guardrails.** Máx. de consultas por dúvida/fase; "uma etapa por vez" no Dev; nunca swarm autônomo.
 6. **Handoff durável.** Cada fase termina com uma **Nota de Handoff** no artefato; decisões relevantes
    vão para o **log de decisões** (`adr/`). O próximo agente lê isso no Passo 0.
+7. **Isolamento de working tree (OBRIGATÓRIO).** Este orquestrador não define gitflow próprio — quem
+   toca o disco do projeto (`dev-senior` na FASE 3, `qa` no `/test-e2e`) sempre cria ou reutiliza um
+   **git worktree** dedicado à branch, nunca faz checkout no clone principal. É esse mecanismo — não
+   um lock explícito — que permite **duas sessões de `/feature-workflow` (ou uma combinada com
+   `/test-e2e`) atuarem no mesmo projeto ao mesmo tempo** sem uma pisar no working tree da outra; o
+   próprio Git recusa um segundo worktree para a mesma branch. Ver `CONVENTIONS.md` § Git Worktree.
 
 ---
 
@@ -100,8 +106,9 @@ devolver a resposta. Dúvidas técnicas para o humano → apresentar (ask-upfron
 ### Passo 3: FASE 3 — Dev Sênior (`/implementar`) — etapa a etapa
 
 **3.1.** Para **cada** ETAPA do PLAN, delegar ao subagent **`dev-senior`**, passando: **path do PLAN**,
-**número da ETAPA** e **branch**. O agente segue `SKILLS/SHARED/implementar.md`, descobre a stack e
-carrega a lente (`AGENTS/SHARED/lenses/{lang}.md`).
+**número da ETAPA** e **branch**. O agente segue `SKILLS/SHARED/implementar.md` — que resolve
+sozinho o **git worktree** da branch (cria ou reutiliza, nunca no clone principal) —, descobre a
+stack e carrega a lente (`AGENTS/SHARED/lenses/{lang}.md`).
 
 **3.2. Broker.** Ambiguidade no PLAN → **consultar o `arquiteto-senior`**. Decisão do humano
 (nome de branch, conflito git) → apresentar ao humano. **Nunca** o agente resolve conflito git sozinho.

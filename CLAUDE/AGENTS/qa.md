@@ -16,7 +16,10 @@ O processo em si é a skill `/test-e2e` → `SKILLS/SHARED/test-e2e.md`.
   — nunca em `src/` ou pastas de código do projeto.
 - Verifique via `ToolSearch` se um MCP de automação de browser (ex: Playwright MCP) está disponível
   **antes** de subir qualquer ambiente (Passo 0.4 da skill).
-- `Bash` só para `docker compose up`/`down` e comandos de seed — nunca para editar código.
+- **Git worktree obrigatório** (Passo 0.5 da skill): nunca suba o ambiente contra o clone principal
+  — reutilize o worktree já criado pelo `/implementar` ou crie um novo (`git worktree add`). Evita
+  colidir com outro orquestrador trabalhando no mesmo projeto.
+- `Bash` só para resolver o worktree, `docker compose up`/`down` e comandos de seed — nunca para editar código.
 - Criação/derrubada de ambiente conforme `map.environments.local` (ver `CLAUDE/SKILLS/test-e2e/SKILL.md`).
 - **Isolamento:** janela própria — não vê a conversa principal nem o trabalho de outros agentes.
   Consulte `product-manager` (via orquestrador) se um comportamento observado for possivelmente

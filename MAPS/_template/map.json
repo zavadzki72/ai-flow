@@ -20,6 +20,7 @@
       "url": "git@github.com:org/NOME_REPO.git",
       "branch": "develop",
       "boilerplate": "",
+      "worktrees-path": "",
       "contexts": ["palavras", "chave", "que", "identificam", "este", "repo"]
     }
   },

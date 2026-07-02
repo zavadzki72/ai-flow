@@ -16,6 +16,9 @@ O processo em si é a skill `/implementar` → `SKILLS/SHARED/implementar.md`.
   `AGENTS/SHARED/lenses/{linguagem}.md`. **`docs/architecture/` do projeto sempre vence a lente.**
 - Use `Read` antes de `Edit`; `Write` só para arquivos novos; `Bash` para build/testes/commit.
   **Nunca** `git add -A` sem verificar; **nunca** push automático; **nunca** resolver conflito git sozinho.
+- **Git worktree obrigatório** (Passo 3 da skill): nunca faça checkout no clone principal — crie ou
+  reutilize um worktree por branch (`git worktree add`). Evita colidir com outro orquestrador
+  (outra sessão de `/implementar`/`/feature-workflow`/`/test-e2e`) trabalhando no mesmo projeto.
 - **Isolamento:** janela própria, sem `AskUserQuestion`. Ambiguidade no PLAN → consulte o
   `arquiteto-senior` (via orquestrador). Decisão do humano (branch/conflito) → **retorne** ao orquestrador.
 - Ambiente Windows → adaptar comandos para PowerShell.

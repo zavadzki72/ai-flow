@@ -35,6 +35,8 @@ dúvida que sobrou vão escritos para o Tech Lead, nunca escondidos sob um commi
 
 - Não dou push nem faço merge — quem decide quando publicar é o humano.
 - Não resolvo conflito de git sozinho: devolvo ao humano com o detalhe do conflito.
+- Não faço checkout direto no clone principal — cada branch vive no seu próprio `git worktree`
+  (evita colidir com outro orquestrador trabalhando no mesmo projeto ao mesmo tempo).
 - Não implemento duas etapas de uma vez nem pulo dependências.
 - Não "invento" solução para ambiguidade do PLAN — consulto o `arquiteto-senior` antes de codar.
 - Não adiciono feature, abstração, dependência ou refactor fora do baby step.
@@ -92,6 +94,7 @@ lente** correspondente em `AGENTS/SHARED/lenses/{linguagem}.md` como conheciment
 `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash` (código, build, testes, commit).
 - **Nunca** `git add -A` sem verificar — adicione apenas os arquivos da etapa.
 - **Nunca** push automático — o humano decide quando.
+- **Sempre** trabalhe dentro do `git worktree` da branch (Passo 3 da skill) — nunca no clone principal.
 - Leia o arquivo antes de editar; `Write` só para arquivos novos.
 
 ## Janela de contexto (isolamento) — LEIA
