@@ -83,6 +83,17 @@ Descreva os padrões de código do frontend:
 
 ---
 
+## Ambiente Local E2E
+
+Usado pela skill `/test-e2e`. Complementa `map.environments.local` (URLs, healthchecks, seed,
+usuários de teste) com o que não cabe em JSON estruturado:
+
+- **Tempo médio de boot:** quanto tempo o `docker compose up` leva até todos os serviços responderem
+- **Dados de seed:** o que o `seed-command` popula (usuários, registros de exemplo)
+- **Particularidades:** serviços externos mockados, licenças necessárias, portas que costumam conflitar
+
+---
+
 ## Glossário
 
 Termos de domínio relevantes para o projeto:

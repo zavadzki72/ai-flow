@@ -70,6 +70,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | Skill | Trigger | O que faz |
 |-------|---------|-----------|
 | `code-review` | `/code-review` | Revisa código validando PLAN, padrões e boas práticas |
+| `test-e2e` | `/test-e2e` | Sobe o ambiente local (Docker), simula um usuário navegando pela feature e gera relatório com evidências (screenshots) |
 | `implementar` | `/implementar` | Executa uma etapa do PLAN com branch, código, testes e commit |
 | `planejar` | `/planejar` | Cria um PLAN de execução a partir de um PRD |
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
@@ -91,9 +92,12 @@ isolada** e se comunica por consulta + handoff em arquivo. Detalhes em `AGENTS/D
 | `product-manager` | Product Manager / Owner | `/spec` |
 | `arquiteto-senior` | Arquiteto de Software Sênior | `/planejar` |
 | `dev-senior` | Dev Sênior (lê a stack do map + lente de linguagem) | `/implementar` |
+| `qa` | QA Engenheiro de Testes E2E (sobe ambiente, navega via MCP de browser) | `/test-e2e` |
 | `tech-lead` | Tech Lead (guardião de engenharia, read-only) | `/code-review` |
 
 Orquestração: `/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead com gate humano entre artefatos.
+`/test-e2e` roda entre `/implementar` (todas as etapas concluídas) e `/code-review` — ainda fora do
+`/feature-workflow`, disparado manualmente enquanto a integração ao orquestrador não é feita.
 
 **Instalação (Claude Code):** copie os adapters de `CLAUDE/AGENTS/*.md` para `.claude/agents/` do
 repositório (ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**.

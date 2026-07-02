@@ -34,12 +34,27 @@
       "project-key": ""
     }
   },
+  "environments": {
+    "local": {
+      "compose-path": "docker-compose.yml",
+      "services": {
+        "web": { "url": "http://localhost:3000", "healthcheck": "/" },
+        "api": { "url": "http://localhost:5000", "healthcheck": "/health" }
+      },
+      "seed-command": "",
+      "teardown-command": "docker compose down -v",
+      "test-users": [
+        { "role": "admin", "email": "admin@test.local", "password-env": "E2E_ADMIN_PASSWORD" }
+      ]
+    }
+  },
   "docs": {
     "business": "docs/business/",
     "architecture": "docs/architecture/",
     "code-review": "docs/code-review/",
     "prd": "prd/",
     "plan": "plan/",
-    "adr": "adr/"
+    "adr": "adr/",
+    "e2e": "e2e/"
   }
 }

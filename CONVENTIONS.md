@@ -101,6 +101,7 @@ O corpo de um agente contém **apenas**:
 | `product-manager` | `/spec` | Read/Glob/Grep + Write (só `prd/`) |
 | `arquiteto-senior` | `/planejar` | + Write (`plan/`, `adr/`) + Bash (git) |
 | `dev-senior` | `/implementar` | + Edit/Write/Bash (lê a stack do map + lente) |
+| `qa` | `/test-e2e` | Read/Glob/Grep + Bash (docker) + Write (só `e2e/`) + MCP de browser |
 | `tech-lead` | `/code-review` | Read/Glob/Grep + Bash (read-only) |
 
 Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.md`).
@@ -140,6 +141,7 @@ MAPS/{slug}/
   {slug}-context.md    ← contexto em prosa (obrigatório)
   prd/          ← PRDs de features
   plan/         ← PLANs de execução
+  e2e/          ← Relatórios e evidências de teste E2E (/test-e2e)
   adr/          ← Architectural Decision Records
 ```
 
@@ -158,6 +160,11 @@ Siga o template em `MAPS/_template/map.json` (ao copiar, renomear para
 - `repositories` com ao menos um entry com `path`, `branch` e `contexts`
 - `stack` com ao menos `backend` ou `frontend`
 
+`environments.local` é **opcional**, mas obrigatório para usar a skill `/test-e2e` — declara como
+subir o ambiente local via Docker (`compose-path`, `services` com URL e healthcheck de cada um,
+`seed-command`, `teardown-command`) e os usuários de teste (`test-users`, sempre com a senha
+referenciada por `password-env`, **nunca** literal).
+
 ### Nomenclatura de Documentos
 
 Todos os nomes são `kebab-case` minúsculo, prefixados com `{slug}` do projeto.
@@ -168,6 +175,7 @@ Todos os nomes são `kebab-case` minúsculo, prefixados com `{slug}` do projeto.
 | Context | `{slug}-context.md` | `gestao-usuarios-context.md` |
 | PRD | `{slug}-prd-NNN-id-nome-da-feature.md` | `gestao-usuarios-prd-001-tbd-cadastro-de-usuario.md` |
 | PLAN | `{slug}-plan-NNN-nome-da-feature.md` (mesmo NNN do PRD) | `gestao-usuarios-plan-001-cadastro-de-usuario.md` |
+| E2E Report | `{slug}-e2e-NNN-nome-da-feature.md` (mesmo NNN do PRD/PLAN) | `gestao-usuarios-e2e-001-cadastro-de-usuario.md` |
 | ADR | `{slug}-adr-NNN-titulo-da-decisao.md` | `gestao-usuarios-adr-001-escolha-orm.md` |
 
 `id` no PRD é o número do ticket externo (Azure DevOps/Jira) ou `tbd` se não

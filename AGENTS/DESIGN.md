@@ -75,6 +75,7 @@ Mapeamento 1:1 com o que você pediu:
 | **Product Manager / Owner** | `/spec` | Write só em `prd/` |
 | **Arquiteto Sênior** | `/planejar` | Write só em `plan/`, `adr/` |
 | **Dev Sênior** | `/implementar` | Edit / Write / Bash (código) |
+| **QA** (E2E) | `/test-e2e` | Write só em `e2e/` + Bash (docker) + MCP de browser |
 | **Tech Lead** (guardião) | `/code-review` | read-only + Bash só p/ diff e PR |
 
 ---
@@ -475,8 +476,11 @@ Ideias que **não** estavam no pedido, mas fortalecem o design. Marcadas por qua
 6. **`/feature-workflow --resume` (evolução).** Como o estado vive nos arquivos (PRD/PLAN/Notas),
    dá pra retomar do último gate sem recomeçar. Barato e muito útil.
 
-7. **Agente de QA / Testes (evolução — 5º papel).** Estilo BMAD *Test Architect*: separar "escrever
-   testes e validar cenários" do dev. Entra depois de o pipeline dos 4 estar sólido.
+7. ✅ **Agente de QA / Testes (5º papel — adotado em 2026-07-01).** Persona `qa` (`AGENTS/SHARED/qa.md`)
+   + skill `/test-e2e` (`SKILLS/SHARED/test-e2e.md`): sobe o ambiente local via Docker, simula
+   navegação real via MCP de browser e reporta bugs com evidência em screenshot. Roda entre
+   `/implementar` (todas as etapas) e `/code-review`; ainda não integrado ao `/feature-workflow`
+   (ver §14).
 
 8. **`memory: project` no tech-lead e no arquiteto (evolução).** Acumula recorrências/decisões do
    projeto entre execuções — alinhado ao `{slug}-context.md`.
@@ -533,7 +537,8 @@ janela isolada** · **agentes se consultam (request/response) + handoff em arqui
 - Adotar já o `DECISIONS.md`/ADR leve por feature ou só a Nota de Handoff?
 - Gerar `AGENTS.md` por repo (e symlink p/ CLAUDE.md) no `setup-project`/`start-project`.
 - Adapters Gemini/Cursor/Copilot explícitos (quando cobrir além do Claude Code).
-- 5º papel (QA/Testes) e lentes adicionais (python, node, angular…).
+- Integrar `/test-e2e` (papel `qa`) ao `/feature-workflow` como uma 5ª fase entre Dev e Tech Lead.
+- Lentes adicionais (python, node, angular…).
 
 ---
 
