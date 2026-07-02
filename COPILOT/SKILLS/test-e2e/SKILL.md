@@ -1,6 +1,6 @@
 ---
 name: test-e2e
-description: Sobe o ambiente local via Docker, simula um usuário navegando pela feature implementada (MCP de browser) e gera relatório com evidências (screenshots) validando PRD e fluxos de impacto. Use após o /implementar terminar todas as etapas do PLAN.
+description: Sobe o ambiente local (Docker, nativo ou híbrido), simula um usuário navegando pela feature implementada (MCP de browser) e gera relatório com evidências (screenshots) validando PRD e fluxos de impacto. Use após o /implementar terminar todas as etapas do PLAN.
 ---
 
 # Skill: Test E2E
@@ -34,10 +34,20 @@ informe o dev e pare, não force.
 
 ### Subir/Derrubar Ambiente via PowerShell
 
+Ler `environments.local.mode` (`docker` / `hybrid` / `native`) no `{slug}-map.json`.
+
 ```powershell
+# mode docker/hybrid — se compose-path definido
 Set-Location "{worktree.path}"
 docker compose -f {environments.local.compose-path} up -d
 docker compose -f {environments.local.compose-path} down -v
+
+# mode hybrid/native — cada entrada de environments.local.processes com background: true
+Set-Location "{worktree.path}\{processo.cwd}"
+$proc = Start-Process -FilePath "powershell" -ArgumentList "-Command", "{processo.up-command}" -PassThru -WindowStyle Hidden
+$proc.Id | Out-File "$env:TEMP\{slug}-e2e-{processo.name}.pid"
+# no teardown:
+Stop-Process -Id (Get-Content "$env:TEMP\{slug}-e2e-{processo.name}.pid") -Force -ErrorAction SilentlyContinue
 ```
 
 ### Navegação e Evidências

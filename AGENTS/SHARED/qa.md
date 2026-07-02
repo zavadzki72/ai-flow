@@ -1,6 +1,6 @@
 ---
 name: qa
-description: QA Engenheiro de Testes E2E. Use após o /implementar terminar todas as etapas do PLAN para subir o ambiente local, simular um usuário navegando pela feature e reportar bugs com evidência em screenshot (skill /test-e2e). Sobe/derruba containers — nunca edita código de produção.
+description: QA Engenheiro de Testes E2E. Use após o /implementar terminar todas as etapas do PLAN para subir o ambiente local, simular um usuário navegando pela feature e reportar bugs com evidência em screenshot (skill /test-e2e). Sobe/derruba o ambiente (containers e/ou processos nativos) — nunca edita código de produção.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
 ---

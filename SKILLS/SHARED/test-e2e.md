@@ -1,9 +1,10 @@
 # Skill: Test E2E
 
 ## Descrição
-Sobe o ambiente completo do projeto localmente (Docker), simula um usuário humano navegando pela
-feature recém-implementada via automação de browser, valida os critérios de aceitação do PRD e os
-fluxos adjacentes que podem ter sido impactados, e gera um relatório estruturado com evidências
+Sobe o ambiente completo do projeto localmente (Docker, nativo ou híbrido, conforme
+`environments.local.mode` do projeto), simula um usuário humano navegando pela feature recém-
+implementada via automação de browser, valida os critérios de aceitação do PRD e os fluxos
+adjacentes que podem ter sido impactados, e gera um relatório estruturado com evidências
 (screenshots) de tudo que foi testado.
 
 ---
@@ -153,18 +154,34 @@ Não seguir para o Passo 4 sem confirmação — evita rodar (e derrubar) ambien
 
 ### Passo 4: Subir Ambiente Local
 
+Ler `environments.local.mode` e agir conforme o que estiver preenchido — os dois blocos abaixo não
+são mutuamente exclusivos (`mode: hybrid` usa os dois).
+
+**4.1. Se `compose-path` estiver definido** (`mode: docker` ou `hybrid`):
 ```bash
 cd {worktree.path}
 docker compose -f {environments.local.compose-path} up -d
 ```
 
-**4.1. Aguardar healthcheck** de cada serviço em `environments.local.services.*.healthcheck`
-(polling com timeout — padrão 60s por serviço). Se algum serviço não sobe dentro do timeout,
-reportar como **bloqueador de ambiente**, derrubar o que subiu (Passo 7) e interromper.
+**4.2. Para cada entrada de `environments.local.processes`** (`mode: hybrid` ou `native`):
 
-**4.2. Rodar seed**, se `environments.local.seed-command` estiver definido.
+Se `background: true` (comando não retorna sozinho — ex.: dev server), rodar em background e
+**guardar o PID**, necessário para derrubar no Passo 7:
+```bash
+cd {worktree.path}/{processo.cwd}
+nohup {processo.up-command} > /tmp/{slug}-e2e-{processo.name}.log 2>&1 &
+echo $! > /tmp/{slug}-e2e-{processo.name}.pid
+```
+Se `background: false`, rodar o comando normalmente (ele mesmo retorna quando termina de subir).
 
-**4.3. Confirmar ao dev:**
+**4.3. Aguardar healthcheck** de cada serviço em `environments.local.services.*.healthcheck`
+(polling com timeout — padrão 60s por serviço; qualquer resposta 2xx conta, não precisa ser um
+endpoint de health dedicado). Se algum serviço não sobe dentro do timeout, reportar como
+**bloqueador de ambiente**, derrubar o que subiu (Passo 7) e interromper.
+
+**4.4. Rodar seed**, se `environments.local.seed-command` estiver definido.
+
+**4.5. Confirmar ao dev:**
 ```
 ✅ Ambiente no ar!
 
@@ -218,13 +235,21 @@ achado à imagem exata.
 
 **Sempre executar**, mesmo se o Passo 4 ou o Passo 5 falharem/lançarem erro:
 
+**7.1.** Se `compose-path` foi usado:
 ```bash
 cd {worktree.path}
 docker compose -f {environments.local.compose-path} down -v
 ```
+Ou `environments.local.teardown-command`, se definido (tem precedência sobre o comando padrão acima).
 
-Ou o comando de `environments.local.teardown-command`, se definido. Confirmar que as portas foram
-liberadas antes de seguir para o relatório.
+**7.2.** Para cada processo backgroundeado no Passo 4.2, rodar `{processo.down-command}` primeiro
+(se definido — alguns processos precisam de um shutdown mais gracioso que um `kill` direto) e, em
+seguida, matar pelo PID guardado:
+```bash
+kill $(cat /tmp/{slug}-e2e-{processo.name}.pid) 2>/dev/null
+```
+
+Confirmar que as portas foram liberadas antes de seguir para o relatório.
 
 **Nota:** derrubar o ambiente Docker é incondicional; **remover o worktree não é** — mesma regra do
 `/implementar` (o dev decide quando, tipicamente depois do merge).
@@ -343,9 +368,9 @@ Evidências: X screenshots capturados
 
 ## Tratamento de Erros
 
-**Ambiente não sobe (docker compose falha):**
+**Ambiente não sobe (docker compose ou processo nativo falha):**
 - Reportar o erro de boot ao dev
-- Garantir teardown do que eventualmente subiu parcialmente
+- Garantir teardown do que eventualmente subiu parcialmente (containers **e** processos backgroundeados)
 - Não prosseguir para os cenários
 
 **Healthcheck nunca fica verde (timeout):**
@@ -374,7 +399,7 @@ Evidências: X screenshots capturados
   evita colidir com outro orquestrador trabalhando no mesmo projeto)
 - Deriva cenários de teste do PRD (critérios de aceitação) e do diff (impacto/regressão)
 - Confirma o Plano de Teste com o dev antes de subir qualquer ambiente
-- Sobe o ambiente local via Docker Compose e aguarda healthcheck
+- Sobe o ambiente local — Docker Compose, processos nativos ou os dois — e aguarda healthcheck
 - Simula navegação real via MCP de browser, com screenshot em cada passo-chave e em toda falha
 - Deriva ambiente **sempre**, mesmo em caso de falha (finally)
 - Gera relatório estruturado (🔴/🟡/🟢) com evidências linkadas

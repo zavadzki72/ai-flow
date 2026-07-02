@@ -161,9 +161,20 @@ Siga o template em `MAPS/_template/map.json` (ao copiar, renomear para
 - `stack` com ao menos `backend` ou `frontend`
 
 `environments.local` é **opcional**, mas obrigatório para usar a skill `/test-e2e` — declara como
-subir o ambiente local via Docker (`compose-path`, `services` com URL e healthcheck de cada um,
-`seed-command`, `teardown-command`) e os usuários de teste (`test-users`, sempre com a senha
-referenciada por `password-env`, **nunca** literal).
+subir o ambiente local, seja via Docker, nativo (`dotnet run`, `npm run dev`, ...) ou híbrido:
+- `mode`: `docker` | `hybrid` | `native` — indica se `compose-path` sozinho já sobe tudo, se é uma
+  mistura de compose + processos nativos, ou se não há Docker no projeto.
+- `compose-path`: caminho do `docker-compose.yml`, presente quando `mode` é `docker` ou `hybrid`.
+- `processes`: comandos nativos adicionais (ex.: dev server de frontend, API sem Docker). Cada
+  entrada tem `name`, `cwd` (relativo à raiz do worktree), `up-command`, `background` (`true` quando
+  o comando não retorna sozinho — ex. dev server — e precisa ir para background com o PID
+  rastreado para poder ser encerrado depois) e `down-command` (vazio = só mata o processo pelo PID).
+- `services`: URL + `healthcheck` de cada serviço acessível do host, para o polling de prontidão.
+  O `healthcheck` não precisa ser um endpoint dedicado — qualquer path que responda 2xx serve.
+- `seed-command`, `teardown-command`: comandos livres, vazios se não aplicável.
+- `test-users`: usuários de teste, sempre com a senha referenciada por `password-env`, **nunca**
+  literal. Projetos sem login fixo (ex.: guest login) deixam a lista vazia e descrevem o mecanismo
+  em prosa no `{slug}-context.md`.
 
 ### Nomenclatura de Documentos
 

@@ -1,6 +1,6 @@
 ---
 name: test-e2e
-description: Sobe o ambiente local via Docker, simula um usuário navegando pela feature implementada (Playwright MCP) e gera relatório com evidências (screenshots) validando PRD e fluxos de impacto. Use após o /implementar terminar todas as etapas do PLAN.
+description: Sobe o ambiente local (Docker, nativo ou híbrido), simula um usuário navegando pela feature implementada (Playwright MCP) e gera relatório com evidências (screenshots) validando PRD e fluxos de impacto. Use após o /implementar terminar todas as etapas do PLAN.
 ---
 
 # Skill: Test E2E
@@ -35,13 +35,22 @@ informe o dev e pare, não force.
 
 ### Subir/Derrubar Ambiente
 
-Usar `Bash` para os comandos de `environments.local` do `{slug}-map.json`, sempre a partir de `{worktree.path}`:
+Ler `environments.local.mode` (`docker` / `hybrid` / `native`) no `{slug}-map.json`. Usar `Bash`
+sempre a partir de `{worktree.path}`:
 ```bash
+# mode docker/hybrid — se compose-path definido
 cd {worktree.path}
 docker compose -f {environments.local.compose-path} up -d
 docker compose -f {environments.local.compose-path} down -v
+
+# mode hybrid/native — cada entrada de environments.local.processes com background: true
+cd {worktree.path}/{processo.cwd}
+nohup {processo.up-command} > /tmp/{slug}-e2e-{processo.name}.log 2>&1 &
+echo $! > /tmp/{slug}-e2e-{processo.name}.pid
+# no teardown:
+kill $(cat /tmp/{slug}-e2e-{processo.name}.pid) 2>/dev/null
 ```
-No Windows, `docker compose` funciona igual via Git Bash — não precisa de adaptação para PowerShell.
+No Windows, `docker compose` e `nohup`/`kill` funcionam igual via Git Bash — não precisa de adaptação para PowerShell.
 
 ### Navegação e Evidências
 

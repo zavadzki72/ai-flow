@@ -37,7 +37,11 @@
   },
   "environments": {
     "local": {
+      "mode": "docker",
       "compose-path": "docker-compose.yml",
+      "processes": [
+        { "name": "NOME_DO_PROCESSO", "cwd": "", "up-command": "", "background": true, "down-command": "" }
+      ],
       "services": {
         "web": { "url": "http://localhost:3000", "healthcheck": "/" },
         "api": { "url": "http://localhost:5000", "healthcheck": "/health" }

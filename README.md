@@ -70,7 +70,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | Skill | Trigger | O que faz |
 |-------|---------|-----------|
 | `code-review` | `/code-review` | Revisa código validando PLAN, padrões e boas práticas |
-| `test-e2e` | `/test-e2e` | Sobe o ambiente local (Docker), simula um usuário navegando pela feature e gera relatório com evidências (screenshots) |
+| `test-e2e` | `/test-e2e` | Sobe o ambiente local (Docker, nativo ou híbrido), simula um usuário navegando pela feature e gera relatório com evidências (screenshots) |
 | `implementar` | `/implementar` | Executa uma etapa do PLAN com branch, código, testes e commit |
 | `planejar` | `/planejar` | Cria um PLAN de execução a partir de um PRD |
 | `spec` | `/spec` | Gera especificação técnica de uma feature |

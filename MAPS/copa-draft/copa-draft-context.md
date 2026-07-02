@@ -101,6 +101,28 @@ styles/
 
 ---
 
+## Ambiente Local E2E
+
+Usado pela skill `/test-e2e`. Complementa `map.environments.local` (URLs, healthcheck, seed) com o
+que não cabe em JSON estruturado:
+
+- **Pré-requisito único:** `cp .env.example .env` e preencher `JWT_KEY` (qualquer string ≥32 chars
+  aleatórios — `.env.example` documenta as demais variáveis). `GOOGLE_CLIENT_ID` pode ficar vazio,
+  não é necessário para E2E (ver login abaixo).
+- **Subir:** `docker compose up --build -d` na raiz do repo. Único ponto de entrada:
+  `http://localhost:8090` (nginx faz proxy de `/`, `/api/` e `/hubs/` pro backend).
+- **Tempo médio de boot:** poucos segundos além do build (imagens leves; sem seed pesado).
+- **Login para teste (sem usuário fixo):** `POST /api/auth/guest` com body `{"name": "<qualquer nome>"}`
+  retorna `{ token, user }` — não existem usuário/senha fixos, convidados são criados sob demanda.
+  Convidados não podem criar sala pela API (restrição de produto) — só entrar em uma existente.
+- **Referência viva:** `tools/e2e/README.md` já documenta um harness de E2E via cliente SignalR
+  oficial contra `localhost:8090` (2 jogadores simulados, ~26 verificações, fluxo completo de
+  lobby → draft → torneio → revanche). Vale ler antes de desenhar cenários novos.
+- **Limpeza de dados de teste:** salas criadas para teste usam `Code LIKE 'E2E%'` e são apagadas ao
+  final do harness existente — seguir a mesma convenção evita lixo acumulando no Postgres do dev.
+
+---
+
 ## Glossário
 
 | Termo | Definição |

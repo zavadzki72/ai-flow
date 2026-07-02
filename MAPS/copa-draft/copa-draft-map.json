@@ -16,10 +16,11 @@
   },
   "repositories": {
     "game": {
-      "path": "/Users/zavadzki72/Projects/Personal/copa-draft",
+      "path": "C:/Projects/Personal/copa-draft",
       "url": "https://github.com/zavadzki72/copa-draft.git",
       "branch": "main",
       "boilerplate": "",
+      "worktrees-path": "",
       "contexts": ["draft", "match", "engine", "ui", "achievements", "store", "multiplayer", "lobby", "auth", "realtime", "backend", "tournament"]
     }
   },
@@ -30,12 +31,26 @@
       "repos-project": ""
     }
   },
+  "environments": {
+    "local": {
+      "mode": "docker",
+      "compose-path": "docker-compose.yml",
+      "processes": [],
+      "services": {
+        "web": { "url": "http://localhost:8090", "healthcheck": "/health" }
+      },
+      "seed-command": "",
+      "teardown-command": "docker compose down -v",
+      "test-users": []
+    }
+  },
   "docs": {
     "business": "docs/business/",
     "architecture": "docs/architecture/",
     "code-review": "docs/code-review/",
     "prd": "prd/",
     "plan": "plan/",
-    "adr": "adr/"
+    "adr": "adr/",
+    "e2e": "e2e/"
   }
 }
