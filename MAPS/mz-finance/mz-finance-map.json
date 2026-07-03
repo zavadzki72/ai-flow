@@ -1,0 +1,68 @@
+{
+  "project": {
+    "name": "mz-finance",
+    "description": "App de controle financeiro pessoal — transações avulsas e recorrentes, cartão de crédito, financiamentos, e projeção de saldo futuro.",
+    "team": "Pessoal",
+    "status": "active"
+  },
+  "stack": {
+    "backend": ["dotnet10", "postgresql"],
+    "frontend": ["react", "typescript"],
+    "infra": ["docker", "hostinger-vps"]
+  },
+  "architecture": {
+    "pattern": "clean-architecture",
+    "style": "cqrs"
+  },
+  "repositories": {
+    "backend": {
+      "path": "C:/Projects/Personal/mz-finance/backend",
+      "url": "",
+      "branch": "main",
+      "boilerplate": "dotnet-api",
+      "contexts": ["api", "backend", "handler", "command", "query", "endpoint", "cqrs", "mediatr"]
+    },
+    "frontend": {
+      "path": "C:/Projects/Personal/mz-finance/frontend",
+      "url": "",
+      "branch": "main",
+      "boilerplate": "react",
+      "contexts": ["react", "frontend", "component", "ui", "page"]
+    }
+  },
+  "tooling": {
+    "project-management": {
+      "type": "none",
+      "workitems-project": "",
+      "repos-project": ""
+    }
+  },
+  "environments": {
+    "local": {
+      "mode": "hybrid",
+      "compose-path": "backend/docker-compose.yml",
+      "processes": [
+        { "name": "api", "cwd": "backend/src/MzFinance.WebApi", "up-command": "ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5280 dotnet run --no-launch-profile", "background": true, "down-command": "" },
+        { "name": "frontend", "cwd": "frontend", "up-command": "npm install && npm run dev", "background": true, "down-command": "" }
+      ],
+      "services": {
+        "api": { "url": "http://localhost:5280", "healthcheck": "/health/live" },
+        "web": { "url": "http://localhost:5173", "healthcheck": "/" }
+      },
+      "seed-command": "",
+      "teardown-command": "",
+      "test-users": [
+        { "role": "user", "email": "dev@mzfinance.local", "password-env": "MZFINANCE_E2E_PASSWORD" }
+      ]
+    }
+  },
+  "docs": {
+    "business": "docs/business/",
+    "architecture": "docs/architecture/",
+    "code-review": "docs/code-review/",
+    "prd": "prd/",
+    "plan": "plan/",
+    "adr": "adr/",
+    "e2e": "e2e/"
+  }
+}

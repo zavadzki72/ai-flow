@@ -4,6 +4,8 @@ MAPS/*
 !MAPS/_template/**
 !MAPS/copa-draft
 !MAPS/copa-draft/**
+!MAPS/mz-finance
+!MAPS/mz-finance/**
 
 # OS
 .DS_Store
