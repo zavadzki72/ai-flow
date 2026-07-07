@@ -69,17 +69,14 @@ git status --porcelain
 Set-Location "{worktree.path}"
 git add "{arquivo1}" "{arquivo2}"
 git status
-git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature`n`nCo-Authored-By: GitHub Copilot <noreply@github.com>"
+git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature"
 ```
 
 Antes de qualquer `git add`, mostrar ao dev os arquivos que serão incluídos.
 
-### Co-authored-by no Commit
+### Commits sem coautoria de IA
 
-Sempre incluir no commit:
-```
-Co-Authored-By: GitHub Copilot <noreply@github.com>
-```
+Nunca adicionar trailer `Co-Authored-By` de IA (Claude, Copilot, etc.) nos commits.
 
 ### Próximos Skills na Sequência
 - Continuar: `/implementar ETAPA N+1`

@@ -413,9 +413,7 @@ git commit -m "feat: [descrição curta]
 - [detalhe 1]
 - [detalhe 2]
 
-Refs: ETAPA N — {slug}-plan-NNN-nome-da-feature
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+Refs: ETAPA N — {slug}-plan-NNN-nome-da-feature"
 
 git status
 ```

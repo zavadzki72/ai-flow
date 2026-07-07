@@ -72,18 +72,12 @@ Para commit, adicionar apenas arquivos específicos:
 Set-Location "{worktree.path}"
 git add "{arquivo1}" "{arquivo2}"
 git status
-git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature`n`nCo-Authored-By: Cursor <noreply@cursor.com>"
+git commit -m "feat: descricao`n`n- detalhe 1`n- detalhe 2`n`nRefs: ETAPA N — {slug}-plan-NNN-nome-da-feature"
 ```
 
-### Co-authored-by no Commit
+### Commits sem coautoria de IA
 
-Quando o SHARED sugerir o trailer do Claude, substituir pelo trailer do Cursor.
-Se o dev tiver um e-mail próprio para coautoria, usar o valor informado por ele.
-
-Padrão:
-```
-Co-Authored-By: Cursor <noreply@cursor.com>
-```
+Nunca adicionar trailer `Co-Authored-By` de IA (Claude, Cursor, etc.) nos commits.
 
 ### Próximos Skills na Sequência
 - Continuar: `/implementar ETAPA N+1`
