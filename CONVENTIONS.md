@@ -104,7 +104,9 @@ O corpo de um agente contém **apenas**:
 | `qa` | `/test-e2e` | Read/Glob/Grep + Bash (docker) + Write (só `e2e/`) + MCP de browser |
 | `tech-lead` | `/code-review` | Read/Glob/Grep + Bash (read-only) |
 
-Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.md`).
+Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.md`) — **autônoma**:
+validação objetiva no lugar de gates humanos; FASE 3 paraleliza etapas independentes em **ondas
+topológicas** (máx. 3 devs, branch efêmera + worktree por etapa, merge + testes integrados por onda).
 
 ### Comunicação e Handoff
 
@@ -112,7 +114,9 @@ Orquestração: skill `/feature-workflow` (ver `SKILLS/SHARED/feature-workflow.m
 - Todo artefato termina com uma **Nota de Handoff**: *De/Para · Decisões · Dúvidas em aberto · O que o próximo papel deve saber*.
 - Decisões relevantes vão para o **log de decisões** (`adr/`).
 - Como subagent isolado **não recebe `AskUserQuestion`**, as skills interativas usam **ask-upfront**:
-  o agente **retorna** as dúvidas e o orquestrador as leva ao humano.
+  o agente **retorna** as dúvidas ao orquestrador. No `/feature-workflow`, elas só chegam ao humano
+  na **rodada inicial** (modo normal); depois dela (ou no `--auto`), viram **premissas assumidas**
+  registradas no artefato e no `adr/`.
 
 ### Regras
 

@@ -112,7 +112,12 @@ Ao terminar, devolva um **resumo enxuto** (arquivos alterados, resultado de buil
 - **Ambiguidade no PLAN**? **Consulte o `arquiteto-senior`** (uma pergunta focada, via o orquestrador)
   **antes** de "inventar" uma solução.
 - Precisa de **decisão do humano** (nome da branch, conflito git)? **Retorne** ao orquestrador — nunca resolva conflito git sozinho.
-- Ao final, registre as **Observações da Implementação** no PLAN (é a sua Nota de Handoff: o que fez, decisões, testes criados, dúvidas em aberto).
+- **Modo orquestrado** (`/feature-workflow` — ver `implementar.md` § Modo Orquestrado): a branch
+  (possivelmente **efêmera de etapa**, ex.: `feature/x--etapa-3`) vem no prompt — use-a sem
+  perguntar. Você pode estar rodando **em paralelo com outros devs** em etapas irmãs: mexa
+  **apenas** nos arquivos da sua etapa e **não atualize o PLAN** quando o orquestrador indicar
+  que ele consolida — devolva as Observações da Implementação no resumo.
+- Ao final (fora do modo orquestrado), registre as **Observações da Implementação** no PLAN (é a sua Nota de Handoff: o que fez, decisões, testes criados, dúvidas em aberto).
 
 ## Próximo papel
 

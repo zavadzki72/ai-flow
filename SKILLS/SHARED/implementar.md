@@ -7,6 +7,28 @@ os padrões do projeto, roda build e testes, faz commit e atualiza o PLAN.
 
 ---
 
+## Modo Orquestrado (invocado pelo `/feature-workflow`)
+
+Quando o prompt de invocação indicar **modo orquestrado**, o processo abaixo muda nestes pontos
+(o restante segue igual):
+
+1. **Zero perguntas/confirmações.** PLAN, ETAPA, branch e branch base vêm no prompt — não pedir
+   nem confirmar nada (pula as confirmações dos Passos 2.4, 3.3, 5.1 e 7). Se faltar informação
+   essencial, **retorne ao orquestrador** informando o que falta, em vez de perguntar.
+2. **Branch e worktree dados.** Use a branch informada (pode ser uma **branch efêmera de etapa**,
+   ex.: `feature/x--etapa-3`, criada a partir da branch base). No Passo 3, crie o worktree para
+   essa branch (`git worktree add "{worktree.path}" -b {branch} {branch-base}` quando ela ainda
+   não existir) — as regras de worktree continuam valendo.
+3. **Não atualizar o PLAN** quando o orquestrador indicar que ele consolida (execução paralela —
+   dois devs não podem editar o mesmo arquivo). Pule o Passo 8 e devolva as **Observações da
+   Implementação** no resumo final.
+4. **Resumo estruturado no retorno:** arquivos alterados, resultado de build/testes, hash do
+   commit, branch usada e Observações da Implementação (Nota de Handoff).
+5. **Working tree sujo** (Passo 3.5) num worktree efêmero recém-criado é anomalia: não pergunte —
+   retorne ao orquestrador como bloqueio.
+
+---
+
 ## Processo
 
 ### Passo 0: Carregar Contexto do Projeto

@@ -98,10 +98,16 @@ Ao terminar, devolva um **resumo enxuto** ao orquestrador (não o PRD inteiro �
 
 ## Comunicação (ask-upfront)
 
-Você **não pergunta ao humano no meio** da execução (subagent isolado não tem esse canal). Em vez disso:
-- Levante **todas** as dúvidas de negócio **no início** e **retorne uma lista estruturada** ao
-  orquestrador; só prossiga após receber as respostas.
-- Ao final, **anexe a Nota de Handoff ao PRD** (o que decidiu, dúvidas em aberto, o que o Arquiteto precisa saber).
+Você **não pergunta ao humano no meio** da execução (subagent isolado não tem esse canal). O
+orquestrador indica no prompt em qual modo você está:
+- **Modo levantamento:** retorne **apenas a lista estruturada de dúvidas de negócio** — não
+  escreva o PRD ainda. O orquestrador coleta as respostas na rodada inicial e te re-invoca.
+- **Modo normal (com respostas anexadas):** escreva o PRD usando as respostas recebidas. Dúvida
+  nova que surgir depois **não volta ao humano**: vire-a uma **premissa assumida** (a leitura
+  mais conservadora e reversível) registrada na seção **"Premissas Assumidas"** do PRD.
+- **Modo autônomo (`--auto`):** não retorne perguntas — converta **toda** dúvida em premissa
+  assumida na seção "Premissas Assumidas", cada uma com o racional e o impacto se estiver errada.
+- Ao final, **anexe a Nota de Handoff ao PRD** (o que decidiu, premissas, o que o Arquiteto precisa saber).
 
 ## Próximo papel
 

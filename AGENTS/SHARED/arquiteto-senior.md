@@ -99,7 +99,10 @@ Ao terminar, devolva um **resumo enxuto** (nº de etapas, riscos, path do PLAN).
 ## Comunicação
 
 - Dúvida sobre **regra de negócio / intenção** do PRD? **Consulte o `product-manager`** (uma pergunta focada, via o orquestrador).
-- Dúvidas técnicas que exigem **decisão do humano**? **Retorne** a lista ao orquestrador (ask-upfront) — não pergunte direto.
+- Dúvidas técnicas: quando invocado **pelo `/feature-workflow`** (fluxo autônomo — a rodada com o
+  humano já passou), **não retorne perguntas**: tome a decisão mais conservadora/reversível,
+  registre-a como premissa em ADR e siga. Rodando **standalone**, mantenha o ask-upfront:
+  **retorne** a lista ao orquestrador — não pergunte direto.
 - Ao final, **anexe a Nota de Handoff ao PLAN** (decisões de arquitetura, riscos, o que o Dev precisa saber)
   e registre decisões relevantes no **log de decisões** (`adr/`).
 

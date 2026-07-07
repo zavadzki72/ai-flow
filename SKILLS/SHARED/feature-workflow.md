@@ -1,14 +1,25 @@
-# Skill: Feature Workflow (Orquestrador de Papéis)
+# Skill: Feature Workflow (Orquestrador Autônomo de Papéis)
 
 ## Descrição
 Orquestra o ciclo completo de uma feature delegando cada fase a um **agente por papel** que roda
 em **janela de contexto isolada** (subagent): Product Manager (`/spec`) → Arquiteto Sênior
-(`/planejar`) → Dev Sênior (`/implementar`) → Tech Lead (`/code-review`).
+(`/planejar`) → Dev Sênior (`/implementar`, **em ondas paralelas**) → Tech Lead (`/code-review`).
 
-Esta skill é o **maestro + broker**: ela roda na **sessão principal**, delega cada fase, aplica um
-**gate humano** entre artefatos, e faz a **ponte de comunicação** (perguntas agente→humano e
-consultas agente→agente). Ela **não reescreve** a lógica das skills — cada agente executa a skill
-SHARED da sua fase. É análoga ao `start-project`, que também reusa skills SHARED.
+Esta skill é o **maestro + broker** e conduz o ciclo de forma **autônoma**: no lugar de gates
+humanos, cada fase é liberada por **validação objetiva** (checklist do artefato, build/testes
+verdes, review sem 🔴). Ela **não reescreve** a lógica das skills — cada agente executa a skill
+SHARED da sua fase.
+
+### Modos de execução
+
+| Modo | Interação humana |
+|------|------------------|
+| `/feature-workflow` (normal) | **Uma única rodada no início**: ponto de entrada (se ambíguo), branch da feature e **todas** as dúvidas de negócio do PM num bloco só. Depois disso, zero interação até o relatório final. |
+| `/feature-workflow --auto` | **Zero interação.** Toda dúvida vira **premissa assumida**, registrada no artefato (seção "Premissas Assumidas") e no log de decisões (`adr/`). |
+
+Em **ambos** os modos: **nunca** push nem PR automáticos — o fluxo termina com o relatório final
+**sugerindo** os comandos. E em ambos os modos o fluxo **para e devolve ao humano** quando um
+guardrail estoura (ver § Paradas por guardrail).
 
 > **Complementar ao `start-project`:** `start-project` = bootstrap zero→MVP (cria o projeto).
 > `feature-workflow` = loop recorrente por feature em projeto **já existente**.
@@ -25,44 +36,70 @@ SHARED da sua fase. É análoga ao `start-project`, que também reusa skills SHA
 
 ## Princípios de orquestração
 
-1. **Humano-no-loop.** Há um **gate** (aprovação) ao fim de cada fase. Nada avança sem o "ok".
-2. **Publish/subscribe.** Uma fase só dispara quando o artefato da anterior **existe e foi aprovado**.
+1. **Validação objetiva no lugar de gate humano.** Uma fase só dispara quando o artefato da
+   anterior **existe e passou na validação automática** (checklists nas fases abaixo). O
+   publish/subscribe continua — só muda quem aprova.
+2. **Interação humana limitada.** Modo normal = só a rodada inicial; `--auto` = nenhuma. Depois
+   da rodada, dúvida nova **não volta ao humano**: vira consulta entre agentes (broker) ou
+   **premissa registrada** — destacada no relatório final.
 3. **Delegação isolada.** Cada fase roda num subagent com janela própria. Passe **paths** (não o
-   conteúdo inteiro) + as respostas já coletadas do humano.
-4. **Broker.** Perguntas do agente ao humano e consultas entre agentes passam por você (§ Broker).
-5. **Guardrails.** Máx. de consultas por dúvida/fase; "uma etapa por vez" no Dev; nunca swarm autônomo.
-6. **Handoff durável.** Cada fase termina com uma **Nota de Handoff** no artefato; decisões relevantes
-   vão para o **log de decisões** (`adr/`). O próximo agente lê isso no Passo 0.
-7. **Isolamento de working tree (OBRIGATÓRIO).** Este orquestrador não define gitflow próprio — quem
-   toca o disco do projeto (`dev-senior` na FASE 3, `qa` no `/test-e2e`) sempre cria ou reutiliza um
-   **git worktree** dedicado à branch, nunca faz checkout no clone principal. É esse mecanismo — não
-   um lock explícito — que permite **duas sessões de `/feature-workflow` (ou uma combinada com
-   `/test-e2e`) atuarem no mesmo projeto ao mesmo tempo** sem uma pisar no working tree da outra; o
-   próprio Git recusa um segundo worktree para a mesma branch. Ver `CONVENTIONS.md` § Git Worktree.
+   conteúdo inteiro) + as respostas/premissas já coletadas.
+4. **Broker.** Consultas agente→agente passam por você (§ Broker). Perguntas agente→humano **só
+   existem na rodada inicial** do modo normal.
+5. **Paralelismo em ondas (FASE 3).** As etapas do PLAN rodam em **ondas topológicas**: etapas sem
+   dependência mútua **e com arquivos disjuntos** entram na mesma onda, até **3 `dev-senior`
+   simultâneos**, cada um em **branch efêmera + worktree próprio**. Merge + build/testes
+   integrados fecham a onda antes da próxima.
+6. **Guardrails anti-loop.** Todo ciclo automático é limitado (2 re-invocações por validação
+   reprovada, 2 correções por build/teste vermelho, 1 re-execução por conflito de merge, 2 ciclos
+   de correção no review). Estourou → **PARA e reporta** — nunca insiste indefinidamente.
+7. **Handoff durável.** Cada fase termina com uma **Nota de Handoff** no artefato; decisões e
+   premissas vão para o **log de decisões** (`adr/`). O próximo agente lê isso no Passo 0.
+8. **Isolamento de working tree (OBRIGATÓRIO).** Quem toca o disco do projeto sempre trabalha em
+   **git worktree** dedicado à branch, nunca no clone principal. No paralelismo, cada etapa da
+   onda ganha **branch efêmera própria** (o Git recusa dois worktrees na mesma branch — por isso
+   paralelo exige branches distintas). Ver `CONVENTIONS.md` § Git Worktree.
+9. **Sem push automático.** O orquestrador nunca faz push nem cria PR — o relatório final sugere
+   os comandos e o humano decide.
 
 ---
 
 ## Processo
 
-### Passo 0: Carregar Contexto e Confirmar Escopo
+### Passo 0: Carregar Contexto e Resolver o Ponto de Entrada
 
-**0.1.** Identificar projeto ativo (`.ai-project`) e ler `{slug}-map.json` + `{slug}-context.md` (igual às demais skills).
+**0.1.** Identificar projeto ativo (`.ai-project`) e ler `{slug}-map.json` + `{slug}-context.md`
+(igual às demais skills). Detectar o modo: `--auto` presente → modo autônomo total.
 
-**0.2.** Confirmar com o dev o ponto de entrada:
+**0.2. Resolver o ponto de entrada sem perguntar, quando possível:**
+- O comando trouxe **path de PRD** → começar na FASE 2 (`/planejar`)
+- Trouxe **path de PLAN** → começar na FASE 3 (`/implementar`)
+- Trouxe **branch para revisar** → começar na FASE 4 (`/code-review`)
+- Trouxe **só a demanda em texto** → começar na FASE 1 (`/spec`)
+- Ambíguo no modo `--auto` → assumir o ponto mais conservador (FASE 1) e registrar premissa
+- Ambíguo no modo normal → incluir a pergunta na rodada inicial (0.3)
+
+**0.3. Rodada inicial (SÓ no modo normal — a única interação do ciclo):**
+
+Antes de montá-la, se o ponto de entrada for a FASE 1, invoque o `product-manager` em **modo
+levantamento** (ele só devolve a lista de dúvidas de negócio, sem escrever o PRD — ver FASE 1).
+Então apresente **um único bloco estruturado** ao humano com:
 
 ```
-🎛️ Feature Workflow — vou conduzir os 4 papéis (PM → Arquiteto → Dev → Tech Lead).
+🎛️ Feature Workflow — rodada inicial (única interação; depois sigo sozinho até o fim)
 
-Por onde começamos?
-1. Do zero (nova feature) → começa no Product Manager (/spec)
-2. Já tenho PRD → começa no Arquiteto (/planejar)
-3. Já tenho PLAN → começa no Dev (/implementar ETAPA N)
-4. Só revisar → Tech Lead (/code-review)
-
-Qual o ponto de entrada?
+1. Ponto de entrada: {inferido ou pergunta}
+2. Branch da feature: {sugestão: feature/{slug-da-feature}} — confirmar/editar
+3. Dúvidas de negócio do Product Manager:
+   Q1. ...
+   Q2. ...
 ```
 
-Use as ferramentas de escolha estruturada da ferramenta (ex.: `AskUserQuestion` no Claude Code) quando disponível.
+Colete todas as respostas de uma vez. **Depois desta rodada, nenhuma outra pergunta é feita ao
+humano** — exceto parada por guardrail.
+
+No modo `--auto`: pule 0.3 — branch = `feature/{slug-da-feature}` derivada da demanda; dúvidas
+viram premissas assumidas.
 
 ---
 
@@ -70,97 +107,151 @@ Use as ferramentas de escolha estruturada da ferramenta (ex.: `AskUserQuestion` 
 
 *(pular se o ponto de entrada for posterior)*
 
-**1.1.** Delegar ao subagent **`product-manager`**, passando: a demanda/descrição, o path do projeto
-e o modo de coleta. O agente segue `SKILLS/SHARED/spec.md`.
+**1.1.** Modo normal: invoque o `product-manager` em **modo levantamento** (devolve só a lista de
+dúvidas — alimenta a rodada inicial do Passo 0.3); depois **re-invoque** com as respostas
+anexadas para escrever o PRD.
+Modo `--auto`: invoque direto em **modo autônomo** — sem perguntas; cada dúvida vira premissa na
+seção **"Premissas Assumidas"** do PRD.
 
-**1.2. Broker de perguntas (ask-upfront).** O agente **retorna uma lista de dúvidas** de negócio em
-vez de perguntar sozinho. Apresente-as ao humano (escolha estruturada), colete as respostas e
-**re-invoque** o agente com as respostas anexadas ao prompt.
+**1.2. ✅ Validação automática do PRD (substitui o gate humano).** Verifique no arquivo salvo:
+- [ ] Critérios de aceite em BDD (Dado/Quando/Então) e falsificáveis
+- [ ] Escopo com não-objetivos explícitos (o que fica FORA)
+- [ ] Caminhos infelizes cobertos (erro, vazio, permissão, concorrência)
+- [ ] Toda regra de negócio com fonte — ou registrada como premissa assumida
+- [ ] Nota de Handoff presente
 
-**1.3. ⛔ GATE.** Quando o PRD estiver salvo, apresente o resumo + path e **pare para aprovação**:
+Reprovou → re-invoque o `product-manager` apontando **exatamente os gaps** (máx. **2**
+re-invocações). Persistiu → ⛔ parada por guardrail.
 
-```
-✅ PRD criado: {path}
-📊 [complexidade, repos, domínios, nº de critérios]
-📝 Nota de Handoff: [dúvidas em aberto p/ o Arquiteto]
-
-Aprovar e seguir para o Arquiteto (/planejar)? [aprovar / ajustar / parar]
-```
-
-Só avance com aprovação. Se "ajustar", re-invoque o `product-manager` com os ajustes.
+**1.3.** Registre no log (`adr/`): "PRD {path} validado automaticamente — {resumo}". Avance.
 
 ---
 
 ### Passo 2: FASE 2 — Arquiteto Sênior (`/planejar`)
 
-**2.1.** Delegar ao subagent **`arquiteto-senior`**, passando o **path do PRD** aprovado.
-O agente segue `SKILLS/SHARED/planejar.md` e dá **HARD STOP** após o PLAN.
+**2.1.** Delegar ao subagent **`arquiteto-senior`**, passando o **path do PRD** validado e o modo.
+Em **ambos os modos** (a rodada inicial já passou): dúvida de **negócio** → consulta ao
+`product-manager` via broker; decisão **técnica** → o arquiteto **decide, registra em ADR e
+segue** (não volta ao humano). O agente dá **HARD STOP** após o PLAN.
 
-**2.2. Broker.** Dúvidas de negócio do arquiteto → **consultar o `product-manager`** (§ Broker) e
-devolver a resposta. Dúvidas técnicas para o humano → apresentar (ask-upfront) e re-invocar.
+**2.2. ✅ Validação automática do PLAN.** Verifique no arquivo salvo:
+- [ ] Toda etapa tem: **Dependências**, **Arquivo(s) Afetado(s)** (paths completos),
+      **Paralelizável: Sim/Não** e critérios de aceitação verificáveis
+- [ ] Grafo de dependências **sem ciclo**
+- [ ] Migrations / mudanças irreversíveis marcadas **Paralelizável: Não**
+- [ ] Nota de Handoff presente
 
-**2.3. ⛔ GATE.** Apresente o resumo do PLAN (nº de etapas, riscos, deps) + path e **pare para aprovação**.
+Reprovou → re-invoque com os gaps (máx. **2**). Persistiu → ⛔ parada por guardrail.
+
+**2.3.** Montar o **grafo de ondas** (Passo 3.1) e registrar no log o plano de execução
+(quantas ondas, quais etapas em cada uma).
 
 ---
 
-### Passo 3: FASE 3 — Dev Sênior (`/implementar`) — etapa a etapa
+### Passo 3: FASE 3 — Dev Sênior (`/implementar`) — ondas paralelas
 
-**3.1.** Para **cada** ETAPA do PLAN, delegar ao subagent **`dev-senior`**, passando: **path do PLAN**,
-**número da ETAPA** e **branch**. O agente segue `SKILLS/SHARED/implementar.md` — que resolve
-sozinho o **git worktree** da branch (cria ou reutiliza, nunca no clone principal) —, descobre a
-stack e carrega a lente (`AGENTS/SHARED/lenses/{lang}.md`).
+**3.1. Montar as ondas (do grafo do PLAN):**
+1. Nível topológico pelo campo **Dependências** (uma etapa só entra quando todas as suas
+   dependências já concluíram em ondas anteriores);
+2. Dentro do nível, etapas com **interseção de Arquivo(s) Afetado(s)** não rodam juntas — a
+   segunda desce para uma sub-onda seguinte;
+3. Etapa **`Paralelizável: Não`** (migration, mudança irreversível) roda **sozinha** na sua onda;
+4. Máximo **3 etapas por onda** — excedente desce para a sub-onda seguinte;
+5. **PLAN antigo** (sem `Paralelizável` ou sem `Arquivo(s) Afetado(s)` em alguma etapa — ex.:
+   ponto de entrada "já tenho PLAN"): trate essas etapas como **sequenciais** (onda de 1) — nunca
+   assuma paralelismo sem os dois campos presentes.
 
-**3.2. Broker.** Ambiguidade no PLAN → **consultar o `arquiteto-senior`**. Decisão do humano
-(nome de branch, conflito git) → apresentar ao humano. **Nunca** o agente resolve conflito git sozinho.
+**3.2. Preparar branches da onda:**
+- Branch da feature: `{branch}` (da rodada inicial, ou derivada no `--auto`). Ela vive no seu
+  próprio worktree (criar na primeira onda, se não existir).
+- Onda com **1 etapa** → o dev trabalha **direto na branch da feature** (worktree dela).
+- Onda com **2+ etapas** → para cada etapa, branch efêmera **`{branch}--etapa-{N}`** criada a
+  partir do **HEAD atual da branch da feature**, cada uma em worktree próprio.
 
-**3.3. ⛔ GATE por etapa.** Ao fim de cada etapa, confirme build/testes verdes e pergunte:
+**3.3. Disparar os `dev-senior` da onda EM PARALELO** (uma invocação por etapa, simultâneas),
+cada um recebendo: **path do PLAN** + **número da ETAPA** + **branch a usar** (efêmera ou da
+feature) + **branch base** + instrução de **modo orquestrado** (ver `implementar.md` § Modo
+Orquestrado): sem confirmações, **não atualizar o PLAN** (o orquestrador consolida), devolver
+resumo estruturado (arquivos, build/testes, hash do commit, Observações da Implementação).
 
-```
-✅ ETAPA N concluída — build ✅ testes ✅ commit {hash}
-Próximo? [próxima etapa / revisar agora (Tech Lead) / push / parar]
-```
+**3.4. Fechar a onda (barreira — só depois que TODOS os devs da onda retornarem):**
+1. **Merge** de cada branch efêmera na branch da feature, na ordem das etapas
+   (`git merge --no-ff` dentro do worktree da feature);
+2. **Conflito de merge** → NÃO resolver na mão: descarte a branch efêmera conflitante e
+   **re-invoque o dev** para reimplementar a etapa **sobre a feature já atualizada**
+   (sequencial, direto na branch da feature). Máx. **1** re-execução por etapa; conflitou de
+   novo → ⛔ parada por guardrail;
+3. **Build + testes integrados** na branch da feature (comandos de `docs/architecture/`).
+   Falhou → re-invocar o dev responsável com o erro (máx. **2** correções) → persistiu →
+   ⛔ parada por guardrail;
+4. **Limpeza:** `git worktree remove` + `git branch -d` das efêmeras mescladas;
+5. **Atualizar o PLAN** (o orquestrador, não o dev): etapas da onda → ✅ Concluída + commit +
+   Observações da Implementação devolvidas por cada dev + progresso geral.
 
-Uma etapa por vez — nunca dispare várias em paralelo.
+**3.5.** Repetir 3.2–3.4 para a próxima onda até o PLAN terminar. **Nunca** duas ondas ao mesmo
+tempo — a barreira de merge + testes integrados é o que mantém o repositório íntegro entre ondas.
 
 ---
 
 ### Passo 4: FASE 4 — Tech Lead (`/code-review`)
 
-**4.1.** Delegar ao subagent **`tech-lead`** (read-only), passando os paths do **PRD**, do **PLAN** e a **branch**.
-O agente segue `SKILLS/SHARED/code-review.md` e devolve **apenas o relatório** 🔴/🟡/🟢 + decisão.
+**4.1.** Delegar ao subagent **`tech-lead`** (read-only), passando os paths do **PRD**, do
+**PLAN** e a **branch da feature**. O agente devolve **apenas o relatório** 🔴/🟡/🟢 + decisão.
 
-**4.2. Broker.** Dúvida de intenção → consultar `product-manager`; de arquitetura → `arquiteto-senior`.
+**4.2. Broker.** Dúvida de intenção → consultar `product-manager`; de arquitetura →
+`arquiteto-senior`.
 
-**4.3. ⛔ GATE final.**
-- ✅ / ⚠️ → oferecer criação de PR (conforme `map.tooling`).
-- ❌ → listar os 🔴; o ciclo **volta à FASE 3** (Dev corrige) e depois re-revisa.
+**4.3. ✅ Fechamento automático (substitui o gate humano):**
+- **✅ / ⚠️** → ciclo concluído. O relatório final **sugere** push + PR (conforme `map.tooling`)
+  — **não executa**.
+- **❌** → re-invoque o `dev-senior` com a lista de 🔴 (correção **sequencial, direto na branch
+  da feature**), depois re-invoque o `tech-lead` para re-review. Máx. **2 ciclos**
+  correção→review; persistiu ❌ → ⛔ parada por guardrail com os 🔴 remanescentes.
 
 ---
 
 ## Broker (comunicação entre papéis)
 
-Como cada agente roda isolado, **você** faz a ponte. Padrão recomendado: **broker pelo orquestrador**.
+Como cada agente roda isolado, **você** faz a ponte:
 
-- **Agente → humano:** o agente retorna uma lista de dúvidas → você pergunta ao humano → re-invoca o agente com as respostas.
-- **Agente A → Agente B:** o agente A retorna "preciso consultar {B} sobre X" → você invoca **B** com a
-  pergunta + os paths dos artefatos → devolve a resposta a **A**.
-- **Guardrail anti-loop:** no máximo **2 consultas por dúvida**; a pergunta é sempre **focada** (uma questão,
-  não "revise tudo"). Se estourar, escale para o humano.
+- **Agente A → Agente B:** o agente A retorna "preciso consultar {B} sobre X" → você invoca **B**
+  com a pergunta + os paths dos artefatos → devolve a resposta a **A**.
+- **Guardrail anti-loop:** no máximo **2 consultas por dúvida**; a pergunta é sempre **focada**.
+  Estourou → a decisão vira **premissa registrada** (ADR + destaque no relatório final) e o
+  fluxo segue.
+- **Agente → humano:** só existe na **rodada inicial** (modo normal). Fora dela, dúvida vira
+  premissa registrada, sinalizada no relatório final.
 
 ---
 
-## Passo Final: Resumo do Ciclo
+## ⛔ Paradas por guardrail (única volta ao humano)
+
+O fluxo só volta ao humano quando um limite automático estoura:
+- Validação de artefato (PRD/PLAN) reprovada após 2 re-invocações;
+- Build/testes vermelhos após 2 correções;
+- Conflito de merge persistente após 1 re-execução;
+- Review ❌ após 2 ciclos de correção.
+
+Nesses casos: **PARE**, preserve o estado (branch, worktrees, PLAN com progresso real) e reporte
+**exatamente** onde parou, o que falhou e o que falta — o humano decide como retomar.
+
+---
+
+## Passo Final: Relatório do Ciclo
 
 ```
-🎉 Feature Workflow concluído (ou parado em {fase}).
+🎉 Feature Workflow concluído (ou ⛔ parado em {fase} — {guardrail estourado}).
 
-PRD:    {path}   ✅
-PLAN:   {path}   ✅  (N/N etapas)
-Código: branch {branch} — {commits}
-Review: {✅/⚠️/❌}  — {nº 🔴 / 🟡 / 🟢}
-PR:     {link ou "não criado"}
+Modo:     {normal | --auto}
+PRD:      {path} ✅ — {N} premissas assumidas
+PLAN:     {path} ✅ — {N}/{N} etapas · {W} ondas (máx. 3 devs/onda)
+Código:   branch {branch} — {N} commits
+Review:   {✅/⚠️/❌} — {nº 🔴/🟡/🟢} · {N} ciclo(s) de correção
+Decisões: {adr/...} — ⚠️ revise as premissas assumidas antes de publicar
 
-Próximo passo sugerido: [ ... ]
+Sugerido (NÃO executado):
+  git push origin {branch}
+  {comando de PR conforme map.tooling}
 ```
 
 ---
@@ -168,16 +259,18 @@ Próximo passo sugerido: [ ... ]
 ## O Que Este Skill FAZ e NÃO FAZ
 
 ### ✅ FAZ:
-- Carrega contexto do projeto e confirma o ponto de entrada
-- Delega cada fase a um subagent isolado (PM → Arquiteto → Dev → Tech Lead)
-- Aplica gate humano entre cada artefato (publish/subscribe)
-- Faz o broker de perguntas agente→humano e consultas agente→agente
-- Garante "uma etapa por vez" no Dev e guardrails anti-loop
-- Consolida o resumo do ciclo
+- Resolve o ponto de entrada sozinho (paths/demanda) e conduz o ciclo de forma autônoma
+- Concentra toda a interação humana numa única rodada inicial (modo normal) ou em nenhuma (`--auto`)
+- Valida cada artefato com checklist objetivo e libera a fase seguinte sem gate humano
+- Paraleliza as etapas do PLAN em ondas topológicas (máx. 3 devs, branch efêmera + worktree por etapa)
+- Fecha cada onda com merge + build/testes integrados e consolida o PLAN
+- Faz o broker de consultas agente→agente; converte dúvidas tardias em premissas registradas
+- Para e reporta com estado preservado quando um guardrail estoura
 
 ### ❌ NÃO FAZ:
 - ❌ Reescrever a lógica das skills (cada agente segue sua skill SHARED)
-- ❌ Avançar de fase sem aprovação humana
-- ❌ Rodar as fases em paralelo / swarm autônomo
+- ❌ Perguntar ao humano fora da rodada inicial (exceto parada por guardrail)
+- ❌ Push ou criação de PR automáticos — só sugere
+- ❌ Resolver conflito de merge manualmente — re-executa a etapa sobre a base atualizada
+- ❌ Rodar duas ondas ao mesmo tempo ou mais de 3 devs por onda
 - ❌ Implementar código diretamente (isso é do `dev-senior`)
-- ❌ Resolver conflitos git ou dar push automático

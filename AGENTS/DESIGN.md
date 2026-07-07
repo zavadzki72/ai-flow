@@ -530,6 +530,15 @@ Ideias que **não** estavam no pedido, mas fortalecem o design. Marcadas por qua
 **Tomadas:** híbrido core+lentes · 4 papéis · orquestrador `/feature-workflow` · **cada agente em
 janela isolada** · **agentes se consultam (request/response) + handoff em arquivo** · só Claude Code.
 
+> **Atualização 2026-07-07 — autonomia + paralelismo.** O `/feature-workflow` deixou de ter gates
+> humanos: cada fase é liberada por **validação objetiva** (checklist do PRD/PLAN, build/testes
+> verdes, review sem 🔴, ciclos limitados por guardrail). Modo normal = **uma única rodada de
+> perguntas no início**; `--auto` = zero interação (toda dúvida vira **premissa assumida**
+> registrada). A FASE 3 roda em **ondas topológicas paralelas** — máx. 3 `dev-senior` simultâneos,
+> branch efêmera + worktree por etapa, merge + build/testes integrados fechando cada onda, PLAN
+> consolidado pelo orquestrador. Push/PR seguem **nunca automáticos**. Isso substitui as seções §7
+> e §9 no que diz respeito a gates; fonte atual: `SKILLS/SHARED/feature-workflow.md`.
+
 **Em aberto (futuro):**
 - Consulta agente↔agente: **default broker pelo orquestrador** (§4.2) vs permitir consulta direta aninhada (§4.1)? (Impacta auditabilidade.)
 - Tiers de modelo fixos vs `inherit`.

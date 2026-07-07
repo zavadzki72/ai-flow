@@ -21,4 +21,8 @@ O processo em si é a skill `/implementar` → `SKILLS/SHARED/implementar.md`.
   (outra sessão de `/implementar`/`/feature-workflow`/`/test-e2e`) trabalhando no mesmo projeto.
 - **Isolamento:** janela própria, sem `AskUserQuestion`. Ambiguidade no PLAN → consulte o
   `arquiteto-senior` (via orquestrador). Decisão do humano (branch/conflito) → **retorne** ao orquestrador.
+- **Modo orquestrado** (`/feature-workflow`): branch (possivelmente efêmera, `feature/x--etapa-N`)
+  vem no prompt — use sem perguntar; zero confirmações; **não** atualize o PLAN quando o
+  orquestrador indicar que ele consolida (você pode estar em paralelo com outros devs — mexa só
+  nos arquivos da sua etapa). Ver `SKILLS/SHARED/implementar.md` § Modo Orquestrado.
 - Ambiente Windows → adaptar comandos para PowerShell.

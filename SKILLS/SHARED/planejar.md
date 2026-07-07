@@ -201,6 +201,14 @@ Com base nas respostas e no código analisado, dividir a implementação em etap
 - ✅ Seguir a ordem natural de implementação da arquitetura (conforme `docs/architecture/`)
   - Regra geral: dados/domínio primeiro, API/interface por último
   - Exemplo típico: Domain → Persistência → Lógica de Negócio → API → Integrações
+- ✅ **Dependências explícitas e mínimas** — o campo `Dependências` forma o grafo que permite ao
+  `/feature-workflow` executar etapas independentes **em paralelo (ondas)**; dependência
+  desnecessária serializa o fluxo à toa
+- ✅ Etapas independentes devem tocar **conjuntos disjuntos de arquivos** sempre que possível —
+  o orquestrador usa `Arquivo(s) Afetado(s)` para decidir o que pode rodar junto; duas etapas
+  que tocam o mesmo arquivo nunca rodam em paralelo
+- ✅ Marcar **`Paralelizável: Não`** em migrations e mudanças irreversíveis — essas etapas rodam
+  sozinhas na sua onda
 
 ---
 
@@ -319,6 +327,8 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 - [ ] Testes passando
 
 **Dependências:** Nenhuma
+
+**Paralelizável:** Sim / Não ([se Não, o motivo — ex.: migration, mudança irreversível])
 
 **Comandos Úteis:**
 [Ver docs/architecture/ — adaptar para o arquivo/módulo desta etapa]

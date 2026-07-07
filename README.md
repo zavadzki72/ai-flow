@@ -77,7 +77,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
-| `feature-workflow` | `/feature-workflow` | Orquestra o ciclo por feature delegando a cada agente por papel (PM → Arquiteto → Dev → Tech Lead) com gates humanos |
+| `feature-workflow` | `/feature-workflow [--auto]` | Orquestra o ciclo por feature de forma autônoma (PM → Arquiteto → Dev em ondas paralelas → Tech Lead), com validação objetiva entre artefatos; normal = 1 rodada de perguntas no início, `--auto` = zero interação |
 
 ---
 
@@ -95,7 +95,10 @@ isolada** e se comunica por consulta + handoff em arquivo. Detalhes em `AGENTS/D
 | `qa` | QA Engenheiro de Testes E2E (sobe ambiente, navega via MCP de browser) | `/test-e2e` |
 | `tech-lead` | Tech Lead (guardião de engenharia, read-only) | `/code-review` |
 
-Orquestração: `/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead com gate humano entre artefatos.
+Orquestração: `/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead de forma **autônoma**
+(validação objetiva no lugar de gates humanos; dúvidas viram premissas registradas). As etapas do
+PLAN rodam em **ondas paralelas** (máx. 3 `dev-senior`, branch efêmera + worktree por etapa).
+Nunca faz push/PR automático — o relatório final só sugere.
 `/test-e2e` roda entre `/implementar` (todas as etapas concluídas) e `/code-review` — ainda fora do
 `/feature-workflow`, disparado manualmente enquanto a integração ao orquestrador não é feita.
 
