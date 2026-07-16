@@ -56,7 +56,7 @@ Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
   código, estrutura de pastas e, sobretudo, a seção **`## Comandos`** (`### Build`, `### Testes`) —
   é de lá que saem os comandos que você vai rodar nos Passos 5.4 e 5.5.
 
-**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+**Depois**, liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — aprofundamento por tema, **quando existir**
 
 Ler cada arquivo encontrado antes de escrever qualquer linha de código. Não pular nenhum.
@@ -326,9 +326,8 @@ Tudo certo para começar?
 
 **5.2. Implementar código**
 
-- Usar `Read` para ler arquivos antes de editar — **nunca editar sem ler antes**
-- Usar `Edit` para modificações pontuais em arquivos existentes
-- Usar `Write` apenas para arquivos novos
+- Ler o arquivo antes de editar — **nunca editar sem ler antes**
+- Editar pontualmente o que já existe; criar arquivo novo só quando o PLAN ou o código exigir
 - Seguir **rigorosamente** os padrões lidos em `docs/architecture/` / `#padroes-frontend`
 - Implementar exatamente o que está descrito no PLAN — sem adicionar complexidade não solicitada
 

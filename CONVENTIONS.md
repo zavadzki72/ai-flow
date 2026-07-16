@@ -36,10 +36,13 @@ aninha em silêncio em vez de substituir.
 O projeto ativo é determinado por um arquivo `.ai-project` na raiz do repositório onde o dev está trabalhando, com o seguinte conteúdo:
 
 ```
-MAPS/project
+MAPS/{slug}
 ```
 
-Se `.ai-project` não existir, a skill deve perguntar ao dev: `Qual projeto estamos trabalhando? (ex: projeto-1, projeto-2)`
+Ex.: `MAPS/copa-draft`, `MAPS/mz-finance`. **É o slug do projeto, não o literal `project`.**
+
+Se `.ai-project` não existir, a skill deve perguntar ao dev: `Qual projeto estamos trabalhando?` —
+listando os slugs que existirem em `MAPS/` (não invente exemplos: leia o diretório).
 
 Após identificar o projeto:
 1. Ler `MAPS/{slug}/{slug}-map.json` para obter configuração estruturada
@@ -96,10 +99,13 @@ Há ainda `license`, `metadata` (mapa livre) e `allowed-tools` (experimental) �
 
 ### Anatomia do `SKILL.md`
 
-Alvo: **50-70 linhas**. Passou de 100, você está copiando processo do SHARED — pare.
+Alvo: **60-90 linhas** (hoje: 62 a 94). Se passar disso, o teste não é a régua e sim a pergunta:
+**estou copiando processo do SHARED?** Se estiver, pare. As orquestradoras estouram legitimamente
+(~120) porque carregam os idiomas de harness que fazem a delegação funcionar — esses ficam verbatim.
 
 | Seção | Papel |
 |---|---|
+| `## ⛔ Requisito de harness` | **Só** quando a skill exige capability que nem todo cliente tem — ver § Skills que exigem um harness específico. Vem antes de tudo |
 | `## Trigger` | Comandos e frases que ativam a skill |
 | `## Processo Completo` | Uma linha: `Leia e siga: SKILLS/SHARED/{nome}.md` + a âncora de path |
 | `## Ambiente` | Como resolver arquivos, shell e perguntas **sem** nomear tool de CLI |
@@ -124,7 +130,7 @@ AGENTS/SHARED/{papel}.md            ← persona canônica (fonte de verdade — 
 AGENTS/SHARED/lenses/{linguagem}.md ← lentes de linguagem (só conhecimento idiomático)
 ```
 
-Instalação: `ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md`.
+Instalação: `mkdir -p {repo}/.claude/agents && ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md`.
 
 > **A camada de agentes é Claude-only, e está tudo bem.** `AGENTS/SHARED/{papel}.md` carrega `tools:`
 > e `model:` no frontmatter — vocabulário do Claude Code — porque é assim que ele funciona. Chamar
@@ -152,7 +158,7 @@ O corpo de um agente contém **apenas**:
 | `product-manager` | `/spec` | Read/Glob/Grep + Write (só `prd/`) |
 | `arquiteto-senior` | `/planejar` | + Write (`plan/`, `adr/`) + Bash (git) |
 | `dev-senior` | `/implementar` | + Edit/Write/Bash (lê a stack do map + lente) |
-| `qa` | `/test-e2e` | Read/Glob/Grep + Bash (docker) + Write (só `e2e/`) + MCP de browser |
+| `qa` | `/test-e2e` | Read/Glob/Grep + Bash (docker) + Write (só `e2e/`) — ⚠️ **sem** MCP de browser: `tools:` explícito não herda tool de MCP, então hoje o `qa` cai no fallback manual do `test-e2e.md` |
 | `tech-lead` | `/code-review` | Read/Glob/Grep + Bash (read-only) |
 | `engineering-manager` | `/feature-workflow` | Read/Glob/Grep + Bash (git) + Edit/Write (só o PLAN) + **`Agent`** |
 
@@ -209,16 +215,18 @@ estabelecido, e N devs em paralelo como primeiro código convergem para N dialet
 
 ### Regras
 
-- **Só Claude Code no 1º corte.** `.claude/agents/*.md` é lido nativamente por Claude Code, Cursor e
-  Copilot (VS Code); Gemini precisaria de arquivo próprio (`.gemini/agents/`) — fazer ao cobrir Gemini.
+- **Claude-only por limite estrutural — não por "1º corte".** `.claude/agents/*.md` só vira subagent
+  em janela isolada no Claude Code; os outros clientes não têm essa capability hoje. **Não** escreva
+  arquivo de agente por CLI (`.gemini/agents/` e afins) — isso é o adapter por ferramenta voltando
+  pela porta dos fundos. Quando outro cliente ganhar subagent de verdade, revisite (ver § Estrutura).
 - ⚠️ **Editar um agente em disco não recarrega na sessão ativa** — reinicie a sessão (ou crie via `/agents`).
 
 ### Adicionando um Novo Agente
 
 1. Crie a persona em `AGENTS/SHARED/{papel}.md` (seguindo o contrato acima) — frontmatter com
    `name`, `description`, `tools` (least-privilege) e `model`.
-2. Instale: `ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md` e
-   **reinicie a sessão**.
+2. Instale: `mkdir -p {repo}/.claude/agents && ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md`
+   e **reinicie a sessão**.
 3. Documente na tabela do `README.md`.
 
 > A `description` não é decoração: é o texto que o orquestrador lê para decidir se delega a você.
@@ -501,7 +509,7 @@ Cada boilerplate deve conter um `README.md` explicando:
 
 1. Crie a lógica central em `SKILLS/SHARED/nome-skill.md`
 2. Crie `SKILLS/nome-skill/SKILL.md` seguindo o § Anatomia. **Um arquivo, para todos os clientes.**
-3. Instale: `ln -sf {ai-flow}/SKILLS/nome-skill/SKILL.md {repo}/.claude/skills/nome-skill/SKILL.md`
+3. Instale: `mkdir -p {repo}/.claude/skills/nome-skill && ln -sf {ai-flow}/SKILLS/nome-skill/SKILL.md {repo}/.claude/skills/nome-skill/SKILL.md`
    e **reinicie a sessão** — o registro de skills é snapshot de startup.
 4. Documente na tabela em `README.md`
 

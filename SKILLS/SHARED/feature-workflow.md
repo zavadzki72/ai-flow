@@ -59,8 +59,9 @@ paralelo. O processo abaixo muda nestes pontos (o restante segue igual ao `--aut
 
 ## Pré-requisitos
 
-- Os 4 agentes instalados como subagents (ex.: `.claude/agents/` no cliente): `product-manager`,
-  `arquiteto-senior`, `dev-senior`, `tech-lead`. Ver `AGENTS/SHARED/` e os adapters da ferramenta.
+- Os 4 agentes instalados como subagents em `.claude/agents/`: `product-manager`, `arquiteto-senior`,
+  `dev-senior`, `tech-lead`. O arquivo que roda é `AGENTS/SHARED/{papel}.md` — instale com symlink de
+  **arquivo**: `ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md`.
 - Projeto ativo configurado (`.ai-project` → `MAPS/{projeto}`).
 
 ---

@@ -72,6 +72,7 @@ O `notify.js` é **fire-and-forget**: se o daemon estiver desligado, ele falha c
 |------|-------|
 | `GET /` | dashboard (SPA) |
 | `GET /api/snapshot` | estado completo (projetos, plans parseados, worktrees) |
+| `GET /api/usage` | custo/uso a partir dos transcripts — exige `?slug=`, 400 sem ele |
 | `GET /api/stream` | SSE: `snapshot` (rescan) e `agent` (hooks) |
 | `POST /api/events` | ingestão de eventos de agente (usado pelos hooks) |
 | `GET /api/rescan` | força um rescan |

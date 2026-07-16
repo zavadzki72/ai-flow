@@ -130,7 +130,7 @@ Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
   estrutura de pastas, modelo de dados, glossário e a seção **`## Comandos`** (build e testes, que
   vão para o campo *Comandos Úteis* e os critérios de aceitação de cada etapa).
 
-**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+**Depois**, liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — aprofundamento por tema, **quando existir**
 
 Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
@@ -300,8 +300,9 @@ Com base na exploração, fazer perguntas técnicas específicas **(máximo 10)*
 Basear as perguntas no código real encontrado, não em suposições.
 
 **Execução como Agente:** quando esta skill roda dentro de um **agente isolado** (persona
-`arquiteto-senior`), a janela **não** tem `AskUserQuestion` — nem se a tool for listada no
-frontmatter. O que fazer depende de **quem te invocou ter canal com o humano**:
+`arquiteto-senior` — hoje só no Claude Code), a janela **não** tem tool de pergunta estruturada (lá,
+`AskUserQuestion`) — nem se ela estiver listada no frontmatter. O que fazer depende de **quem te
+invocou ter canal com o humano**:
 
 | Quem invoca | Canal humano? | O que fazer com a dúvida |
 |---|---|---|

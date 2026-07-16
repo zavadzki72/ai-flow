@@ -11,11 +11,15 @@ ai-flow/
   SKILLS/{nome}/SKILL.md  A skill: uma por pasta, lida por todos os clientes
   SKILLS/SHARED/          O processo de cada skill (agnóstico de provider)
   AGENTS/SHARED/          Personas por papel + lenses/ de linguagem (→ .claude/agents/)
+  AGENTS/DESIGN.md        Por que a camada de agentes é assim (registro de decisão)
+  MCP/{provider}/         Guias de setup de MCP, agnósticos de cliente (+ README.md e CLIENTS.md)
   BOILERPLATES/
     BACK/                 Boilerplates de backend (dotnet-api, dotnet-worker, ...)
     FRONT/                Boilerplates de frontend (react, angular, ...)
   MAPS/
     _template/            Template para novos projetos
+  ORCHESTRATOR/           Dashboard local de acompanhamento dos workflows
+  PRESENTATIONS/          Material de palestra
   CONVENTIONS.md          Como escrever skills, maps e boilerplates
   README.md               Este arquivo
 ```
@@ -42,6 +46,7 @@ tool que os adapters traduziam à mão, o modelo resolve em runtime.
 `~/.claude/skills/` para todos), e **reinicie a sessão** — o registro é snapshot de startup.
 
 ```bash
+mkdir -p {repo}/.claude/skills/{nome}
 ln -sf {ai-flow}/SKILLS/{nome}/SKILL.md {repo}/.claude/skills/{nome}/SKILL.md
 ```
 
@@ -79,7 +84,6 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `implementar` | `/implementar` | Executa uma etapa do PLAN com branch, código, testes e commit |
 | `planejar` | `/planejar` | Cria um PLAN de execução a partir de um PRD |
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
-| `setup` | `/setup` | Configura ambiente de desenvolvimento |
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → projeto planejado: descoberta da ideia, recorte, boilerplate, bootstrap físico e os artefatos — **enxuto** (1 PRD + 1 PLAN do MVP_000001) ou **completo** (N PRDs + N PLANs via `/epic-workflow --so-planejar`), à escolha do dev |
 | `feature-workflow` | `/feature-workflow [--auto]` | Orquestra o ciclo por feature de forma autônoma (PM → Arquiteto → Dev em ondas paralelas → Tech Lead), com validação objetiva entre artefatos; normal = 1 rodada de perguntas no início, `--auto` = zero interação |
@@ -129,17 +133,17 @@ feature na sua mão. Depois, `/epic-workflow {path-do-épico}` retoma e implemen
 Nenhum dos dois faz push/PR automático — o relatório final só sugere.
 `/test-e2e` roda entre `/implementar` (todas as etapas concluídas) e `/code-review` — ainda fora do
 `/feature-workflow`, disparado manualmente enquanto a integração ao orquestrador não é feita. No
-`/epic-workflow` ele já entra como FASE 4.3, condicional a `environments.local` + MCP de browser.
+`/epic-workflow` ele já entra como Passo 6.3 (FASE 4), condicional a `environments.local` + MCP de browser.
 
 > ⚠️ **`Agent` no frontmatter é o que dá poder de delegação.** Só o `engineering-manager` tem — os
 > outros papéis são folhas de propósito, e a comunicação entre eles é sempre via broker. Ver
 > `CONVENTIONS.md` § Delegação.
 
 **Instalação (Claude Code):** symlink de `AGENTS/SHARED/*.md` para `.claude/agents/` do repositório
-(ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**. `.claude/agents/` também é
-lido nativamente por Cursor e Copilot (VS Code).
+(ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**.
 
 ```bash
+mkdir -p {repo}/.claude/agents
 ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md
 ```
 
@@ -157,6 +161,7 @@ As skills em `MCP/` são agnósticas de cliente e geram configuração para Clau
 | Provider | Skill | Status |
 |----------|-------|--------|
 | Azure DevOps | `MCP/azure-devops/SKILL.md` | ✅ Disponível |
+| SonarQube | `MCP/sonarqube/SKILL.md` | ✅ Disponível |
 | Datadog | — | 🔜 Em breve |
 
 Para configurar:

@@ -36,7 +36,7 @@ Extrair:
 
 **0.3. Carregar documentação do projeto**
 
-Usar Glob para listar e ler **todos** os arquivos `.md` de:
+Liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — rotas, telas e fluxos principais da aplicação
 - `{slug}-context.md`, seção `## Ambiente Local E2E` (ou `## Comandos`, se a seção dedicada não existir) — como o dev sobe o projeto manualmente
 

@@ -120,7 +120,7 @@ Carregar o arquivo `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 - `{AI_FLOW_ROOT}/{map-path}/{slug}-context.md` — **é a fonte principal**: domínio, glossário,
   regras de negócio, integrações, restrições não-funcionais e roadmap.
 
-**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+**Depois**, liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/business/` — domínio de negócio, módulos, glossário
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — arquitetura, padrões e estrutura
 
@@ -295,9 +295,10 @@ inverte: toda dúvida vira premissa registrada.)*
 
 #### Execução como Agente (modo ask-upfront)
 
-Quando esta skill roda dentro de um **agente isolado** (persona `product-manager`), a janela do
-agente **não** tem `AskUserQuestion` — nem se a tool for listada no frontmatter. Como você pergunta
-depende de **quem te invocou ter canal com o humano**:
+Quando esta skill roda dentro de um **agente isolado** (persona `product-manager` — hoje só no Claude
+Code), a janela do agente **não** tem tool de pergunta estruturada (lá, `AskUserQuestion`) — nem se
+ela estiver listada no frontmatter. Como você pergunta depende de **quem te invocou ter canal com o
+humano**:
 
 | Quem invoca | Canal humano? | O que fazer com a dúvida |
 |---|---|---|

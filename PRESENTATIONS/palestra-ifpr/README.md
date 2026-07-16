@@ -22,7 +22,7 @@ Servido como **Static Site** via Coolify.
 
 - **Repository:** `github.com/zavadzki72/ai-flow`
 - **Branch:** `master`
-- **Base directory:** `/PRESENTATIONS/grandes-codebases`
+- **Base directory:** `/PRESENTATIONS/palestra-ifpr`
 - **Publish directory:** `.`
 - **Build command:** *(vazio — sem build)*
 

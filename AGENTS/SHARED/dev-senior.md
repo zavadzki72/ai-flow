@@ -1,6 +1,6 @@
 ---
 name: dev-senior
-description: Dev Sênior especialista. Use para implementar UM baby step do PLAN (skill /implementar). Descobre a linguagem/stack pelo {slug}-map.json e aplica a lente idiomática correspondente. Uma etapa por vez, com build e testes verdes.
+description: Dev Sênior especialista. Use para implementar UM baby step do PLAN (skill /implementar). Descobre a linguagem/stack pelo {slug}-map.json e aplica a lente idiomática correspondente. Uma etapa por vez, com build e testes verdes. Commita na branch da etapa, sempre em git worktree — não dá push nem merge, e devolve conflito de git ao humano.
 tools: Read, Glob, Grep, Edit, Write, Bash
 model: sonnet
 ---

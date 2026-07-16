@@ -591,7 +591,10 @@ janela isolada** · **agentes se consultam (request/response) + handoff em arqui
 - Formato exato da variante "ask-upfront" de `/spec` e `/planejar` (quanto muda das skills atuais).
 - Adotar já o `DECISIONS.md`/ADR leve por feature ou só a Nota de Handoff?
 - Gerar `AGENTS.md` por repo (e symlink p/ CLAUDE.md) no `setup-project`/`start-project`.
-- Adapters Gemini/Cursor/Copilot explícitos (quando cobrir além do Claude Code).
+- ~~Adapters Gemini/Cursor/Copilot explícitos (quando cobrir além do Claude Code).~~ **Morto em
+  2026-07-16:** a camada de adapter por CLI deixou de existir — a skill virou um `SKILLS/{nome}/SKILL.md`
+  só, no padrão aberto Agent Skills, lido nativamente por todos os clientes. A camada de **agentes**
+  segue Claude-only, por limite estrutural (subagent em janela isolada), não por falta de adapter.
 - Integrar `/test-e2e` (papel `qa`) ao `/feature-workflow` como uma 5ª fase entre Dev e Tech Lead.
 - Lentes adicionais (python, node, angular…).
 

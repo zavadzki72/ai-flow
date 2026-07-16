@@ -31,7 +31,7 @@ Extrair:
   arquitetura, convenções de teste e a seção **`## Comandos`** (build/testes, para conferir se o
   que o PLAN exigiu foi realmente rodado).
 
-**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+**Depois**, liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões, anti-patterns e convenções de teste
 - `{AI_FLOW_ROOT}/{map-path}/docs/code-review/` — checklist específico do projeto
 
@@ -250,7 +250,7 @@ Verificar se `map.tooling.sonar.project-key` está preenchido no `{slug}-map.jso
 Deseja incluir a análise SonarQube no code review? (s/n)
 ```
 
-**Se o dev aceitar**, usar o MCP SonarQube (ver adapter do agente) para coletar:
+**Se o dev aceitar**, usar o MCP SonarQube configurado nesta sessão para coletar:
 
 1. **Quality Gate** — status atual (passou / falhou) e condições violadas
 2. **Métricas do projeto:**
@@ -546,7 +546,7 @@ git diff {repo.branch}...HEAD --name-only  # arquivos
 - Descrição: resumo, resultados do review, mudanças, testes, referências ao PRD e PLAN
 
 **Criar PR via ferramenta configurada em `map.tooling.project-management`:**
-- `type: azure-devops` → usar MCP Azure DevOps (ver adapter do agente/cliente para tool names)
+- `type: azure-devops` → usar o MCP Azure DevOps configurado nesta sessão
 - `type: github` → usar `gh pr create`
 - `type: gitlab` → usar `glab mr create`
 - Outros → orientar o dev a criar manualmente
