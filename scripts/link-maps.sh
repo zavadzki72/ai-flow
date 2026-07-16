@@ -12,6 +12,17 @@
 #      default: ../ai-flow-maps
 set -euo pipefail
 
+# Windows/Git Bash: ln -s copia por padrão — força symlink nativo (exige Modo
+# Desenvolvedor ou shell elevado); e "python3" cai no stub da Microsoft Store,
+# então usa o launcher "py".
+PYTHON=python3
+case "$(uname -s)" in
+  MINGW*|MSYS*)
+    export MSYS="winsymlinks:nativestrict"
+    command -v py >/dev/null && PYTHON=py
+    ;;
+esac
+
 AF_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAPS_REPO="$(cd "${1:-$AF_ROOT/../ai-flow-maps}" 2>/dev/null && pwd || true)"
 
@@ -46,7 +57,7 @@ for dir in "$MAPS_REPO"/*/; do
   fi
 
   # Link relativo (../../ai-flow-maps/{slug}), para ser portável entre máquinas.
-  rel="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "${dir%/}" "$AF_ROOT/MAPS")"
+  rel="$("$PYTHON" -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "${dir%/}" "$AF_ROOT/MAPS")"
   ln -sfn "$rel" "$target"
   echo "  ✓ MAPS/$slug -> $rel"
   linked=$((linked + 1))

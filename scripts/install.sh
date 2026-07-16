@@ -19,21 +19,11 @@ echo "destino: $DEST"
 echo ""
 
 # ── Skills ─────────────────────────────────────────────────────────────────
-# Uma pasta por skill, com SKILL.md dentro (padrão Agent Skills). O symlink é
-# de ARQUIVO, nunca de diretório: `ln -sfn` contra um diretório existente
-# aninha em silêncio em vez de substituir.
+# Delegado ao link-skills.sh (padrão Agent Skills: pasta por skill com
+# SKILL.md dentro) — o mesmo script serve Copilot, Codex e afins.
 echo "Skills:"
-skills=0
-for dir in "$AF_ROOT"/SKILLS/*/; do
-  slug="$(basename "$dir")"
-  [ "$slug" = "SHARED" ] && continue          # SHARED é o processo, não é uma skill
-  [ -f "$dir/SKILL.md" ] || continue
-
-  mkdir -p "$DEST/skills/$slug"
-  ln -sf "$dir/SKILL.md" "$DEST/skills/$slug/SKILL.md"
-  echo "  ✓ $slug"
-  skills=$((skills + 1))
-done
+"$AF_ROOT/scripts/link-skills.sh" "$DEST/skills" | { grep '✓' || true; } | sed 's/^/  /'
+skills=$(find "$DEST/skills" -name SKILL.md -type l 2>/dev/null | wc -l)
 
 # ── Agentes ────────────────────────────────────────────────────────────────
 # Claude-only: subagent em janela isolada não existe nos outros clientes.

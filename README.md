@@ -4,6 +4,38 @@ Repositório central de configurações, skills e contexto para uso de IA no dia
 
 ---
 
+## Get Started
+
+```bash
+# 1. Clone (o ai-flow-maps é privado e opcional — só para quem tem os maps)
+git clone https://github.com/zavadzki72/ai-flow.git
+git clone https://github.com/zavadzki72/ai-flow-maps.git   # opcional, lado a lado
+
+# 2. Instale
+cd ai-flow
+./scripts/install.sh ~/.claude    # Claude Code: skills + agentes + maps, nível de usuário
+```
+
+Usa outro cliente? Qualquer um que leia o padrão **Agent Skills** (Copilot CLI, Codex, Cursor,
+Gemini CLI, ...) é atendido pelo mesmo script de skills:
+
+```bash
+./scripts/link-skills.sh                     # detecta os clientes da máquina (~/.claude, ~/.copilot, ~/.codex)
+./scripts/link-skills.sh ~/.gemini/skills    # ou passe o(s) destino(s) explicitamente
+./scripts/link-skills.sh {repo}/.github/skills   # skills no nível de um repositório (Copilot)
+```
+
+Depois:
+
+3. **Reinicie a sessão** do cliente — o registro de skills é snapshot de startup. `/skills` deve listar as skills.
+4. Em cada repositório de projeto, aponte o projeto ativo: crie um `.ai-project` na raiz com o
+   conteúdo `MAPS/{slug}` (ver § Projeto Ativo).
+
+Tudo roda por **symlink** — nada é copiado. Editar uma skill no ai-flow passa a valer na hora,
+sem reinstalar. No Windows, rode num shell com permissão de symlink (Modo Desenvolvedor ou elevado).
+
+---
+
 ## Estrutura
 
 ```
@@ -20,6 +52,7 @@ ai-flow/
     _template/            Template para novos projetos
   ORCHESTRATOR/           Dashboard local de acompanhamento dos workflows
   PRESENTATIONS/          Material de palestra
+  scripts/                install.sh, link-skills.sh, link-maps.sh — instalação por symlink
   CONVENTIONS.md          Como escrever skills, maps e boilerplates
   README.md               Este arquivo
 ```
@@ -42,13 +75,16 @@ liberado como spec aberta, hoje lido nativamente por **Claude Code, Cursor, Gemi
 Copilot e VS Code**, entre outros. Por isso um arquivo só serve todos os clientes: o vocabulário de
 tool que os adapters traduziam à mão, o modelo resolve em runtime.
 
-**Instalação:** symlink de arquivo para `.claude/skills/{nome}/SKILL.md` no repositório (ou
-`~/.claude/skills/` para todos), e **reinicie a sessão** — o registro é snapshot de startup.
+**Instalação:** `./scripts/link-skills.sh` cria os symlinks para todos os clientes detectados na
+máquina (ou para os destinos que você passar) e ainda troca resquícios de instalações antigas —
+links de diretório inteiro que quebram quando o repo move. Na mão, o equivalente é:
 
 ```bash
 mkdir -p {repo}/.claude/skills/{nome}
 ln -sf {ai-flow}/SKILLS/{nome}/SKILL.md {repo}/.claude/skills/{nome}/SKILL.md
 ```
+
+Nos dois casos, **reinicie a sessão** — o registro é snapshot de startup.
 
 ### 2. Maps
 
