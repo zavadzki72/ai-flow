@@ -53,10 +53,14 @@
       ]
     }
   },
+  "epic": {
+    "hot-files": []
+  },
   "docs": {
     "business": "docs/business/",
     "architecture": "docs/architecture/",
     "code-review": "docs/code-review/",
+    "epic": "epic/",
     "prd": "prd/",
     "plan": "plan/",
     "adr": "adr/",

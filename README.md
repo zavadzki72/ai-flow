@@ -78,6 +78,7 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
 | `feature-workflow` | `/feature-workflow [--auto]` | Orquestra o ciclo por feature de forma autônoma (PM → Arquiteto → Dev em ondas paralelas → Tech Lead), com validação objetiva entre artefatos; normal = 1 rodada de perguntas no início, `--auto` = zero interação |
+| `epic-workflow` | `/epic-workflow` | Orquestra um **pacote de features** ou um **épico que não cabe num PRD só**: decompõe, roda `/spec` e `/planejar` de todas em paralelo, monta o grafo global e executa as features em ondas — cada uma num `/feature-workflow` isolado. Sempre autônomo |
 
 ---
 
@@ -94,13 +95,34 @@ isolada** e se comunica por consulta + handoff em arquivo. Detalhes em `AGENTS/D
 | `dev-senior` | Dev Sênior (lê a stack do map + lente de linguagem) | `/implementar` |
 | `qa` | QA Engenheiro de Testes E2E (sobe ambiente, navega via MCP de browser) | `/test-e2e` |
 | `tech-lead` | Tech Lead (guardião de engenharia, read-only) | `/code-review` |
+| `engineering-manager` | Engineering Manager (entrega uma feature inteira; **único papel que delega**) | `/feature-workflow` |
 
-Orquestração: `/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead de forma **autônoma**
-(validação objetiva no lugar de gates humanos; dúvidas viram premissas registradas). As etapas do
-PLAN rodam em **ondas paralelas** (máx. 3 `dev-senior`, branch efêmera + worktree por etapa).
-Nunca faz push/PR automático — o relatório final só sugere.
+### Os três níveis de orquestração
+
+```
+/epic-workflow        épico → N features       ondas de features (máx. 3 · teto de 6 devs somados)
+  └─ /feature-workflow    feature → N etapas   ondas de etapas (máx. 3 devs)
+       └─ /implementar        etapa → código
+```
+
+`/feature-workflow` conduz PM → Arquiteto → Dev → Tech Lead de forma **autônoma** (validação
+objetiva no lugar de gates humanos; dúvidas viram premissas registradas). As etapas do PLAN rodam em
+**ondas paralelas** (branch efêmera + worktree por etapa).
+
+`/epic-workflow` sobe uma altitude: decompõe o épico em features (recorte do PM **criticado pelo
+arquiteto** — a validação cruzada substitui o gate humano), roda `/spec` e `/planejar` de todas em
+paralelo, e **só depois de todos os PLANs existirem** monta o grafo global (dependências + colisão
+real de arquivos) e executa as features em ondas. Cada feature vira um `engineering-manager` rodando
+um `/feature-workflow` inteiro em janela própria.
+
+Nenhum dos dois faz push/PR automático — o relatório final só sugere.
 `/test-e2e` roda entre `/implementar` (todas as etapas concluídas) e `/code-review` — ainda fora do
-`/feature-workflow`, disparado manualmente enquanto a integração ao orquestrador não é feita.
+`/feature-workflow`, disparado manualmente enquanto a integração ao orquestrador não é feita. No
+`/epic-workflow` ele já entra como FASE 4.3, condicional a `environments.local` + MCP de browser.
+
+> ⚠️ **`Agent` no frontmatter é o que dá poder de delegação.** Só o `engineering-manager` tem — os
+> outros papéis são folhas de propósito, e a comunicação entre eles é sempre via broker. Ver
+> `CONVENTIONS.md` § Delegação.
 
 **Instalação (Claude Code):** copie os adapters de `CLAUDE/AGENTS/*.md` para `.claude/agents/` do
 repositório (ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**.

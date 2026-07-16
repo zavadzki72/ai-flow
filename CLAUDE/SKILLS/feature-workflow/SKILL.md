@@ -26,6 +26,32 @@ Agentes referenciados (instalados em `.claude/agents/` — ver `CLAUDE/AGENTS/`)
 
 ## Notas Específicas do Claude Code
 
+### Dashboard de agentes (Orchestrator) — rodar ANTES de tudo (Passo 0)
+No **começo do Passo 0**, garanta que o dashboard local esteja no ar e **dê o link ao humano**,
+sugerindo acompanhar as fases e os agentes por lá. É **best-effort**: se algo falhar (sem Node,
+porta 4319 ocupada por outro processo, etc.), **siga o fluxo normalmente** — o dashboard é
+observabilidade, **nunca** um gate e nunca uma parada por guardrail.
+
+1. Cheque se já está rodando; se não, suba **destacado** (sobrevive ao fim da sessão — `nohup`,
+   macOS-friendly):
+   ```bash
+   curl -s -o /dev/null --max-time 2 http://localhost:4319/api/snapshot \
+     && echo "orchestrator já no ar" \
+     || ( nohup node /Users/zavadzki72/Projects/Personal/ai-flow/ORCHESTRATOR/server.js \
+            > /tmp/ai-flow-orchestrator.log 2>&1 & echo "orchestrator iniciado" )
+   ```
+   (Windows → PowerShell: `Start-Process node -ArgumentList "<...>\ORCHESTRATOR\server.js" -WindowStyle Hidden`.)
+   Se acabou de subir, repita o `curl` 1x para confirmar que respondeu antes de anunciar.
+2. **Informe o humano** com o link (frase sugerida):
+   > 🎛️ Acompanhe os agentes ao vivo no dashboard: **http://localhost:4319**
+   >    (fases PM→Arquiteto→Dev→Tech Lead, ondas paralelas e, clicando em cada agente,
+   >     a tarefa/resultado do que ele está fazendo)
+   - **Modo normal:** inclua essa linha **no bloco da rodada inicial** (Passo 0.3), antes das perguntas.
+   - **Modo `--auto`:** imprima como **primeira mensagem** do ciclo.
+3. O "ao vivo" por agente depende dos hooks (`PreToolUse`/`PostToolUse`/`SubagentStart`/`SubagentStop`
+   → `ORCHESTRATOR/hooks/notify.js`) já registrados no `settings.json`. Sem hooks, o dashboard ainda
+   mostra o progresso lido dos PLANs — não bloqueie nem tente instalar hooks no meio do fluxo.
+
 ### Delegação (tool Agent)
 - Invoque cada papel com a tool `Agent`, passando no prompt os **paths** do PRD/PLAN/branch +
   o **modo** (normal | --auto) + respostas/premissas. O subagent roda em **janela própria** e

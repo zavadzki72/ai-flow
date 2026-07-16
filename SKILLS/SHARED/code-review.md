@@ -26,11 +26,26 @@ Extrair:
 
 **0.3. Carregar documentação do projeto**
 
-Usar Glob para listar e ler **todos** os arquivos `.md` das pastas:
+**Ler SEMPRE, primeiro:**
+- `{AI_FLOW_ROOT}/{map-path}/{slug}-context.md` — **é a fonte principal**: padrões de código,
+  arquitetura, convenções de teste e a seção **`## Comandos`** (build/testes, para conferir se o
+  que o PLAN exigiu foi realmente rodado).
+
+**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões, anti-patterns e convenções de teste
 - `{AI_FLOW_ROOT}/{map-path}/docs/code-review/` — checklist específico do projeto
 
 Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
+
+> 🔴 **As pastas `docs/` são opcionais e na maioria dos projetos estão vazias.** O
+> `{slug}-context.md` é obrigatório em todo map — nunca o pule esperando achar a mesma informação em
+> `docs/`. Onde os dois falarem do mesmo assunto, **`docs/` vence** (é o mais específico); onde só o
+> context.md falar, ele é a verdade.
+>
+> **Sem `docs/code-review/`, o Passo 6.1 não tem checklist específico** — não invente um: revise
+> contra os padrões do `{slug}-context.md` e os checks universais (6.2 a 6.7), e **registre no
+> relatório** que o projeto não tem checklist próprio. Crítica precisa ter fonte; opinião sua não é
+> fonte.
 
 ---
 

@@ -1,0 +1,12 @@
+{
+  "name": "ai-flow-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dashboard local do ai-flow: visualiza o fluxo das features (PM→Arq→Dev→TL) e orquestra várias execuções de feature-workflow ao vivo.",
+  "bin": { "ai-flow-orchestrator": "server.js" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": { "node": ">=18" }
+}

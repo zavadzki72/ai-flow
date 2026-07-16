@@ -15,10 +15,14 @@ Quando o prompt de invocação indicar **modo orquestrado**, o processo abaixo m
 1. **Zero perguntas/confirmações.** PLAN, ETAPA, branch e branch base vêm no prompt — não pedir
    nem confirmar nada (pula as confirmações dos Passos 2.4, 3.3, 5.1 e 7). Se faltar informação
    essencial, **retorne ao orquestrador** informando o que falta, em vez de perguntar.
-2. **Branch e worktree dados.** Use a branch informada (pode ser uma **branch efêmera de etapa**,
-   ex.: `feature/x--etapa-3`, criada a partir da branch base). No Passo 3, crie o worktree para
-   essa branch (`git worktree add "{worktree.path}" -b {branch} {branch-base}` quando ela ainda
-   não existir) — as regras de worktree continuam valendo.
+2. **Branch e worktree dados — não os crie.** A branch (possivelmente **efêmera de etapa**, ex.:
+   `feature/x--etapa-3`) e o worktree dela **já foram preparados pelo orquestrador** (ver
+   `feature-workflow.md` § 3.2); ambos vêm no prompt. **Pule a criação no Passo 3** e vá direto
+   trabalhar em `{worktree.path}`.
+   **Por quê:** quem monta a onda é quem sabe quais etapas rodam em paralelo — a topologia é do
+   nível dele, não do seu. Dois devs criando worktree ao mesmo tempo no mesmo repo é colisão
+   desnecessária. Se o worktree informado **não existir**, isso é anomalia: **retorne ao
+   orquestrador** em vez de criá-lo.
 3. **Não atualizar o PLAN** quando o orquestrador indicar que ele consolida (execução paralela —
    dois devs não podem editar o mesmo arquivo). Pule o Passo 8 e devolva as **Observações da
    Implementação** no resumo final.
@@ -47,10 +51,24 @@ Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 
 **0.3. Carregar documentação do projeto**
 
-Usar Glob para listar e ler **todos** os arquivos `.md` da pasta de arquitetura:
-- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões de código, estrutura de arquivos e comandos
+**Ler SEMPRE, primeiro:**
+- `{AI_FLOW_ROOT}/{map-path}/{slug}-context.md` — **é a fonte principal**: arquitetura, padrões de
+  código, estrutura de pastas e, sobretudo, a seção **`## Comandos`** (`### Build`, `### Testes`) —
+  é de lá que saem os comandos que você vai rodar nos Passos 5.4 e 5.5.
+
+**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — aprofundamento por tema, **quando existir**
 
 Ler cada arquivo encontrado antes de escrever qualquer linha de código. Não pular nenhum.
+
+> 🔴 **`docs/architecture/` é opcional e na maioria dos projetos está vazio.** O `{slug}-context.md`
+> é obrigatório em todo map (ver `CONVENTIONS.md` § Maps) — nunca o pule esperando achar a mesma
+> informação em `docs/`. Onde os dois falarem do mesmo assunto, **`docs/architecture/` é o mais
+> específico e vence**; onde só o context.md falar, ele é a verdade.
+>
+> **Sem comando de build você não conclui a etapa.** Não achou nem no context.md nem em `docs/`:
+> em modo interativo, **pergunte ao dev**; em modo orquestrado, **retorne ao orquestrador** — não
+> adivinhe o comando nem pule o build.
 
 ---
 
@@ -178,9 +196,16 @@ git -C {repo.path} worktree add "{worktree.path}" {branch}
 # Se não existe — branch só existe no remoto:
 git -C {repo.path} worktree add "{worktree.path}" -b {branch} origin/{branch}
 
-# Se não existe — branch nova:
-git -C {repo.path} worktree add "{worktree.path}" -b {branch}
+# Se não existe — branch NOVA: sempre a partir de origin/{repo.branch}
+git -C {repo.path} worktree add "{worktree.path}" -b {branch} origin/{repo.branch}
 ```
+
+> 🔴 **O start-point da branch nova é `origin/{repo.branch}` — nunca omita.**
+> `worktree add -b {branch}` **sem** start-point sai do **HEAD do clone principal**, que é a branch
+> que por acaso estiver com checkout lá: uma `develop` desatualizada, uma feature de outra pessoa,
+> um HEAD detached. É silencioso e a feature inteira nasce da base errada. O `git fetch` do Passo
+> 3.2 atualiza `origin/{repo.branch}` — é dele que a branch tem que sair, e é assim que "atualizar
+> antes de começar" acontece **sem** precisar de `checkout`/`pull` no clone principal.
 
 **Se o Git recusar** com `branch already checked out at ...`: a branch já está em uso por **outro
 worktree/orquestrador rodando agora**. Não force — informe ao dev:

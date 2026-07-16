@@ -7,6 +7,100 @@ quebra a implementação em baby steps independentes e gera um arquivo PLAN comp
 
 ---
 
+## Modo Autônomo (invocado por um orquestrador)
+
+Quando o prompt indicar **modo autônomo** (`/feature-workflow --auto`, `/epic-workflow`), o processo
+muda nestes pontos:
+
+1. **Zero perguntas e zero confirmações.** Pule as confirmações dos Passos 2.3 e 3, e o Passo 5
+   (perguntas técnicas) na forma interativa. **Não devolva a lista de dúvidas** — o orquestrador
+   autônomo não tem quem responder.
+2. **Dúvida técnica: decida.** Você é o arquiteto — escolha a opção mais alinhada ao código
+   existente e a `docs/architecture/`, registre em **ADR** e siga. Isso é o seu trabalho, não um
+   chute.
+3. **Dúvida de negócio: vira premissa.** Registre na seção **Premissas Assumidas** do PLAN (a
+   premissa, o motivo, o impacto se errada), marcada com ⚠️ — e **não** invente regra de negócio
+   que o PRD não trouxe: escolha o comportamento mais conservador.
+4. **A faixa de ADR vem no prompt quando houver.** Um orquestrador que dispara vários arquitetos em
+   paralelo **reserva** os números antes e passa uma **faixa** (ex.: "seus ADRs são 012 a 016").
+   Use os números dela, em ordem, e **nunca conte a pasta** — dois arquitetos simultâneos que contem
+   escolhem o mesmo número e um sobrescreve o ADR do outro. **Estourou a faixa?** Não conte a pasta:
+   **retorne ao orquestrador** pedindo mais números.
+5. **Os Passos 8 e 9 viram o resumo de retorno.** Não há dev na sala para validar o plano; devolva o
+   resumo estruturado ao orquestrador. O **HARD STOP continua valendo**: não implemente nada.
+
+---
+
+## Modo Épico (invocado pelo `/epic-workflow`)
+
+Vale tudo do § Modo Autônomo, **mais**:
+
+1. **🔴 NÃO rode git. Pule o Passo 3 inteiro.** O orquestrador já fez `fetch` e já criou um
+   **worktree de planejamento** — o path vem no prompt. Explore o código **lá**.
+   **Por quê:** o `/epic-workflow` dispara N arquitetos **ao mesmo tempo**. Se cada um rodar
+   `checkout`/`pull` no clone principal, eles colidem no `index.lock` — ou, pior e silencioso, o
+   `pull` de um move o HEAD enquanto o outro explora, e os `Arquivo(s) Afetado(s)` saem calculados
+   sobre uma árvore inconsistente. O épico inteiro decide o paralelismo com base nesses paths.
+   Isso também é o que `CONVENTIONS.md` § Git Worktree já manda: **o clone principal nunca recebe
+   `checkout`**.
+2. **Você não está sozinho.** O prompt lista as **outras features do épico** (nome + escopo curto).
+   Você não vê o trabalho dos outros arquitetos e eles não veem o seu. Consequências práticas:
+   - Se o seu PLAN **assume** algo que outra feature constrói, declare no campo **Dependências** da
+     etapa e registre em ADR. Não presuma que ela vai existir.
+   - Se o seu PLAN precisa de um helper genérico que **outra feature provavelmente também precisa**,
+     não invente um nome novo: procure primeiro no código; não achando, registre em ADR que você o
+     está criando, com o path exato.
+3. **`Arquivo(s) Afetado(s)` com path relativo à raiz do repo e prefixado pelo alias do repo**
+   (ex.: `backend/src/Domain/User.cs`). O épico compara esses paths **entre features de repos
+   diferentes** para detectar colisão — sem o prefixo, `src/index.ts` do frontend colide falsamente
+   com o do backend e o épico serializa à toa.
+
+### § Reconciliação (sub-caso do Modo Épico)
+
+O review de integração de um épico acha incoerências **entre** features (duas implementações do
+mesmo conceito, contratos divergentes) e pede um **PLAN de reconciliação**. Aqui:
+
+- **A base não é um PRD único** — é o **relatório do `tech-lead`** (o escopo) mais os **PRDs das
+  features envolvidas** (a intenção original de cada lado). Eles vêm no prompt e **satisfazem o
+  Passo 1**; não pare pedindo "o PRD".
+- **Explore o worktree da branch `fix/`** que veio no prompt, não o de planejamento: o código a
+  reconciliar é o do **épico já mergeado**, e a árvore de planejamento aponta para a branch base,
+  onde nada disso existe ainda.
+- **Decidir qual implementação sobrevive é seu** — é a decisão mais importante do PLAN. Registre em
+  ADR (com a faixa do prompt) *o que morre, o que fica e por quê*; quem lê o épico depois precisa
+  entender por que uma das duas features "perdeu".
+- **PLAN curto e cirúrgico:** o escopo é o 🔴, não a refatoração que você faria se pudesse. Nome:
+  `{slug}-plan-NNN-reconciliacao-epic-{nome}.md`, com o `NNN` que veio no prompt.
+
+---
+
+## Modo Crítica de Recorte (invocado pelo `/epic-workflow` FASE 0)
+
+Modo **read-only**: você **não escreve PLAN nem ADR**. Sua entrega é um **veredito sobre o recorte
+de um épico em features**, produzido pelo `product-manager`. É esta crítica que substitui a
+aprovação humana do recorte — leve a sério: tudo abaixo dela (N PRDs, N PLANs, N features de código)
+herda o erro que você deixar passar.
+
+**O HARD STOP do Passo 8 não se aplica** — aqui não há PLAN a salvar. Você lê, critica e devolve.
+
+**Entrega:** `✅ aprovado` ou `❌ reprovado` + a lista de gaps concretos (qual feature, o quê,
+como corrigir). Checklist:
+
+- [ ] **Toda feature entrega valor sozinha** — nenhuma é "só a camada X" (recorte por camada
+      técnica é o erro mais comum e o mais caro: força dependência total e serializa o épico)
+- [ ] **Grafo de dependências sem ciclo**
+- [ ] **Nenhuma dependência é desnecessária** — questione cada uma; "faz sentido depois" não é
+      dependência, é preferência de ordem, e cada uma custa uma onda
+- [ ] **Nenhuma feature é grande demais para um PRD só** — se for, aponte como subdividir
+- [ ] **Migration / mudança irreversível isolada** numa feature `Isolada: Sim`
+- [ ] **Sem sobreposição** — duas features não implementam o mesmo conceito
+- [ ] **Ordem geral respeita a arquitetura** do projeto (dados/domínio antes de interface)
+
+Use o código real e `docs/architecture/` para criticar — não critique no abstrato. Se uma feature
+"independente" na verdade depende de uma entidade que outra cria, você é quem tem que ver isso.
+
+---
+
 ## Processo
 
 ### Passo 0: Carregar Contexto do Projeto
@@ -27,10 +121,21 @@ Carregar `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 
 **0.3. Carregar documentação do projeto**
 
-Usar Glob para listar e ler **todos** os arquivos `.md` da pasta de arquitetura:
-- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — padrões, estrutura de pastas, ordem de implementação, comandos
+**Ler SEMPRE, primeiro:**
+- `{AI_FLOW_ROOT}/{map-path}/{slug}-context.md` — **é a fonte principal**: arquitetura, padrões,
+  estrutura de pastas, modelo de dados, glossário e a seção **`## Comandos`** (build e testes, que
+  vão para o campo *Comandos Úteis* e os critérios de aceitação de cada etapa).
+
+**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
+- `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — aprofundamento por tema, **quando existir**
 
 Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
+
+> 🔴 **`docs/architecture/` é opcional e na maioria dos projetos está vazio.** O `{slug}-context.md`
+> é obrigatório em todo map — nunca o pule esperando achar a mesma informação em `docs/`. Onde os
+> dois falarem do mesmo assunto, **`docs/architecture/` vence** (é o mais específico); onde só o
+> context.md falar, ele é a verdade. Um PLAN cujos critérios de aceitação dizem "build sem erros"
+> sem que ninguém saiba **qual** é o comando de build é um PLAN que o Dev não consegue executar.
 
 ---
 
@@ -180,11 +285,15 @@ Com base na exploração, fazer perguntas técnicas específicas **(máximo 10)*
 
 Basear as perguntas no código real encontrado, não em suposições.
 
-**Execução como Agente (modo ask-upfront):** quando esta skill roda dentro de um **agente isolado**
-(persona `arquiteto-senior` via `/feature-workflow`), a janela do agente **não** tem `AskUserQuestion`.
-Nesse caso, **não pergunte inline**: reúna todas as dúvidas técnicas e **retorne uma lista
-estruturada** ao orquestrador (que as leva ao humano ou consulta o `product-manager` para regras de
-negócio). Rodando direto com o dev na sessão principal, pergunte normalmente.
+**Execução como Agente:** quando esta skill roda dentro de um **agente isolado** (persona
+`arquiteto-senior`), a janela **não** tem `AskUserQuestion` — nem se a tool for listada no
+frontmatter. O que fazer depende de **quem te invocou ter canal com o humano**:
+
+| Quem invoca | Canal humano? | O que fazer com a dúvida |
+|---|---|---|
+| Dev, na sessão principal | sim | Pergunte normalmente, inline |
+| `/feature-workflow` (modo normal) | só na rodada inicial | **ask-upfront**: reúna todas as dúvidas e **retorne a lista estruturada** ao orquestrador, que leva ao humano (ou consulta o `product-manager` para regra de negócio) e te re-invoca |
+| `/feature-workflow --auto` · `/epic-workflow` | **não** | **§ Modo Autônomo**: dúvida técnica você **decide** + ADR; dúvida de negócio vira **premissa** ⚠️. **Nunca** devolva a lista |
 
 ---
 
@@ -310,7 +419,13 @@ e principais componentes afetados por camada]
 **Complexidade:** 🟢 Baixa / 🟡 Média / 🔴 Alta
 
 **Arquivo(s) Afetado(s):**
-- `{path}/[Arquivo]` (novo / alterado)
+- `{repo-alias}/{path-relativo-à-raiz-do-repo}` (novo / alterado)
+
+> Prefixe com o **alias do repo** (a chave em `map.repositories`) sempre que o projeto tiver mais de
+> um — ex.: `backend/src/Domain/User.cs`, `frontend/src/routes.tsx`. Os orquestradores comparam
+> esses paths **como string** para decidir o que roda em paralelo: sem o prefixo, o `src/index.ts`
+> do frontend colide falsamente com o do backend e o fluxo serializa à toa; e dois arquivos
+> genuinamente diferentes com o mesmo path relativo passariam por iguais.
 
 **O que implementar:**
 [Descrição técnica clara do que deve ser feito — SEM código.
@@ -401,6 +516,20 @@ O que a classe/módulo deve fazer, quais campos adicionar, qual lógica aplicar]
 
 ---
 
+## PREMISSAS ASSUMIDAS *(omitir a seção se não houve nenhuma)*
+
+> Preenchida em **modo autônomo**, quando não houve canal para perguntar. Nenhum humano validou
+> nada aqui. Decisão **técnica** não entra aqui — vai para DECISÕES TÉCNICAS / `adr/`; premissa é o
+> que foi **assumido por falta de informação**.
+
+### Negócio ⚠️
+- **P01**: [premissa] — **Motivo**: [que informação faltou] — **Impacto se errada**: [o que refazer]
+
+### Técnicas
+- **P02**: [premissa] — **Motivo**: [...] — **Impacto se errada**: [...]
+
+---
+
 ## RISCOS E MITIGAÇÕES
 
 ### Risco 1: [Nome]
@@ -445,9 +574,29 @@ Após cada etapa concluída:
 
 ---
 
+---
+
+## HANDOFF
+
+- **De / Para**: Arquiteto Sênior → Dev Sênior
+- **Decisões de arquitetura**: [o que foi decidido e por quê — o que o Dev não deve reabrir; ver
+  também DECISÕES TÉCNICAS e `adr/`]
+- **Premissas assumidas**: [ver PREMISSAS ASSUMIDAS, ou "nenhuma"]
+- **Riscos**: [o que pode dar errado na implementação e onde]
+- **Dúvidas em aberto**: [o que ficou sem resposta e quem pode respondê-la]
+- **O que o próximo papel deve saber**: [padrão do código que precisa ser replicado, armadilha
+  conhecida, etapa que parece simples e não é]
+
+---
+
 **Criado em:** YYYY-MM-DD
 **Próximo passo:** `/implementar ETAPA 1`
 ```
+
+> 🔴 **A seção HANDOFF é obrigatória** — os orquestradores (`/feature-workflow` § 2.2,
+> `/epic-workflow`) **reprovam o PLAN sem ela**, e PLAN reprovado duas vezes bloqueia a feature. Ela
+> é o contrato entre papéis: o Dev roda em janela isolada e **não vê** a sua exploração do código —
+> o que não estiver escrito aqui (ou no PLAN), ele não saberá que existiu.
 
 ---
 

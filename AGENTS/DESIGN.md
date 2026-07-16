@@ -539,8 +539,45 @@ janela isolada** · **agentes se consultam (request/response) + handoff em arqui
 > consolidado pelo orquestrador. Push/PR seguem **nunca automáticos**. Isso substitui as seções §7
 > e §9 no que diz respeito a gates; fonte atual: `SKILLS/SHARED/feature-workflow.md`.
 
+> **Atualização 2026-07-16 — nível de épico (`/epic-workflow`) + 6º papel.** Entrou uma altitude
+> acima do `/feature-workflow`: `SKILLS/SHARED/epic-workflow.md` orquestra **um pacote de features
+> ou um épico que não cabe num PRD só**. Decisões desta rodada:
+>
+> | Decisão | Escolha |
+> |---|---|
+> | Entrada | **Épico** (decompõe em N features) **ou pacote** (N demandas já recortadas) — convergem no mesmo motor de ondas |
+> | Autonomia | **Sempre autônomo** — não há modo normal nem flag `--auto`. Zero interação, sempre |
+> | Gate da decomposição | **Validação cruzada**: o `product-manager` recorta, o `arquiteto-senior` critica. Duas personas se checando no lugar do "ok" do humano |
+> | Execução | Barreira obrigatória após a FASE 2; grafo global por **dependências + colisão real de arquivos**; features em ondas |
+> | Branch | Integração em `epic/{nome}`; cada `feature/{x}` sai dele e volta nele; um PR só no fim |
+> | 6º papel | **`engineering-manager`** — entrega uma feature inteira rodando o `/feature-workflow` na janela dele |
+> | Falha | **Isolada**: feature bloqueada não derruba o épico; só a branch de integração quebrada aborta o ciclo |
+>
+> **Mecânica confirmada na doc oficial (2026-07-16)** — resolve a dúvida "consulta direta vs broker"
+> que estava em aberto nesta seção:
+> - Subagent **pode** disparar subagent (v2.1.172+). Profundidade máxima **5**, **fixa**; em depth 5
+>   o agente perde a tool `Agent`. A cadeia real é `/epic-workflow` → EM → {`dev-senior` |
+>   `arquiteto-senior` | `tech-lead`} = profundidade **2**. Ela não cresce mais que isso justamente
+>   porque os 5 papéis originais são folhas: o `dev-senior` não consulta o arquiteto **direto** —
+>   quem invoca o arquiteto a pedido dele é o EM (broker).
+> - **A delegação depende de `Agent` estar na lista `tools:`.** Lista explícita sem `Agent` = agente
+>   sem poder de delegar. Campo omitido herda tudo. → **§4.1 (consulta direta aninhada) não está
+>   disponível para os 5 papéis originais** — todos têm `tools:` explícito sem `Agent`, o que os
+>   torna folhas. Na prática o **§4.2 (broker) é o único canal**, que já era o default recomendado.
+>   O `engineering-manager` é o primeiro papel com `Agent`, e é o que viabiliza a FASE 3.
+> - `AskUserQuestion` é **bloqueada em subagent mesmo se listada** — confirma o ask-upfront como
+>   obrigatório, não como preferência de estilo.
+> - **Limite de subagents concorrentes: não documentado.** Por isso o teto de 6 devs do
+>   `/epic-workflow` é **auto-imposto** e viaja no prompt de cada EM — ninguém o aplica por nós.
+
 **Em aberto (futuro):**
-- Consulta agente↔agente: **default broker pelo orquestrador** (§4.2) vs permitir consulta direta aninhada (§4.1)? (Impacta auditabilidade.)
+- ✅ ~~Consulta agente↔agente: broker (§4.2) vs consulta direta aninhada (§4.1)?~~ **Resolvido em
+  2026-07-16:** é **broker**, e não por preferência — os 5 papéis originais têm `tools:` explícito
+  **sem `Agent`**, o que os impede tecnicamente de consultar qualquer um direto. O texto das personas
+  ("consulte o `arquiteto-senior`") já diz "via o orquestrador"; a §4.1 fica registrada como
+  possibilidade da plataforma, não como caminho em uso.
+- Dar `Agent` a algum dos 5 papéis originais para habilitar a §4.1 (hoje só o
+  `engineering-manager` tem)? Trade-off: menos idas e voltas × menos auditabilidade.
 - Tiers de modelo fixos vs `inherit`.
 - Formato exato da variante "ask-upfront" de `/spec` e `/planejar` (quanto muda das skills atuais).
 - Adotar já o `DECISIONS.md`/ADR leve por feature ou só a Nota de Handoff?

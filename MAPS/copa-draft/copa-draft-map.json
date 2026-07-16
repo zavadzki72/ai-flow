@@ -16,7 +16,7 @@
   },
   "repositories": {
     "game": {
-      "path": "C:/Projects/Personal/copa-draft",
+      "path": "/Users/zavadzki72/Projects/Personal/copa-draft",
       "url": "https://github.com/zavadzki72/copa-draft.git",
       "branch": "main",
       "boilerplate": "",

@@ -30,6 +30,60 @@ O PRD é uma especificação de negócio, NÃO um guia de implementação.
 
 ---
 
+## Modo Autônomo (invocado por um orquestrador)
+
+Quando o prompt de invocação indicar **modo autônomo** (`/feature-workflow --auto`, `/epic-workflow`),
+o processo abaixo muda nestes pontos:
+
+1. **Zero perguntas.** Pule o Passo 1 (escolha de modo) e o Passo 4 (perguntas de clarificação) na
+   forma interativa. As informações da feature vêm no prompt.
+2. **⚠️ Isto sobrepõe o "Não assuma nada" do Passo 4.** Ali a regra é pedir clareza total; aqui
+   **não existe canal para perguntar** — nem inline, nem via ask-upfront (o orquestrador autônomo
+   não tem quem responder). Toda dúvida vira **premissa assumida**.
+3. **Como registrar uma premissa:** decida o caminho **mais conservador** (o que menos amplia
+   escopo e menos assume comportamento novo), e registre na seção **"Premissas Assumidas"** do PRD:
+   - a premissa, em uma frase;
+   - o **motivo** de ela ter sido assumida (que informação faltou);
+   - o **impacto se estiver errada** (o que precisa ser refeito).
+   Marque com ⚠️ toda premissa de **negócio** (regra, comportamento, prioridade) — essas são chute,
+   diferente das técnicas.
+4. **Nada de confirmações** (Passos 3.1, 4). Os repositórios afetados vêm no prompt ou são inferidos
+   dos `contexts` do map — inferência também é premissa.
+5. **Não rode git.** Em modo autônomo o repositório já foi atualizado por quem te invocou; pule o
+   Passo 3.2. Se o prompt trouxer um **worktree de exploração**, leia o código de lá.
+6. **Nunca devolva perguntas em vez do PRD.** Um PRD com 5 premissas registradas é entregável; uma
+   lista de perguntas devolvida a um orquestrador sem canal humano **trava o ciclo** e a feature
+   acaba bloqueada por um artefato que nunca existiu.
+
+---
+
+## Modo Épico (decomposição — invocado pelo `/epic-workflow`)
+
+Quando o prompt indicar **modo épico**, você **não escreve um PRD**. Sua entrega é o **recorte de um
+épico em features** — cada uma virando, depois, um PRD próprio (numa invocação separada, em modo
+autônomo). Vale tudo do § Modo Autônomo acima.
+
+**Entrega:** para cada feature — nome, **valor de negócio** (por que ela entrega valor sozinha),
+escopo em 2-3 linhas, o que fica **fora** dela, **dependências** de outras features (quais e por
+quê), complexidade grosseira 🟢/🟡/🔴 e **`Isolada: Sim/Não`**.
+
+**Regras do recorte:**
+
+- ✅ **Cada feature entrega valor sozinha** e cabe num PRD só. Se não cabe, subdivida.
+- ✅ **Fatie por fluxo de negócio vertical, nunca por camada técnica.** "Feature: o backend" é
+  recorte errado — não entrega valor e força dependência total. Uma feature atravessa as camadas
+  que precisar.
+- ✅ **Dependências mínimas e explícitas.** Cada dependência declarada serializa o épico; declare só
+  as reais ("F2 precisa da entidade que F1 cria"), nunca as de conveniência ("faz sentido depois").
+- ✅ **Migrations e mudanças irreversíveis** concentradas numa feature marcada **`Isolada: Sim`**.
+- ✅ **Sem sobreposição:** duas features não implementam o mesmo conceito. Se o recorte gera "as duas
+  precisam de X", X é uma feature (ou pertence a uma delas, e a outra depende).
+
+Seu recorte será **criticado pelo `arquiteto-senior`** antes de qualquer PRD ser escrito — é essa
+crítica que substitui a aprovação humana. Recorte reprovado volta para você com os gaps.
+
+---
+
 ## Princípios do Spec-Driven Development
 
 1. **Especificação antes de código**: PRD completo antes de implementar
@@ -62,11 +116,21 @@ Carregar o arquivo `{AI_FLOW_ROOT}/{map-path}/{slug}-map.json` e extrair:
 
 **0.3. Carregar documentação do projeto**
 
-Usar Glob para listar e ler **todos** os arquivos `.md` das pastas:
+**Ler SEMPRE, primeiro:**
+- `{AI_FLOW_ROOT}/{map-path}/{slug}-context.md` — **é a fonte principal**: domínio, glossário,
+  regras de negócio, integrações, restrições não-funcionais e roadmap.
+
+**Depois**, usar Glob para listar e ler **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/business/` — domínio de negócio, módulos, glossário
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — arquitetura, padrões e estrutura
 
 Ler cada arquivo encontrado antes de prosseguir. Não pular nenhum.
+
+> 🔴 **As pastas `docs/` são opcionais e na maioria dos projetos estão vazias.** O
+> `{slug}-context.md` é obrigatório em todo map — nunca o pule esperando achar a mesma informação em
+> `docs/`. Onde os dois falarem do mesmo assunto, **`docs/` vence** (é o mais específico); onde só o
+> context.md falar, ele é a verdade. O glossário dele é o que te impede de inventar um termo novo
+> para um conceito que o projeto já nomeia.
 
 ---
 
@@ -216,14 +280,24 @@ Com base no contexto do projeto (docs/ carregados no Passo 0) e no código anali
 - Retrocompatibilidade
 
 **IMPORTANTE:** Não assuma nada. Pergunte até ter clareza total.
+*(Exceto em **modo autônomo** — ver § Modo Autônomo, onde não há canal para perguntar e a regra se
+inverte: toda dúvida vira premissa registrada.)*
 
 #### Execução como Agente (modo ask-upfront)
 
-Quando esta skill roda dentro de um **agente isolado** (persona `product-manager` via
-`/feature-workflow`), a janela do agente **não** tem `AskUserQuestion`. Nesse caso, **não pergunte
-inline**: reúna **todas** as dúvidas e **retorne uma lista estruturada** ao orquestrador, que as
-leva ao humano e re-invoca o agente com as respostas. Rodando direto com o dev na sessão principal,
-pergunte normalmente.
+Quando esta skill roda dentro de um **agente isolado** (persona `product-manager`), a janela do
+agente **não** tem `AskUserQuestion` — nem se a tool for listada no frontmatter. Como você pergunta
+depende de **quem te invocou ter canal com o humano**:
+
+| Quem invoca | Canal humano? | O que fazer com a dúvida |
+|---|---|---|
+| Dev, na sessão principal | sim | Pergunte normalmente, inline |
+| `/feature-workflow` (modo normal) | só na rodada inicial | **ask-upfront**: reúna todas as dúvidas e **retorne a lista estruturada** ao orquestrador, que leva ao humano e te re-invoca com as respostas |
+| `/feature-workflow --auto` · `/epic-workflow` | **não** | **§ Modo Autônomo**: vira premissa registrada. **Nunca** devolva a lista — não há quem responda, e o ciclo trava |
+
+> ⚠️ Devolver perguntas para um orquestrador autônomo é o erro mais caro desta skill: ele valida um
+> PRD que não existe, reprova, te re-invoca 2×, e a feature acaba **bloqueada**. Na dúvida sobre ter
+> canal ou não: se o prompt disse "modo autônomo", **assuma e registre**.
 
 ---
 
@@ -275,6 +349,12 @@ Determinar caminho e nome do arquivo:
   - NNN = próximo número sequencial, zero-padded a 3 dígitos (verificar último PRD na pasta)
   - id = número do ticket (ou `tbd` se não houver)
   - nome-da-feature = nome descritivo em kebab-case (minúsculo, hífen — nunca PascalCase/underscore)
+
+> 🔴 **Se o prompt trouxer o nome do arquivo, use-o e NÃO calcule o número.** Um orquestrador que
+> dispara vários PMs em paralelo (`/epic-workflow` FASE 1) **reserva** os números antes e passa o
+> filename pronto. Dois PMs simultâneos que "verifiquem o último PRD na pasta" enxergam o mesmo
+> último e escolhem o **mesmo** número — e o segundo `Write` sobrescreve o PRD do primeiro, em
+> silêncio. Nome no prompt vence a contagem, sempre.
 
 Usar o template abaixo, preenchendo as seções com base nas informações coletadas e na análise técnica.
 
@@ -479,7 +559,22 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ---
 
-## 15. OBSERVAÇÕES
+## 15. PREMISSAS ASSUMIDAS *(omitir a seção se não houve nenhuma)*
+
+> Preenchida em **modo autônomo**, quando não houve canal para perguntar. Nenhum humano validou
+> nada aqui — revise antes de implementar.
+
+### Negócio ⚠️
+- **P01**: [premissa em uma frase]
+  - **Motivo**: [que informação faltou]
+  - **Impacto se errada**: [o que precisa ser refeito]
+
+### Técnicas
+- **P02**: [premissa] — **Motivo**: [...] — **Impacto se errada**: [...]
+
+---
+
+## 16. OBSERVAÇÕES
 
 [Notas adicionais, decisões, pontos de atenção identificados na análise técnica]
 
@@ -491,7 +586,7 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ---
 
-## 16. HISTÓRICO DE ALTERAÇÕES
+## 17. HISTÓRICO DE ALTERAÇÕES
 
 | Data | Versão | Autor | Descrição |
 |------|--------|-------|-----------|
@@ -499,8 +594,24 @@ Usar o template abaixo, preenchendo as seções com base nas informações colet
 
 ---
 
+## 18. HANDOFF
+
+- **De / Para**: Product Manager → Arquiteto Sênior
+- **Decisões**: [o que foi decidido e por quê — o que o Arquiteto não deve reabrir]
+- **Premissas assumidas**: [ver seção 15, ou "nenhuma"]
+- **Dúvidas em aberto**: [o que ficou sem resposta e quem pode respondê-la]
+- **O que o próximo papel deve saber**: [armadilhas, contexto que não cabe nos critérios, o que
+  parece simples e não é]
+
+---
+
 **Próximo Passo:** Execute `/planejar` para criar o plano de execução detalhado.
 ```
+
+> 🔴 **A seção HANDOFF é obrigatória** — os orquestradores (`/feature-workflow` § 1.2,
+> `/epic-workflow`) **reprovam o PRD sem ela**, e PRD reprovado duas vezes bloqueia a feature. Ela é
+> o contrato entre papéis: cada agente roda em janela isolada e **não vê** o que você fez — o que
+> não estiver escrito aqui, o Arquiteto não saberá que existiu.
 
 ---
 

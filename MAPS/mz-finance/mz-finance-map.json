@@ -15,19 +15,12 @@
     "style": "cqrs"
   },
   "repositories": {
-    "backend": {
-      "path": "C:/Projects/Personal/mz-finance/backend",
-      "url": "",
+    "app": {
+      "path": "/Users/zavadzki72/Projects/Personal/mz-finance",
+      "url": "https://github.com/zavadzki72/mz-finance.git",
       "branch": "main",
-      "boilerplate": "dotnet-api",
-      "contexts": ["api", "backend", "handler", "command", "query", "endpoint", "cqrs", "mediatr"]
-    },
-    "frontend": {
-      "path": "C:/Projects/Personal/mz-finance/frontend",
-      "url": "",
-      "branch": "main",
-      "boilerplate": "react",
-      "contexts": ["react", "frontend", "component", "ui", "page"]
+      "boilerplate": "",
+      "contexts": ["api", "backend", "handler", "command", "query", "endpoint", "cqrs", "mediatr", "react", "frontend", "component", "ui", "page"]
     }
   },
   "tooling": {

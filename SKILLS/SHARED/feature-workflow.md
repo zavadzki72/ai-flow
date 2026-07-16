@@ -16,13 +16,44 @@ SHARED da sua fase.
 |------|------------------|
 | `/feature-workflow` (normal) | **Uma única rodada no início**: ponto de entrada (se ambíguo), branch da feature e **todas** as dúvidas de negócio do PM num bloco só. Depois disso, zero interação até o relatório final. |
 | `/feature-workflow --auto` | **Zero interação.** Toda dúvida vira **premissa assumida**, registrada no artefato (seção "Premissas Assumidas") e no log de decisões (`adr/`). |
+| **sub-orquestrado** (invocado pelo `/epic-workflow`) | **Zero interação**, e você mesmo roda dentro de um subagent — uma feature entre várias. Ver § Modo Sub-orquestrado. |
 
-Em **ambos** os modos: **nunca** push nem PR automáticos — o fluxo termina com o relatório final
-**sugerindo** os comandos. E em ambos os modos o fluxo **para e devolve ao humano** quando um
+Em **todos** os modos: **nunca** push nem PR automáticos — o fluxo termina com o relatório final
+**sugerindo** os comandos. E em todos eles o fluxo **para e devolve** ao nível de cima quando um
 guardrail estoura (ver § Paradas por guardrail).
 
 > **Complementar ao `start-project`:** `start-project` = bootstrap zero→MVP (cria o projeto).
 > `feature-workflow` = loop recorrente por feature em projeto **já existente**.
+> **`epic-workflow`** = pacote de features / épico grande, uma altitude **acima** desta skill.
+
+---
+
+## Modo Sub-orquestrado (invocado pelo `/epic-workflow`)
+
+Quando o prompt de invocação indicar **modo sub-orquestrado**, esta skill roda dentro de um subagent
+`engineering-manager`, como **uma feature entre várias** que o `/epic-workflow` está tocando em
+paralelo. O processo abaixo muda nestes pontos (o restante segue igual ao `--auto`):
+
+1. **Ponto de entrada dado.** O prompt traz o **path do PLAN** → comece direto na **FASE 3**. Não
+   re-resolva o ponto de entrada (Passo 0.2) e não refaça as FASES 1 e 2 — o PRD e o PLAN já foram
+   escritos e **já foram validados** pelo `/epic-workflow`.
+2. **Branch, branch base e worktrees vêm no prompt.** A branch da feature já foi criada a partir de
+   `epic/{nome}` pelo orquestrador, com o worktree pronto — em **cada repo** que a feature toca.
+   Use-os; não crie nem mova nada.
+3. **Teto de `dev-senior` vem no prompt.** Use-o no lugar do padrão do Passo 3.1. Ele é sempre
+   **≤ 3** (o limite desta skill continua valendo) e pode ser menor — outros orquestradores de
+   feature estão consumindo o mesmo orçamento ao mesmo tempo.
+4. **Não mergeie na branch base.** O merge das efêmeras de etapa **na branch da feature** continua
+   sendo seu (Passo 3.4). O merge da **feature no épico** é de quem te invocou — pare na branch da
+   feature.
+5. **Atualize o PLAN, não o épico.** O artefato do épico é consolidado por quem te invocou.
+6. **Resumo estruturado no retorno:** branch, etapas fechadas (nº + hash), resultado de build/testes,
+   veredito do review, **premissas assumidas** e o que ficou pendente. Retorno vazio ou sem hash é
+   lido como **falha** pelo orquestrador — não como sucesso silencioso.
+7. **Guardrail estourado → preserve o estado e retorne** dizendo onde parou. Não insista.
+8. **Correção pós-review de integração:** se o prompt te reinvocar com 🔴 de um review de épico, ele
+   traz uma **branch de correção própria** (`fix/...`) e o worktree dela. Trabalhe nela — a branch
+   original da feature já não existe, e a do épico não é sua.
 
 ---
 
@@ -69,7 +100,11 @@ guardrail estoura (ver § Paradas por guardrail).
 ### Passo 0: Carregar Contexto e Resolver o Ponto de Entrada
 
 **0.1.** Identificar projeto ativo (`.ai-project`) e ler `{slug}-map.json` + `{slug}-context.md`
-(igual às demais skills). Detectar o modo: `--auto` presente → modo autônomo total.
+(igual às demais skills). **Detectar o modo:**
+- prompt indica **sub-orquestrado** (veio do `/epic-workflow`) → § Modo Sub-orquestrado; pule para a
+  FASE 3 com o PLAN que veio no prompt;
+- `--auto` presente → modo autônomo total;
+- caso contrário → modo normal.
 
 **0.2. Resolver o ponto de entrada sem perguntar, quando possível:**
 - O comando trouxe **path de PRD** → começar na FASE 2 (`/planejar`)
@@ -161,16 +196,27 @@ Reprovou → re-invoque com os gaps (máx. **2**). Persistiu → ⛔ parada por 
    ponto de entrada "já tenho PLAN"): trate essas etapas como **sequenciais** (onda de 1) — nunca
    assuma paralelismo sem os dois campos presentes.
 
-**3.2. Preparar branches da onda:**
+**3.2. Preparar branches e worktrees da onda — é você quem cria, não o dev:**
 - Branch da feature: `{branch}` (da rodada inicial, ou derivada no `--auto`). Ela vive no seu
-  próprio worktree (criar na primeira onda, se não existir).
+  próprio worktree — criar na primeira onda, se não existir. **Em modo sub-orquestrado ela já vem
+  pronta** no prompt; não a crie.
 - Onda com **1 etapa** → o dev trabalha **direto na branch da feature** (worktree dela).
 - Onda com **2+ etapas** → para cada etapa, branch efêmera **`{branch}--etapa-{N}`** criada a
-  partir do **HEAD atual da branch da feature**, cada uma em worktree próprio.
+  partir do **HEAD atual da branch da feature**, cada uma em worktree próprio:
+  ```bash
+  git -C {repo.path} worktree add "{worktrees}/{branch-slug}--etapa-{N}" -b {branch}--etapa-{N} {branch}
+  ```
+  (`{worktrees}` = `{repo.worktrees-path}` ou `{repo.path}-worktrees`.)
+
+> **Quem monta a onda cria a topologia dela.** Você sabe quais etapas rodam em paralelo; o dev não.
+> Por isso `implementar.md` § Modo Orquestrado proíbe o dev de criar worktree — se ele recebesse
+> essa tarefa, N devs simultâneos disputariam a criação no mesmo repo. `worktree add` a partir do
+> clone principal é permitido (não altera o working tree dele) — `checkout`/`pull` não.
 
 **3.3. Disparar os `dev-senior` da onda EM PARALELO** (uma invocação por etapa, simultâneas),
 cada um recebendo: **path do PLAN** + **número da ETAPA** + **branch a usar** (efêmera ou da
-feature) + **branch base** + instrução de **modo orquestrado** (ver `implementar.md` § Modo
+feature) + **branch base** + **path do worktree dela** (obrigatório — o dev não o cria e retorna
+bloqueio se não vier) + instrução de **modo orquestrado** (ver `implementar.md` § Modo
 Orquestrado): sem confirmações, **não atualizar o PLAN** (o orquestrador consolida), devolver
 resumo estruturado (arquivos, build/testes, hash do commit, Observações da Implementação).
 
