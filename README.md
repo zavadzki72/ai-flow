@@ -62,16 +62,46 @@ arquivo de nome idêntico, impossível de diferenciar na busca rápida ou no gra
 
 As skills **nunca** têm contexto de projeto embutido. Elas leem o map do projeto ativo antes de agir.
 
+> **Este repositório é público e contém a *ferramenta*; os maps são *dados* e moram fora dele.**
+> Só o `MAPS/_template/` é versionado aqui. Os maps reais vivem no repo privado **`ai-flow-maps`**,
+> ligados em `MAPS/{slug}` por symlink — os paths continuam idênticos, então `.ai-project`, skills e
+> docs não mudam nada. Ver § Trabalhando em mais de uma máquina.
+
 ### 3. Projeto Ativo
 
 Para que as skills saibam em qual projeto você está trabalhando, crie um arquivo `.ai-project` na raiz do repositório:
 
 ```
 # .ai-project
-MAPS/project
+MAPS/{slug}
 ```
 
+Ex.: `MAPS/copa-draft`. É o slug do projeto — não o literal `project`.
 Se o arquivo não existir, a skill vai perguntar qual projeto usar.
+
+### 4. Trabalhando em mais de uma máquina
+
+Clone os dois repositórios **lado a lado** e rode o script de ligação:
+
+```bash
+git clone https://github.com/zavadzki72/ai-flow.git
+git clone git@github.com:zavadzki72/ai-flow-maps.git    # privado
+
+cd ai-flow && ./scripts/link-maps.sh
+```
+
+O script cria um symlink **relativo** (`MAPS/{slug} -> ../../ai-flow-maps/{slug}`) por projeto, então
+funciona em qualquer máquina desde que os dois repos sejam irmãos. Ele nunca sobrescreve diretório
+real — se `MAPS/{slug}` existir de verdade, ele avisa e pula.
+
+Sincronizar entre máquinas = `git pull`/`push` nos dois repos. O que é privado nunca passa pelo público.
+
+**Ao criar um projeto novo:** o `/setup-project` gera o map em `MAPS/{slug}/`. Mova para o repo
+privado e religue:
+
+```bash
+mv MAPS/{slug} ../ai-flow-maps/{slug} && ./scripts/link-maps.sh
+```
 
 ---
 
