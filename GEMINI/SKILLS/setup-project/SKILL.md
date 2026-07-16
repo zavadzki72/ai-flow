@@ -20,6 +20,8 @@ MAPS/{slug}/
   prd/
   plan/
   adr/
+  epic/
+  e2e/
 ```
 
 Com arquivos `.gitkeep` em cada subpasta para que sejam rastreadas pelo git.

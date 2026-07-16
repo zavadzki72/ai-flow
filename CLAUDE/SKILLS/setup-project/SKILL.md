@@ -23,8 +23,8 @@ Use as ferramentas nativas — nunca bash para criar arquivos de texto:
 
 Para as pastas do map, executar:
 ```bash
-mkdir -p "MAPS/{slug}/prd" "MAPS/{slug}/plan" "MAPS/{slug}/adr"
-touch "MAPS/{slug}/prd/.gitkeep" "MAPS/{slug}/plan/.gitkeep" "MAPS/{slug}/adr/.gitkeep"
+mkdir -p "MAPS/{slug}"/{prd,plan,adr,epic,e2e}
+touch "MAPS/{slug}"/{prd,plan,adr,epic,e2e}/.gitkeep
 ```
 
 ### Verificação de Caminho Existente

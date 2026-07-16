@@ -30,10 +30,10 @@ Para as pastas do map, executar via powershell:
 ```powershell
 $slug = "{slug}"
 $base = "MAPS\$slug"
-New-Item -ItemType Directory -Path "$base\prd", "$base\plan", "$base\adr" -Force | Out-Null
-"" | Out-File "$base\prd\.gitkeep" -Encoding utf8
-"" | Out-File "$base\plan\.gitkeep" -Encoding utf8
-"" | Out-File "$base\adr\.gitkeep" -Encoding utf8
+foreach ($d in "prd","plan","adr","epic","e2e") {
+  New-Item -ItemType Directory -Path "$base\$d" -Force | Out-Null
+  "" | Out-File "$base\$d\.gitkeep" -Encoding utf8
+}
 ```
 
 ### Verificação de Caminho Existente

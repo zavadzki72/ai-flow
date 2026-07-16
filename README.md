@@ -76,9 +76,9 @@ Se o arquivo não existir, a skill vai perguntar qual projeto usar.
 | `spec` | `/spec` | Gera especificação técnica de uma feature |
 | `setup` | `/setup` | Configura ambiente de desenvolvimento |
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
-| `start-project` | `/start-project` | Orquestrador zero → MVP rodando: descoberta da ideia, recorte do MVP_000001, boilerplate, bootstrap físico, PRD e PLAN do MVP |
+| `start-project` | `/start-project` | Orquestrador zero → projeto planejado: descoberta da ideia, recorte, boilerplate, bootstrap físico e os artefatos — **enxuto** (1 PRD + 1 PLAN do MVP_000001) ou **completo** (N PRDs + N PLANs via `/epic-workflow --so-planejar`), à escolha do dev |
 | `feature-workflow` | `/feature-workflow [--auto]` | Orquestra o ciclo por feature de forma autônoma (PM → Arquiteto → Dev em ondas paralelas → Tech Lead), com validação objetiva entre artefatos; normal = 1 rodada de perguntas no início, `--auto` = zero interação |
-| `epic-workflow` | `/epic-workflow` | Orquestra um **pacote de features** ou um **épico que não cabe num PRD só**: decompõe, roda `/spec` e `/planejar` de todas em paralelo, monta o grafo global e executa as features em ondas — cada uma num `/feature-workflow` isolado. Sempre autônomo |
+| `epic-workflow` | `/epic-workflow [--so-planejar]` | Orquestra um **pacote de features** ou um **épico que não cabe num PRD só**: decompõe, roda `/spec` e `/planejar` de todas em paralelo, monta o grafo global e executa as features em ondas — cada uma num `/feature-workflow` isolado. Sempre autônomo; `--so-planejar` para nos artefatos (N PRDs + N PLANs + grafo), sem escrever código |
 
 ---
 
@@ -114,6 +114,12 @@ arquiteto** — a validação cruzada substitui o gate humano), roda `/spec` e `
 paralelo, e **só depois de todos os PLANs existirem** monta o grafo global (dependências + colisão
 real de arquivos) e executa as features em ondas. Cada feature vira um `engineering-manager` rodando
 um `/feature-workflow` inteiro em janela própria.
+
+`/epic-workflow --so-planejar` corta o fluxo no grafo: N PRDs, N PLANs e as ondas calculadas, **zero
+código**. Serve para revisar o plano inteiro (sobretudo as premissas assumidas) antes de pagar a
+implementação, e é por essa porta que o `/start-project` entra quando o dev escolhe o caminho
+"completo" — projeto novo não tem padrão pro dev replicar, então ele planeja tudo e deixa a primeira
+feature na sua mão. Depois, `/epic-workflow {path-do-épico}` retoma e implementa.
 
 Nenhum dos dois faz push/PR automático — o relatório final só sugere.
 `/test-e2e` roda entre `/implementar` (todas as etapas concluídas) e `/code-review` — ainda fora do

@@ -1,12 +1,16 @@
 ---
 name: epic-workflow
-description: Orquestra um PACOTE DE FEATURES ou um ÉPICO grande que não cabe num PRD só, uma altitude acima do /feature-workflow. Decompõe em features (validadas por cruzamento PM × arquiteto), roda /spec e /planejar de todas em paralelo, monta o grafo global cruzando dependências e colisão de arquivos, e executa as features em ondas — cada uma num /feature-workflow isolado. Sempre autônomo, zero interação.
+description: Orquestra um PACOTE DE FEATURES ou um ÉPICO grande que não cabe num PRD só, uma altitude acima do /feature-workflow. Decompõe em features (validadas por cruzamento PM × arquiteto), roda /spec e /planejar de todas em paralelo, monta o grafo global cruzando dependências e colisão de arquivos, e executa as features em ondas — cada uma num /feature-workflow isolado. Com --so-planejar, para nos artefatos (N PRDs + N PLANs + grafo) sem escrever código. Sempre autônomo, zero interação.
 ---
 
 # Skill: Epic Workflow (Orquestrador Autônomo de Múltiplas Features)
 
 ## Trigger
 `/epic-workflow` · `/epico` · "roda esse pacote de features" · "esse épico não cabe num PRD só" · "orquestra essas N features"
+
+`/epic-workflow --so-planejar` · "planeja tudo mas não implementa" · "quero ver o plano inteiro antes de codar"
+→ roda as FASES 0-2, monta o grafo e **para** (`SKILLS/SHARED/epic-workflow.md` § `--so-planejar`).
+É também como o `/start-project` entra aqui, no caminho "completo" do recorte inicial.
 
 ## Processo Completo
 Leia e siga: `SKILLS/SHARED/epic-workflow.md`

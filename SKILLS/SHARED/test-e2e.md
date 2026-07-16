@@ -62,7 +62,8 @@ git -C {repo.path} worktree list
 - **Se não existe** (ex.: QA rodando isolado, sem `/implementar` nesta sessão): criar um.
 ```bash
 cd {repo.path}
-git fetch origin
+# Só se houver remote — projeto recém-criado pelo /start-project não tem
+git remote get-url origin >/dev/null 2>&1 && git fetch origin
 git worktree add "{worktree.path}" {branch}
 ```
 - **Se o Git recusar** (`branch already checked out at ...`): outro processo está usando a branch

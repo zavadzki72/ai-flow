@@ -12,8 +12,9 @@ aquele arquivo e execute seus passos dentro desta conversa.
 
 Skills referenciadas:
 - `SKILLS/SHARED/setup-project.md` (Passo 6)
-- `SKILLS/SHARED/spec.md` (Passo 8)
-- `SKILLS/SHARED/planejar.md` (Passo 9)
+- `SKILLS/SHARED/spec.md` (Passo 8A — caminho enxuto)
+- `SKILLS/SHARED/planejar.md` (Passo 9 — caminho enxuto; não roda no completo)
+- `SKILLS/SHARED/epic-workflow.md` (Passo 8B — caminho completo, sempre com `--so-planejar`)
 
 ---
 
@@ -44,6 +45,8 @@ MAPS/{slug}/
   prd/.gitkeep
   plan/.gitkeep
   adr/.gitkeep
+  epic/.gitkeep
+  e2e/.gitkeep
   {slug}-map.json
   {slug}-context.md
 ```
@@ -77,17 +80,15 @@ Antes de aplicar boilerplate ou criar `.ai-project`:
 - Se o path existe e está vazio → prosseguir
 - Se o path existe e tem conteúdo → parar, avisar e pedir decisão (pular / usar mesmo assim / cancelar)
 
-### Detecção de Tamanho do MVP
+### Bifurcação Enxuto × Completo (Passo 2)
 
-Após o dev confirmar o recorte (Passo 2), conte os fluxos. Se > 5 OU envolve
-integrações externas complexas, apresente o alerta de slicing com as 3
-opções (fatiar / manter / outro recorte) antes de prosseguir.
+O recorte do Passo 2 pode terminar em **dois formatos de saída**, e é o dev quem escolhe.
+As condições, as opções e o que cada caminho produz estão **só** no SHARED
+(`start-project.md` § Enxuto × Completo e Passo 2) — leia de lá e não decida por memória:
+este menu já mudou uma vez, e os adaptadores que o copiaram ficaram oferecendo o menu antigo.
 
-### Sem Limite Duro
-
-A skill **não impõe** um limite de tamanho para o MVP_000001. Apenas alerta
-e oferece slicing. Se o dev disser "manter como está", siga adiante.
+Aqui só a mecânica: apresentar as opções com uma lista curta e numerada, e respeitar a escolha nos Passos 8/9/10
+sem perguntar de novo.
 
 ### Próximo Skill na Sequência
-Após o `/start-project`, o dev deve rodar `/implementar ETAPA 1` para começar
-a execução do MVP_000001.
+Depende do caminho — o Passo 10 do SHARED (10A enxuto / 10B completo) traz o comando exato.

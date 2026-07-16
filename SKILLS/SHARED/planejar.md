@@ -201,14 +201,24 @@ REPO_PATH="{repo.path}"
 
 if [ -d "$REPO_PATH" ]; then
   cd "$REPO_PATH"
-  git fetch origin
   git checkout {repo.branch}
-  git pull origin {repo.branch}
+  # Só se houver remote — projeto recém-criado pelo /start-project não tem
+  if git remote get-url origin >/dev/null 2>&1; then
+    git fetch origin
+    git pull origin {repo.branch}
+  fi
 else
   echo "Repositório não encontrado em $REPO_PATH"
   echo "Clone com: git clone {repo.url}"
 fi
 ```
+
+> **Repo sem `origin` não é erro.** O `/start-project` faz `git init` local e **não** cria
+> repositório remoto — num projeto recém-criado, `git fetch origin` e `git pull` falham com
+> `'origin' does not appear to be a git repository`, e a fase morre aqui. Sem remote, a base local
+> **é** a versão mais recente: siga com ela. Mesma regra em `implementar.md` (Passo 3.2) e
+> `epic-workflow.md` § Repo sem remote.
+
 
 Informar ao dev ao concluir:
 ```

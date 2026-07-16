@@ -149,6 +149,11 @@ features (recorte do PM **criticado pelo arquiteto**, no lugar do gate humano), 
 `/planejar` de todas em paralelo, e só então monta o grafo global. Cada feature é delegada a um
 `engineering-manager`, que roda o `/feature-workflow` inteiro na janela dele.
 
+Com `--so-planejar`, ele para no grafo: entrega os artefatos e não delega nada — nenhum
+`engineering-manager`, nenhuma branch de épico, nenhuma linha de código. O `/start-project` só o
+invoca nesse modo (`start-project.md` § Enxuto × Completo): projeto recém-criado não tem padrão
+estabelecido, e N devs em paralelo como primeiro código convergem para N dialetos.
+
 > **A barreira do `/epic-workflow` é estrutural, não conservadorismo:** o grafo de features depende
 > da união dos `Arquivo(s) Afetado(s)` de cada PLAN — que só existe depois da FASE 2. Sem ela, duas
 > features colidem no merge do épico, e reimplementar uma feature inteira custa ordens de grandeza
@@ -328,11 +333,19 @@ trava natural contra dois orquestradores disputando a mesma branch.
 
 | Nível | Branch | Sai de | Volta para | Quem cria |
 |-------|--------|--------|-----------|-----------|
-| Épico | `epic/{nome}` | `origin/{repo.branch}` | — (PR manual) | `/epic-workflow` |
-| Feature | `feature/{x}` | `epic/{nome}` **ou** `origin/{repo.branch}` | branch do épico, ou PR | `/epic-workflow` ou `/feature-workflow` |
+| Épico | `epic/{nome}` | `origin/{repo.branch}` † | — (PR manual) | `/epic-workflow` |
+| Feature | `feature/{x}` | `epic/{nome}` **ou** `origin/{repo.branch}` † | branch do épico, ou PR | `/epic-workflow` ou `/feature-workflow` |
 | Etapa | `feature/{x}--etapa-{N}` | branch da feature | branch da feature | `/feature-workflow` |
 | Correção | `fix/{nome}-{n}` | `epic/{nome}` | branch do épico | `/epic-workflow` (review de integração) |
-| Planejamento | *(nenhuma — `--detach`)* | `origin/{repo.branch}` | — (só leitura) | `/epic-workflow` |
+| Planejamento | *(nenhuma — `--detach`)* | `origin/{repo.branch}` † | — (só leitura) | `/epic-workflow` |
+
+> † **`origin/{repo.branch}` pressupõe remote — e nem todo projeto tem.** O `/start-project` faz
+> `git init` local e não cria repositório remoto, então um projeto recém-nascido não tem `origin`:
+> `fetch origin` falha e `origin/{branch}` é `invalid reference`. **Sem remote, o start-point é a
+> branch base local (`{repo.branch}`), e não há fetch** — ausência de remote nunca é erro, é o caso
+> do projeto novo. Detecte com
+> `git -C {repo.path} remote get-url origin >/dev/null 2>&1`. Ver `epic-workflow.md` § Repo sem
+> remote e `implementar.md` Passo 3.2.
 
 Cada nível vive em **worktree próprio**. Fora de um épico, `feature/{x}` sai direto da branch base
 do repo — a branch de épico só existe quando o `/epic-workflow` está conduzindo.
@@ -363,25 +376,33 @@ diretório compartilhado. São coisas diferentes, e é fácil confundir:
 
 | | O que faz | Precisamos? |
 |---|---|---|
-| `git fetch origin` | traz **todos** os commits novos para `origin/{branch}` | ✅ **sim** — é a atualização |
+| `git fetch origin` | traz **todos** os commits novos para `origin/{branch}` | ✅ **sim** — é a atualização (quando há remote) |
 | `git checkout {branch}` | move o working tree do clone principal | ❌ não — e quebra a sessão vizinha |
 | `git pull` | fetch + move o ref **local** `{branch}` e o working tree | ❌ não — nada lê o ref local |
 
-O padrão correto é **`fetch` + sair de `origin/{repo.branch}`**:
+O padrão correto é **`fetch` + sair de `origin/{repo.branch}`** — com o `fetch` e o start-point
+**condicionais à existência do remote** (†, acima):
 
 ```bash
-git -C {repo.path} fetch origin
+# Só se houver remote — projeto recém-criado pelo /start-project não tem
+git -C {repo.path} remote get-url origin >/dev/null 2>&1 && git -C {repo.path} fetch origin
+
+# COM remote — espelho do servidor
 git -C {repo.path} worktree add "{worktree.path}" -b feature/x origin/{repo.branch}
+# SEM remote — a base local É a versão mais recente que existe
+git -C {repo.path} worktree add "{worktree.path}" -b feature/x {repo.branch}
 ```
 
-Isso é **mais** confiável que `checkout` + `pull`, não menos: não depende de o ref local estar em
-dia nem de o `pull` ter dado fast-forward limpo. O clone principal vira um espelho do remoto e uma
-base de onde se cria worktree — e nunca mais alguém pisa no working tree dele.
+Havendo remote, isso é **mais** confiável que `checkout` + `pull`, não menos: não depende de o ref
+local estar em dia nem de o `pull` ter dado fast-forward limpo. O clone principal vira um espelho do
+remoto e uma base de onde se cria worktree — e nunca mais alguém pisa no working tree dele.
 
 > ⚠️ **A armadilha:** `worktree add -b nova-branch` **sem start-point** sai do **HEAD do clone
 > principal** — a branch que por acaso estiver com checkout lá, possivelmente velha ou alheia. O
-> `fetch` não salva, porque esse comando não olha para `origin/`. **Sempre** passe
-> `origin/{repo.branch}` explicitamente ao criar branch nova.
+> `fetch` não salva, porque esse comando não olha para `origin/`. **Sempre** passe o start-point
+> explicitamente ao criar branch nova: `origin/{repo.branch}` com remote, `{repo.branch}` sem.
+> As duas formas de errar aqui são simétricas e igualmente reais — omitir o start-point pega o HEAD
+> errado **silenciosamente**; forçar `origin/` num repo sem remote quebra com `invalid reference`.
 - Antes de criar um worktree novo, checar se já existe um para a branch (`git worktree list`) e
   **reutilizá-lo** — não recriar a cada execução.
 - Se o Git recusar a criação (`branch already checked out at ...`), **não forçar**: informar ao dev

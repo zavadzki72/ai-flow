@@ -167,9 +167,13 @@ Cruzar o(s) repositório(s) do PLAN com `map.repositories` para obter `path` e, 
 **3.2. Atualizar o clone principal (fetch apenas — nunca checkout aqui)**
 
 ```bash
-cd {repo.path}
-git fetch origin
+# Só se houver remote — projeto recém-criado pelo /start-project não tem
+git -C {repo.path} remote get-url origin >/dev/null 2>&1 && git -C {repo.path} fetch origin
 ```
+
+> **`git fetch origin` num repo sem remote falha** (`'origin' does not appear to be a git
+> repository`). O `/start-project` faz `git init` local e **não cria repositório remoto** — então
+> nem todo projeto tem `origin`. Ausência de remote **não é erro**: siga com a base local.
 
 **3.3. Definir branch**
 
@@ -196,16 +200,28 @@ git -C {repo.path} worktree add "{worktree.path}" {branch}
 # Se não existe — branch só existe no remoto:
 git -C {repo.path} worktree add "{worktree.path}" -b {branch} origin/{branch}
 
-# Se não existe — branch NOVA: sempre a partir de origin/{repo.branch}
+# Se não existe — branch NOVA, projeto COM remote: a partir de origin/{repo.branch}
 git -C {repo.path} worktree add "{worktree.path}" -b {branch} origin/{repo.branch}
+
+# Se não existe — branch NOVA, projeto SEM remote (ex.: recém-criado): base local
+git -C {repo.path} worktree add "{worktree.path}" -b {branch} {repo.branch}
 ```
 
-> 🔴 **O start-point da branch nova é `origin/{repo.branch}` — nunca omita.**
+> 🔴 **O start-point da branch nova é obrigatório — nunca omita.**
 > `worktree add -b {branch}` **sem** start-point sai do **HEAD do clone principal**, que é a branch
 > que por acaso estiver com checkout lá: uma `develop` desatualizada, uma feature de outra pessoa,
-> um HEAD detached. É silencioso e a feature inteira nasce da base errada. O `git fetch` do Passo
-> 3.2 atualiza `origin/{repo.branch}` — é dele que a branch tem que sair, e é assim que "atualizar
-> antes de começar" acontece **sem** precisar de `checkout`/`pull` no clone principal.
+> um HEAD detached. É silencioso e a feature inteira nasce da base errada. Pior: num repo **sem
+> nenhum commit** o Git infere `--orphan` e cria um worktree **sem história** — também em silêncio.
+>
+> Escolha o start-point pelo que o repo tem:
+> - **com remote** → `origin/{repo.branch}`, sempre. O `fetch` do 3.2 acabou de atualizá-lo, e é
+>   assim que "partir de código atualizado" acontece **sem** `checkout`/`pull` no clone principal;
+> - **sem remote** (`/start-project` faz `git init` local, sem criar repo remoto) →
+>   `{repo.branch}` local, que é a única base que existe.
+>
+> ⚠️ **Repo sem nenhum commit → PARE.** `worktree add` não tem de onde partir. Isso significa que o
+> bootstrap não terminou: o `/start-project` (Passo 7.7) deve ter deixado um commit inicial. Avise
+> o dev em vez de criar worktree órfão.
 
 **Se o Git recusar** com `branch already checked out at ...`: a branch já está em uso por **outro
 worktree/orquestrador rodando agora**. Não force — informe ao dev:

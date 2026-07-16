@@ -16,7 +16,7 @@ e configura o arquivo `.ai-project` em cada repositório local informado.
 - Suporta múltiplos repositórios por projeto
 - Cria `MAPS/{slug}/{slug}-map.json` preenchido com tudo que foi coletado
 - Cria `MAPS/{slug}/{slug}-context.md` com estrutura padrão (seções opcionais preenchidas se o dev fornecer)
-- Cria as pastas `prd/`, `plan/`, `adr/` dentro do map
+- Cria as pastas `prd/`, `plan/`, `adr/`, `epic/`, `e2e/` dentro do map
 - Cria `.ai-project` nos repositórios locais cujo path existir
 
 ### ❌ NÃO FAZ:
@@ -222,7 +222,9 @@ Exibir resumo de tudo que será criado:
    ├── {slug}-context.md
    ├── prd/
    ├── plan/
-   └── adr/
+   ├── adr/
+   ├── epic/
+   └── e2e/
 
 🔗 .ai-project em:
    {lista de caminhos locais que existirem}
@@ -239,58 +241,51 @@ Se o dev confirmar, executar o Passo 8.
 
 #### 8.1. Criar pasta e estrutura de diretórios
 
-Criar as seguintes pastas (com `.gitkeep` se necessário para rastrear no git):
-- `MAPS/{slug}/prd/`
-- `MAPS/{slug}/plan/`
-- `MAPS/{slug}/adr/`
+Criar as pastas de **artefato** (com `.gitkeep` se necessário para rastrear no git) — uma para cada
+caminho relativo que o `docs` do map declara:
+
+- `MAPS/{slug}/prd/` — PRDs (`/spec`)
+- `MAPS/{slug}/plan/` — PLANs (`/planejar`)
+- `MAPS/{slug}/adr/` — decisões de arquitetura
+- `MAPS/{slug}/epic/` — pacotes de features (`/epic-workflow`)
+- `MAPS/{slug}/e2e/` — evidências do `/test-e2e`
+
+As outras três entradas do `docs` (`business/`, `architecture/`, `code-review/`) apontam para
+`docs/…` — o `MAPS/_template/docs/` já traz essa árvore, então copie-a junto em vez de recriá-la.
+Se uma pasta declarada no `docs` não existir em disco, a skill que a lê não falha: ela segue como se
+não houvesse nada ali, e o dev nunca descobre o que faltou.
 
 #### 8.2. Criar `{slug}-map.json`
 
-Preencher com todos os dados coletados:
+**Copie `MAPS/_template/map.json`** e preencha com os dados coletados. Não escreva o JSON de
+memória: o template é a **única** definição do schema, e uma cópia parcial nasce sem os campos que
+as skills mais novas leem — `epic.hot-files` e `docs.epic` (`/epic-workflow`), `docs.e2e` e
+`environments.local` (`/test-e2e`), `repositories.*.worktrees-path` (`/implementar`). Um campo
+faltando não dá erro visível: a skill assume o default e segue, e o furo só aparece lá na frente.
 
-```json
-{
-  "project": {
-    "name": "{nome}",
-    "description": "{descricao}",
-    "team": "{time}",
-    "status": "{status}"
-  },
-  "stack": {
-    "backend": [{backend}],
-    "frontend": [{frontend}],
-    "infra": [{infra}]
-  },
-  "architecture": {
-    "pattern": "{pattern}",
-    "style": "{style}"
-  },
-  "repositories": {
-    "{alias1}": {
-      "path": "{path}",
-      "url": "{url}",
-      "branch": "{branch}",
-      "boilerplate": "{boilerplate}",
-      "contexts": [{contexts}]
-    }
-  },
-  "tooling": {
-    "project-management": {
-      "type": "{tipo}",
-      "workitems-project": "{workitems-project}",
-      "repos-project": "{repos-project}"
-    }
-  },
-  "docs": {
-    "business": "docs/business/",
-    "architecture": "docs/architecture/",
-    "code-review": "docs/code-review/",
-    "prd": "prd/",
-    "plan": "plan/",
-    "adr": "adr/"
-  }
-}
+```bash
+cp MAPS/_template/map.json MAPS/{slug}/{slug}-map.json   # depois, edite
 ```
+
+Ao preencher:
+
+- **Placeholders** (`NOME_DO_PROJETO`, `NOME_REPO`, `NOME_DO_PROCESSO`, `C:/Projetos/...`) → os
+  valores reais. O `path` do template é um exemplo Windows; use o path real desta máquina.
+- **Campos sem resposta** → mantenha o valor vazio do template (`""`, `[]`). Não invente, e não
+  remova a chave: `epic.hot-files: []` significa "nenhum hot-file conhecido ainda", e a chave
+  ausente obriga o `/epic-workflow` a migrar o map no meio de um épico.
+- 🔴 **`environments.local` vem com um EXEMPLO preenchido, não com placeholders** — e os Blocos 1-6
+  **não perguntam nada sobre ambiente local**, então não há resposta do dev para pôr ali. Se o
+  projeto ainda não tem ambiente local definido, **esvazie os valores** (a chave fica, o conteúdo
+  sai): `compose-path: ""`, `processes: []`, `services: {}`, `test-users: []`,
+  `seed-command: ""`, `teardown-command: ""`.
+
+  Por que isso importa mais que os outros campos: `http://localhost:3000`, `docker-compose.yml` e
+  `admin@test.local` **parecem configuração de verdade**. O `/test-e2e` decide se pode rodar
+  perguntando "`environments.local` está preenchido?" — um exemplo copiado responde **sim**, e o QA
+  vai subir um `docker compose` que não existe e esperar por uma porta que ninguém serve. Vazio ele
+  para com uma mensagem clara; preenchido com mentira, ele falha longe da causa. Mesma leitura no
+  `/epic-workflow` (Passo 6.3, a FASE 4). O mesmo vale para `tooling.sonar`.
 
 #### 8.3. Criar `{slug}-context.md`
 
@@ -456,6 +451,8 @@ Para cada repositório informado:
    ✅ prd/
    ✅ plan/
    ✅ adr/
+   ✅ epic/
+   ✅ e2e/
 
 🔗 .ai-project configurado em:
    ✅ {path1}

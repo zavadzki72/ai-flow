@@ -27,9 +27,60 @@ artefato do épico e no log de decisões (`adr/`).
 A única volta ao humano é a **parada por guardrail** (§ Falha isolada e propagação) e o **relatório
 final**. Em nenhum cenário há push ou PR automático.
 
+### `--so-planejar` — parar antes do código
+
+`/epic-workflow --so-planejar` roda as **FASES 0, 1 e 2** (decomposição → validação cruzada →
+N PRDs → N PLANs), monta o **grafo global** (Passo 4) e **PARA**. Não cria branch de épico, não
+escreve uma linha de código, não dispara `engineering-manager`.
+
+**Por que existe:** autonomia total é ótima quando você já confia no fluxo, e cara quando não.
+Este modo separa a parte **barata e reversível** (documentos, read-only) da parte **cara e
+irreversível** (código em N branches). Use quando:
+- **Estrear** um épico — o primeiro run de qualquer épico é o mais provável de sair torto, e aqui
+  ele custa alguns documentos em vez de features inteiras;
+- **Projeto novo** (`/start-project` modo completo): não há padrão de código estabelecido para o
+  dev replicar, e é a primeira etapa que cria esse padrão. Revisar o recorte antes vale muito;
+- **Épico caro** — o grafo do Passo 4 já te diz quantas ondas e quanto paralelismo vai haver. Se o
+  relatório disser que o paralelismo é ~1, você economiza o épico inteiro (§ Quando o épico não se
+  paga).
+
+**Ele continua autônomo** — não pergunta nada, e as dúvidas viram premissas do mesmo jeito. A
+diferença é só **onde termina**.
+
+**Retomar:** rode `/epic-workflow {path-do-épico}` sem a flag. O ponto de entrada "path de épico
+existente" (0.2) cai na § Retomada, que pula o que está ✅ (todos os PRDs e PLANs) e **recalcula o
+grafo do zero** — o Passo 4 refaz as pegadas, porque você pode ter editado os PLANs no meio.
+Editá-los é, aliás, o ponto: eles são o produto deste modo.
+
+**Relatório do `--so-planejar`** (substitui o § Passo Final):
+```
+📋 Épico planejado — nada foi implementado.
+
+Épico:    {path} — "{nome}"
+Recorte:  {N} features — validado pelo arquiteto em {N} rodada(s)
+PRDs:     {N} ✅ · {N} ⛔ bloqueados
+PLANs:    {N} ✅ · {N} ⛔ bloqueados · {total} etapas
+Ondas previstas: {W} · paralelismo previsto {X.X} features/onda
+Colisões: {N} ({N} só em hot-file → não serializam)
+
+⚠️ PREMISSAS DE NEGÓCIO ({N}) — é isto que você deveria revisar agora:
+  - P01: [premissa] (impacto se errada: [...])
+
+{se paralelismo previsto < 1.5:}
+📉 Paralelismo previsto de {X.X} features/onda — este épico não vai se pagar.
+   Rodar /feature-workflow por feature custa menos. Considere não seguir.
+
+Revise os PLANs e, quando quiser implementar:
+  /epic-workflow {path-do-épico}
+```
+
 > **Onde esta skill se encaixa:**
-> `start-project` = bootstrap zero→MVP (cria o projeto).
-> `epic-workflow` = pacote de features / épico grande em projeto **já existente**.
+> `start-project` = bootstrap zero→MVP (cria o projeto). Ele **delega para cá com `--so-planejar`**
+> quando o dev escolhe o caminho "completo" no recorte inicial (`start-project.md § Enxuto × Completo`) —
+> nesse caso o projeto acabou de nascer: `MAPS/{slug}/` e o commit inicial já existem (pré-requisitos
+> satisfeitos), mas **não há código nem padrão estabelecido**, e é por isso que ele só chama o
+> `--so-planejar` e nunca o épico full.
+> `epic-workflow` = pacote de features / épico grande. Em projeto já existente, na entrada direta.
 > `feature-workflow` = uma feature. Se a sua demanda cabe num PRD só, **use `/feature-workflow`** —
 > esta skill só paga o próprio overhead a partir de ~2 features **que não colidam entre si**
 > (ver § Quando o épico não se paga).
@@ -39,14 +90,17 @@ final**. Em nenhum cenário há push ou PR automático.
 ## Pré-requisitos
 
 - Projeto ativo configurado (`.ai-project` → `MAPS/{projeto}`).
-- Agentes instalados: `product-manager`, `arquiteto-senior`, `dev-senior`, `tech-lead` e
-  **`engineering-manager`** — este último é quem roda o `/feature-workflow` de cada feature em
-  janela própria.
-- ⚠️ **O `engineering-manager` precisa da tool de delegação (`Agent`) no frontmatter** — sem ela
-  ele não dispara os `dev-senior` e a FASE 3 morre em silêncio. Verificado no Passo 0.4.
-- Modos usados nas fases de documento (se faltarem, a fase trava — ver Passo 0.4):
-  `spec.md` § Modo Autônomo · § Modo Épico · `planejar.md` § Modo Autônomo · § Modo Épico ·
-  § Modo Crítica de Recorte · `feature-workflow.md` § Modo Sub-orquestrado.
+- **Sempre** (FASES 0-2, as únicas que o `--so-planejar` roda):
+  - Agentes instalados: `product-manager`, `arquiteto-senior`.
+  - Modos: `spec.md` § Modo Autônomo · § Modo Épico · `planejar.md` § Modo Autônomo · § Modo Épico ·
+    § Modo Crítica de Recorte. Se faltarem, a fase trava — ver Passo 0.4.
+- **Só fora do `--so-planejar`** (FASES 3 e 4):
+  - Agentes instalados: `dev-senior`, `tech-lead` e **`engineering-manager`** — este último é quem
+    roda o `/feature-workflow` de cada feature em janela própria.
+  - ⚠️ **O `engineering-manager` precisa da tool de delegação (`Agent`) no frontmatter** — sem ela
+    ele não dispara os `dev-senior` e a FASE 3 morre em silêncio. Verificado no Passo 0.4.
+  - Modos: `feature-workflow.md` § Modo Sub-orquestrado · `planejar.md` § Reconciliação.
+- Git: `origin` é **opcional** — ver § Repo sem remote.
 
 ---
 
@@ -149,7 +203,11 @@ Ler `.ai-project` na raiz do repositório atual e, com ele, `{slug}-map.json` + 
 > Ao usar 1-3, **crie o `.ai-project`** apontando para o projeto resolvido e diga no relatório —
 > assim a próxima execução não repete a inferência.
 
-**0.2. Classificar a entrada** — sem perguntar:
+**0.2. Detectar `--so-planejar`** (§ `--so-planejar`): presente → você termina no Passo 4 e **não**
+executa os Passos 5, 6 e 7. Anote no artefato do épico, no PROGRESSO GERAL:
+`Status: 📋 Planejado (--so-planejar) — não implementado`.
+
+**0.2.1. Classificar a entrada** — sem perguntar:
 
 | O comando trouxe | Modo | O que acontece |
 |---|---|---|
@@ -171,20 +229,27 @@ Ambíguo → assumir **Épico** (o caminho conservador, que decompõe e valida) 
   template** — usá-lo cru resolveria para `/epic-{nome}`, na raiz do filesystem.
 
 **0.4. Pré-voo — pare aqui se faltar (não descubra no meio do épico):**
-- [ ] Agente `engineering-manager` instalado **e com `Agent` no `tools:`** → sem isso, FASE 3 morre
-- [ ] Agentes `product-manager`, `arquiteto-senior`, `tech-lead` instalados
-- [ ] **Todos** os modos existem — um `grep` por cabeçalho, não de olho:
+- [ ] Agentes `product-manager` e `arquiteto-senior` instalados
+- [ ] **Modos das FASES 0-2 existem** — um `grep` por cabeçalho, não de olho:
       `spec.md` § Modo Autônomo · § Modo Épico · `planejar.md` § Modo Autônomo · § Modo Épico ·
-      § Reconciliação · § Modo Crítica de Recorte · `feature-workflow.md` § Modo Sub-orquestrado.
+      § Modo Crítica de Recorte · `feature-workflow.md` § 1.2 e § 2.2 (os checklists de validação).
       Sem os do `spec.md`, o PM devolve perguntas para um orquestrador sem canal humano e **toda**
-      feature acaba bloqueada na FASE 1; sem o do `feature-workflow.md`, a FASE 3 quebra; sem
-      § Reconciliação, a FASE 4 não consegue corrigir nada (e você só descobriria lá)
+      feature acaba bloqueada na FASE 1
 - [ ] Templates do `spec.md` e do `planejar.md` têm a seção **HANDOFF** — os checklists das FASES 1
       e 2 a exigem; sem ela **todo** PRD/PLAN reprova e o épico morre na validação
 - [ ] Cada repo do `map.repositories` **é um repositório git de verdade** —
       `git -C {repo.path} rev-parse --git-dir`, não um `ls` na pasta. Um map pode declarar
       `projeto/api` e `projeto/web` como dois repos quando o `.git` está só na raiz (`projeto/`) e
-      aqueles são pastas: a pasta existe, o `fetch` falha, e você só descobriria na FASE 2
+      aqueles são pastas: a pasta existe, e o `worktree add` do **Passo 0.5** — que roda em
+      **todos** os modos, `--so-planejar` incluído — morre logo em seguida
+
+**Só quando NÃO é `--so-planejar`** (estes itens cobrem as FASES 3 e 4, que o modo não executa —
+cobrá-los aí seria abortar um planejamento por uma dependência que ele nunca usa):
+
+- [ ] Agente `engineering-manager` instalado **e com `Agent` no `tools:`** → sem isso, FASE 3 morre
+- [ ] Agentes `dev-senior` e `tech-lead` instalados → FASES 3 e 4
+- [ ] `feature-workflow.md` § Modo Sub-orquestrado → sem ele a FASE 3 quebra
+- [ ] `planejar.md` § Reconciliação → sem ele a FASE 4 não corrige nada (e você só descobriria lá)
 
 Faltou algo → **PARE** e reporte exatamente o quê. Não tente compensar rodando a fase você mesmo.
 
@@ -192,19 +257,30 @@ Faltou algo → **PARE** e reporte exatamente o quê. Não tente compensar rodan
 
 Para **cada repo** em `map.repositories` que o épico pode tocar:
 ```bash
-git -C {repo.path} fetch origin
+# Só se houver remote — projeto recém-criado pelo /start-project não tem
+git -C {repo.path} remote get-url origin >/dev/null 2>&1 && git -C {repo.path} fetch origin
+
+# COM remote: base atualizada do servidor
 git -C {repo.path} worktree add "{worktrees}/planning-epic-{nome}" --detach origin/{repo.branch}
+# SEM remote (ex.: projeto vindo do /start-project): base local
+git -C {repo.path} worktree add "{worktrees}/planning-epic-{nome}" --detach {repo.branch}
 ```
 (`{worktrees}` = `{repo.worktrees-path}` ou `{repo.path}-worktrees`.)
+
+> 🔴 **Ausência de `origin` não é erro — é o caso do projeto novo** (§ Repo sem remote). O
+> `/start-project` faz `git init` local e não cria repositório remoto; se o épico foi chamado por
+> ele (`--so-planejar`), **nenhum** dos repos tem `origin`. `fetch origin` incondicional falharia
+> com `'origin' does not appear to be a git repository`, e `origin/{repo.branch}` com
+> `invalid reference` — o épico morreria aqui, antes da FASE 0, sem produzir um PRD sequer.
 
 `--detach` de propósito: árvore **só de leitura**, sem branch — N agentes leem juntos, ninguém
 commita, nada fica preso. Reutilize se já existir; **remova no Passo 7.3**.
 
 **Nasce aqui, no Passo 0**, porque **todo** agente das FASES 0 a 2 lê código: o crítico do recorte
 (1.3 — `planejar.md` § Modo Crítica de Recorte manda criticar contra o código real), os PMs (2.1 —
-`spec.md` Passo 3.3) e os arquitetos (3.1). Este `fetch` é o **primeiro do épico**: sem ele, o
-primeiro agente a rodar leria o clone principal num estado arbitrariamente velho. Todas as fases
-usam o **mesmo** worktree.
+`spec.md` Passo 3.3) e os arquitetos (3.1). Quando há remote, este `fetch` é o **primeiro do
+épico**: sem ele, o primeiro agente a rodar leria o clone principal num estado arbitrariamente
+velho. Todas as fases usam o **mesmo** worktree.
 
 ---
 
@@ -333,9 +409,16 @@ fechamento da onda, e o custo dele já está coberto pelo guardrail de re-execu�
 Registre **todas** as colisões (e a classificação de cada uma) no artefato — é o que explica por que
 o épico não é mais paralelo do que é.
 
+> 🛑 **`--so-planejar` termina aqui.** Pule 4.3 (não crie branch de épico — não há o que integrar),
+> limpe o worktree de planejamento (7.3) e emita o **relatório do `--so-planejar`**. Os Passos 5, 6
+> e 7.1/7.2 não rodam.
+
 **4.3. Preparar a branch de integração — em CADA repo tocado pelo épico:**
 ```bash
+# COM remote
 git -C {repo.path} worktree add "{worktrees}/epic-{nome}" -b epic/{nome} origin/{repo.branch}
+# SEM remote (§ Repo sem remote)
+git -C {repo.path} worktree add "{worktrees}/epic-{nome}" -b epic/{nome} {repo.branch}
 ```
 Se a **branch** já existe (retomada), sem `-b`:
 `git -C {repo.path} worktree add "{worktrees}/epic-{nome}" epic/{nome}`.
@@ -528,6 +611,32 @@ Aplica-se em **todos** estes pontos, não só onde o bug foi visto primeiro:
 - **§ Branches e worktrees órfãos** — feature bloqueada cuja branch será recriada;
 - **§ Retomada** — feature que rodou parcialmente numa execução anterior: o épico pode ter morrido
   entre o commit e a escrita do estado, e o HEAD do épico pode ter mudado desde então.
+
+## Repo sem remote
+
+**Nem todo projeto tem `origin`, e isso não é erro.** O `/start-project` faz `git init` local e
+declara que **não** cria repositório remoto — um projeto que veio dele (e é exatamente quem chama o
+`--so-planejar`) tem história local, zero remotes. `git fetch origin` aí falha com `'origin' does not
+appear to be a git repository`, e qualquer `origin/{branch}` com `invalid reference`.
+
+Regra, válida em **todo** ponto desta skill que ramifica a partir da branch base do repo — hoje o
+Passo 0.5 (worktree de planejamento) e o 4.3 (branch do épico) —, e não só onde o bug já foi visto.
+O 5.1 não entra: a branch de feature sai de `epic/{nome}`, que é local por construção.
+
+| | Com remote | Sem remote |
+|---|---|---|
+| Atualizar antes de ramificar | `git -C {repo.path} fetch origin` | pular — não há de onde buscar |
+| Start-point de `worktree add` | `origin/{repo.branch}` | `{repo.branch}` (base local) |
+
+Detecte uma vez, no Passo 0, e reuse a resposta — não redetecte a cada comando:
+```bash
+git -C {repo.path} remote get-url origin >/dev/null 2>&1 && echo "com remote" || echo "sem remote"
+```
+
+Sem remote, o `git push` sugerido no relatório final também não se aplica: troque a sugestão de push
+por "publique o repo e depois `git push -u origin epic/{nome}`". Mesma regra em `implementar.md`
+(Passo 3.2) e `CONVENTIONS.md` § Git Worktree — se você está corrigindo `origin` em um lugar só,
+está corrigindo errado.
 
 ## Branches e worktrees órfãos
 
@@ -754,6 +863,11 @@ E2E:      {✅ | pulado — environments.local ausente}
 Sugerido (NÃO executado):
   git push origin epic/{nome}      # em cada repo: {aliases}
   {comando de PR conforme map.tooling}  # epic/{nome} → {repo.branch}
+
+{se o repo não tem remote (§ Repo sem remote) — substitui as duas linhas acima:}
+Sugerido (NÃO executado):
+  {aliases} ainda não tem repositório remoto — publique-o e então:
+  git push -u origin epic/{nome}
 ```
 
 ---
