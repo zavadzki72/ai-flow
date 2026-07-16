@@ -85,12 +85,23 @@ Clone os dois repositórios **lado a lado** e rode o script de ligação:
 
 ```bash
 git clone https://github.com/zavadzki72/ai-flow.git
-git clone git@github.com:zavadzki72/ai-flow-maps.git    # privado
+git clone https://github.com/zavadzki72/ai-flow-maps.git   # privado — pede login
 
-cd ai-flow && ./scripts/link-maps.sh
+cd ai-flow && ./scripts/install.sh
 ```
 
-O script cria um symlink **relativo** (`MAPS/{slug} -> ../../ai-flow-maps/{slug}`) por projeto, então
+O `install.sh` faz os três passos: instala as **skills** e os **agentes** em `.claude/` (por symlink)
+e liga os **maps**. Sem argumento, instala em `../.claude` — o workspace que contém o ai-flow.
+Passe `~/.claude` para instalar no nível do usuário, valendo em qualquer projeto:
+
+```bash
+./scripts/install.sh ~/.claude
+```
+
+**Reinicie a sessão depois** — o registro de skills e agentes é lido no startup.
+
+Se só quiser religar os maps (ex.: depois de criar um projeto novo), rode `./scripts/link-maps.sh`.
+Ele cria um symlink **relativo** (`MAPS/{slug} -> ../../ai-flow-maps/{slug}`) por projeto, então
 funciona em qualquer máquina desde que os dois repos sejam irmãos. Ele nunca sobrescreve diretório
 real — se `MAPS/{slug}` existir de verdade, ele avisa e pula.
 
