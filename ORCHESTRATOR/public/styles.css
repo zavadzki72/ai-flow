@@ -25,6 +25,8 @@
   --progress:    oklch(0.730 0.140 250);
   --blocked:     oklch(0.680 0.190 25);
   --pending:     oklch(0.560 0.020 258);
+  --planned:     oklch(0.740 0.120 300);  /* planejado de propósito ≠ parado */
+  --warn:        oklch(0.800 0.140 85);   /* o artefato se contradiz */
 
   /* z-index semântico (dropdown → sticky → backdrop → modal → toast → tooltip) */
   --z-sticky: 20;
@@ -182,8 +184,18 @@ main { max-width: 1180px; margin: 0 auto; padding: 26px 30px; }
 }
 .badge.active   { background: oklch(0.8 0.135 78 / 0.16);  color: var(--running); }
 .badge.in_progress { background: oklch(0.73 0.14 250 / 0.16); color: var(--progress); }
+.badge.planned  { background: oklch(0.72 0.09 300 / 0.16);  color: var(--planned); }
 .badge.recent   { background: oklch(0.78 0.155 152 / 0.16); color: var(--done); }
 .badge.done     { background: oklch(0.56 0.02 258 / 0.22);  color: var(--text-dim); }
+
+/* chip do épico no card + conflito interno do PLAN */
+.epic-chip { color: var(--planned); margin-top: 2px; }
+.card-sub.conflict { color: var(--warn); }
+
+/* card do épico — uma altitude acima da feature, então se distingue dela */
+.epic-card { border-color: oklch(0.74 0.12 300 / 0.35); }
+.epic-card .card-title { color: var(--planned); }
+.section-title.sub { font-size: 12px; margin-top: 18px; color: var(--text-faint); }
 
 /* progress bar */
 .progress { height: 6px; background: oklch(0.165 0.014 258); border-radius: 999px; overflow: hidden; }

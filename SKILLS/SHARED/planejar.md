@@ -54,6 +54,10 @@ Vale tudo do § Modo Autônomo, **mais**:
    (ex.: `backend/src/Domain/User.cs`). O épico compara esses paths **entre features de repos
    diferentes** para detectar colisão — sem o prefixo, `src/index.ts` do frontend colide falsamente
    com o do backend e o épico serializa à toa.
+4. **Preencha o campo `**Épico**` na § Informações** com o path do artefato do épico (vem no
+   prompt). É o que liga este PLAN ao épico para quem lê de fora — sem ele, o PLAN vira uma feature
+   avulsa indistinguível das outras, e o dashboard não consegue agrupar as N features do épico nem
+   dizer em que onda esta está. Fora do Modo Épico, **omita a linha inteira** (não escreva "N/A").
 
 ### § Reconciliação (sub-caso do Modo Épico)
 
@@ -348,9 +352,11 @@ Usar o template abaixo:
 
 ## Informações
 - **PRD Relacionado**: {map.docs.prd}/{slug}-prd-NNN-id-nome-da-feature.md
+- **Épico**: {map.docs.epic}/{arquivo-do-épico}.md — *(só no § Modo Épico; omita a linha fora dele)*
 - **Repositório(s)**: [repos afetados]
 - **Domínio(s)**: [domínios]
 - **Branch Base**: {repo.branch}
+- **Branch da Feature**: `feature/{nome}` — *(a branch que ESTE plano cria; omita se ainda não definida)*
 - **Complexidade**: 🟢 Baixa / 🟡 Média / 🔴 Alta
 - **Criado em**: YYYY-MM-DD
 - **Última atualização**: YYYY-MM-DD

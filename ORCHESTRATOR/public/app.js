@@ -23,12 +23,13 @@ const PHASES = [
 
 const TABS = [
   { key: 'andamento', icon: '⣷', label: 'Andamento' },
+  { key: 'planejadas', icon: '📋', label: 'Planejadas' },
   { key: 'concluidas', icon: '✓', label: 'Concluídas' },
   { key: 'todas', icon: '≡', label: 'Todas' },
   { key: 'agentes', icon: '🤖', label: 'Agentes' },
 ];
 
-const AGENT_ICON = { 'product-manager': '📋', 'arquiteto-senior': '📐', 'dev-senior': '⚙️', 'tech-lead': '🔍' };
+const AGENT_ICON = { 'product-manager': '📋', 'arquiteto-senior': '📐', 'dev-senior': '⚙️', 'tech-lead': '🔍', 'engineering-manager': '🎯', qa: '🧪' };
 
 const el = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -216,6 +217,21 @@ function runningRuns() {
   return allRuns().filter((r) => r.status === 'running' && now - r.startedAt < 15 * 60000);
 }
 // projetos conhecidos (união de PLANs + runs); '—' = sem projeto, sempre por último
+function allEpics() {
+  if (!state.snapshot) return [];
+  const out = [];
+  for (const p of state.snapshot.projects) {
+    for (const ep of p.epics || []) out.push({ ...ep, projectName: p.name });
+  }
+  return out.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+}
+function visibleEpics() {
+  let eps = allEpics();
+  if (state.projectSlug) eps = eps.filter((e) => (e.slug || '—') === state.projectSlug);
+  const q = state.filter.trim().toLowerCase();
+  if (q) eps = eps.filter((e) => [e.title, e.slug, e.epicFile].some((s) => (s || '').toLowerCase().includes(q)));
+  return eps;
+}
 function allSlugs() {
   const set = new Set();
   for (const p of allPlans()) if (p.slug) set.add(p.slug);
@@ -233,12 +249,16 @@ function projectSelectHTML() {
 }
 
 // filtro por aba + busca + ordenação
+// `planned` sai de "Andamento": um PLAN escrito de propósito e ainda não atacado
+// (o normal depois de um /epic-workflow --so-planejar) não é trabalho em curso.
 function tabOf(plan) {
-  return plan.liveness.state === 'done' ? 'concluidas' : 'andamento';
+  if (plan.liveness.state === 'done') return 'concluidas';
+  if (plan.liveness.state === 'planned') return 'planejadas';
+  return 'andamento';
 }
 function tabCounts() {
   const plans = allPlans();
-  const c = { andamento: 0, concluidas: 0, todas: plans.length };
+  const c = { andamento: 0, planejadas: 0, concluidas: 0, todas: plans.length };
   for (const p of plans) c[tabOf(p)]++;
   c.agentes = allRuns().length;
   return c;
@@ -274,19 +294,39 @@ function pipelineHTML(phases) {
     '</div>'
   );
 }
-function progressHTML(pr) {
+// `unit` porque a barra serve às duas altitudes: o PLAN conta etapas, o épico
+// conta features.
+function progressHTML(pr, unit = 'etapas') {
   const pct = pr ? pr.percent : 0;
   return `<div>
     <div class="progress"><i style="width:${pct}%"></i></div>
-    <div class="progress-meta"><span>${pr ? pr.done : 0}/${pr ? pr.total : 0} etapas</span><span>${pct}%</span></div>
+    <div class="progress-meta"><span>${pr ? pr.done : 0}/${pr ? pr.total : 0} ${unit}</span><span>${pct}%</span></div>
   </div>`;
 }
+const BADGE_TEXT = {
+  active: '● ativo',
+  in_progress: 'em progresso',
+  planned: '📋 planejada',
+  recent: 'recente',
+  done: 'concluído',
+};
+
+// Chip do épico: só existe quando o PLAN declara `**Épico**` (planejar.md § Modo
+// Épico) ou quando o épico o referencia. Feature avulsa não ganha chip.
+function epicChipHTML(plan) {
+  if (!plan.epicFile) return '';
+  const wave = plan.epicWave ? ` · onda ${plan.epicWave}` : '';
+  const fid = plan.featureId ? `${plan.featureId} · ` : '';
+  return `<div class="card-sub epic-chip" title="${esc(plan.epicTitle || plan.epicFile)}">🧩 ${fid}${esc(plan.epicTitle || plan.epicFile)}${wave}</div>`;
+}
+
 function cardHTML(plan) {
   const lv = plan.liveness || { state: 'done', ageMin: null };
   const cur = currentEtapa(plan);
   const running = activeAgents(plan.slug);
   const live = lv.state === 'active' || lv.state === 'in_progress' || running.length > 0;
-  const badgeText = { active: '● ativo', in_progress: 'em progresso', recent: 'recente', done: 'concluído' }[lv.state];
+  const badgeText = BADGE_TEXT[lv.state];
+  const conflict = plan.progress && plan.progress.conflict;
   return `<div class="card ${live ? 'live' : ''}" data-slug="${esc(plan.slug)}" data-plan="${esc(plan.planFile)}">
     <div class="card-head">
       <div>
@@ -295,10 +335,36 @@ function cardHTML(plan) {
       </div>
       <span class="badge ${lv.state}">${badgeText}</span>
     </div>
+    ${epicChipHTML(plan)}
     ${pipelineHTML(plan.phases)}
     ${progressHTML(plan.progress)}
+    ${conflict ? `<div class="card-sub conflict" title="O PLAN se contradiz — o dashboard não escolhe um lado">⚠️ ${esc(conflict)}</div>` : ''}
     ${running.length ? `<div class="card-sub" style="color:var(--running)">⣷ ${running.map(esc).join(', ')} rodando agora</div>` : ''}
     ${cur ? `<div class="card-sub">▸ próxima: <b>ETAPA ${cur.n}</b> — ${esc(cur.title)}</div>` : ''}
+  </div>`;
+}
+
+// Card do épico — a altitude que faltava. Mostra o que o épico decidiu (ondas,
+// paralelismo) e o que o humano precisa revisar (premissas de negócio), que é o
+// único conteúdo do relatório que exige ação dele.
+function epicCardHTML(ep) {
+  const pr = ep.progress || {};
+  const st = pr.statusKey || 'pending';
+  const nWaves = (ep.waves || []).length;
+  const par = nWaves ? (ep.features.length / nWaves).toFixed(1) : null;
+  const badge = pr.planOnly ? '📋 planejado' : (BADGE_TEXT[st] || st);
+  return `<div class="card epic-card" data-epic-slug="${esc(ep.slug)}" data-epic="${esc(ep.epicFile)}">
+    <div class="card-head">
+      <div>
+        <div class="card-title">🧩 ${esc(ep.title || ep.epicFile)}</div>
+        <div class="card-sub">${esc(ep.projectName || ep.slug)}${ep.entryMode ? ' · ' + esc(ep.entryMode) : ''}${pr.phase ? ' · ' + esc(pr.phase) : ''}</div>
+      </div>
+      <span class="badge ${st}">${badge}</span>
+    </div>
+    ${progressHTML({ done: pr.done, total: pr.total, percent: pr.percent }, 'features')}
+    <div class="card-sub">${ep.features.length} features${nWaves ? ` · ${nWaves} ondas · ${par} features/onda` : ''}${pr.blocked ? ` · <b>${pr.blocked} bloqueada(s)</b>` : ''}</div>
+    ${pr.planOnly ? `<div class="card-sub epic-chip">nenhuma linha de código — <code>--so-planejar</code></div>` : ''}
+    ${ep.premissasNegocio ? `<div class="card-sub conflict">⚠️ ${ep.premissasNegocio} premissa(s) de negócio pra revisar</div>` : ''}
   </div>`;
 }
 
@@ -322,6 +388,14 @@ function renderDeck() {
   const tabMeta = TABS.find((t) => t.key === state.tab);
   let html = `<div class="section-title">${tabMeta.label} <span class="count">${plans.length}</span></div>`;
   html += toolbarHTML();
+  // Épicos primeiro, e só nas abas onde eles dizem algo: em "Concluídas" e
+  // "Agentes" seriam ruído.
+  const eps = state.tab === 'andamento' || state.tab === 'planejadas' || state.tab === 'todas' ? visibleEpics() : [];
+  if (eps.length) {
+    html += `<div class="section-title sub">Épicos <span class="count">${eps.length}</span></div>`;
+    html += `<div class="grid">${eps.map(epicCardHTML).join('')}</div>`;
+    html += `<div class="section-title sub">Features <span class="count">${plans.length}</span></div>`;
+  }
   html += plans.length
     ? `<div class="grid">${plans.map(cardHTML).join('')}</div>`
     : `<div class="empty">${state.filter ? 'Nada encontrado para esse filtro.' : 'Nenhuma feature aqui. Rode <code>/feature-workflow</code> num terminal e ela aparece.'}</div>`;

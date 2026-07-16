@@ -50,6 +50,13 @@ function parseProgress(headerBlock) {
   const out = { done: null, total: null, percent: null, statusLine: null };
   const statusM = headerBlock.match(/^\*\*Status:?\*\*:?\s*(.+)$/m);
   if (statusM) out.statusLine = statusM[1].trim();
+  // Fallback: "## PROGRESSO GERAL — ✅ Concluído (2026-07-16)". Fora do template
+  // (planejar.md § PROGRESSO GERAL manda uma linha `**Status**:`), mas acontece —
+  // e sem isto o PLAN fica sem status nenhum, que é pior que um status informal.
+  if (!out.statusLine) {
+    const headM = headerBlock.match(/^##\s*PROGRESSO GERAL\s*[—–-]\s*(.+)$/im);
+    if (headM) out.statusLine = headM[1].trim();
+  }
 
   const progM = headerBlock.match(/^\*\*Progresso:?\*\*:?\s*(.+)$/m);
   if (progM) {
@@ -218,11 +225,23 @@ function parsePlan(md, meta = {}) {
 
   const prdM = header.match(/PRD\s+Relacionado\*?\*?:?\s*(.+)/i);
   const branchM = header.match(/Branch\s+Base\*?\*?:?\s*[`']?([^`'\n]+)/i);
+  // Campo do /epic-workflow: liga este PLAN ao artefato do épico que o gerou.
+  const epicM = header.match(/[ÉE]pico\*?\*?:?\s*[`']?([^`'\n]+)/i);
+  // Branch da feature ≠ Branch Base. Só a primeira é sinal de vida (ver scanner.js).
+  const fbM = header.match(/Branch\s+da\s+Feature\*?\*?:?\s*[`']?([^`'\n]+)/i);
   const complexM = header.match(/Complexidade\*?\*?:?\s*(.+)/i);
   const updatedM = header.match(/[ÚU]ltima\s+atualizaç[ãa]o\*?\*?:?\s*([0-9-]+)/i);
 
   const maxLevel = etapas.reduce((mx, e) => Math.max(mx, e.level), 0);
   const doneCount = etapas.filter((e) => e.status === 'done').length;
+
+  const pct = progress.percent ?? (etapas.length ? Math.round((doneCount / etapas.length) * 100) : 0);
+  // O PLAN pode se contradizer: a prosa do PROGRESSO GERAL diz "✅ Concluído" e
+  // nenhuma etapa está marcada (acontece quando o dev fecha o plano na mão e não
+  // volta nas etapas). Não escolha um lado em silêncio — os dois números são
+  // afirmações do arquivo, e esconder a briga é o que faz o dashboard mentir.
+  const saysDone = /(✅|conclu[íi])/i.test(progress.statusLine || '');
+  const conflict = saysDone && pct < 100 ? 'status diz concluído, mas as etapas não estão marcadas' : null;
 
   return {
     ...meta,
@@ -230,11 +249,14 @@ function parsePlan(md, meta = {}) {
     progress: {
       done: progress.done ?? doneCount,
       total: progress.total ?? etapas.length,
-      percent: progress.percent ?? (etapas.length ? Math.round((doneCount / etapas.length) * 100) : 0),
+      percent: pct,
       statusLine: progress.statusLine,
+      conflict,
     },
     prdRef: prdM ? prdM[1].replace(/[*`]/g, '').trim() : null,
+    epicRef: epicM ? epicM[1].replace(/[*`]/g, '').trim() : null,
     branch: branchM ? branchM[1].trim() : null,
+    featureBranch: fbM ? fbM[1].trim() : null,
     complexity: complexM ? complexM[1].replace(/[*`]/g, '').trim() : null,
     updatedAt: updatedM ? updatedM[1] : null,
     phases: inferPhases(progress, etapas),

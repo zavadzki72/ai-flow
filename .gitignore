@@ -7,6 +7,11 @@ MAPS/*
 !MAPS/mz-finance
 !MAPS/mz-finance/**
 
+# Orchestrator — estado de runtime local, não versionado
+# (events.log é só de depuração: o server.js escreve, ninguém lê)
+ORCHESTRATOR/events.log
+ORCHESTRATOR/*.log
+
 # OS
 .DS_Store
 Thumbs.db
