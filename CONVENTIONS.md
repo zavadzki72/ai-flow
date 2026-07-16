@@ -8,15 +8,26 @@ Guia de como escrever e manter skills, maps e boilerplates neste repositório.
 
 ### Estrutura de uma Skill
 
-Toda skill tem uma lógica central e um adapter por ferramenta:
+Toda skill tem dois arquivos — e **nenhum adapter por ferramenta**:
 
 ```
-SKILLS/SHARED/nome-skill.md     ← lógica central, agnóstica de provider
-CLAUDE/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Claude Code
-GEMINI/SKILLS/nome-skill/SKILL.md   ← adapter com sintaxe Gemini
-COPILOT/SKILLS/nome-skill/SKILL.md  ← adapter com sintaxe GitHub Copilot CLI
-CURSOR/SKILLS/nome-skill/SKILL.md   ← adapter em Markdown para Cursor Commands/Agent
+SKILLS/SHARED/nome-skill.md     ← o processo: lógica central, agnóstica de provider
+SKILLS/nome-skill/SKILL.md      ← a porta de entrada: frontmatter + Ambiente + invariantes
 ```
+
+O `SKILL.md` segue o padrão aberto **Agent Skills** (`agentskills.io`), formato criado pela Anthropic
+e liberado como spec aberta — hoje lido nativamente por Claude Code, Cursor, Gemini CLI, GitHub
+Copilot e VS Code, entre outros. Um arquivo serve todos: quem traduz vocabulário de tool é o próprio
+modelo, em runtime.
+
+> **Por que não existe mais adapter por CLI.** Existiu até 07/2026, e fazia sentido quando não havia
+> formato comum. O custo apareceu depois: toda regra nova precisava pousar em 4 arquivos, e a que não
+> pousava sumia em silêncio. A proibição de `Co-Authored-By` de IA chegou a viver só em 2 dos 4
+> adapters — sem o Claude Code, justamente o único CLI que anexa o trailer por padrão.
+
+**Instalação:** symlink de **arquivo** para `.claude/skills/{nome}/SKILL.md` — que o Claude Code lê, e
+o Cursor e o Copilot também. Nunca symlink de diretório: `ln -sfn` contra um diretório existente
+aninha em silêncio em vez de substituir.
 
 ### Como as Skills Acessam Contexto de Projeto
 
@@ -56,32 +67,47 @@ informação em `docs/`.
 ### Regras para Escrever Skills
 
 - **Sem contexto de projeto embutido.** Todo contexto vem do map.
-- **Lógica central em SHARED.** Os adapters de Claude/Gemini/Copilot/Cursor apenas traduzem sintaxe.
+- **Lógica central em SHARED.** O `SKILL.md` nunca copia o processo — aponta para ele.
+- **Sem vocabulário de CLI.** Nunca nomeie tools de uma ferramenta específica (`Read`, `view`,
+  `ask_user`). Escreva a intenção — "leia antes de editar", "pergunte ao dev e espere" — e deixe cada
+  cliente resolver com as tools que tem. O modelo traduz; o arquivo não precisa.
+- **Shell é eixo de SO, não de CLI.** Escreva POSIX. `git`, `gh` e `docker compose` são idênticos no
+  Windows via Git Bash — não escreva variante PowerShell sem necessidade real e comprovada.
 - **Perguntas obrigatórias primeiro.** Se a skill precisa de PRD, PLAN ou branch, peça antes de agir.
 - **Passos numerados e explícitos.** O dev deve conseguir acompanhar o que a skill está fazendo.
 - **Saída estruturada.** Relatórios e resultados devem ter formato consistente.
 
-### Frontmatter do Adapter Claude e Copilot CLI
+### Frontmatter do `SKILL.md`
+
+Campos do padrão Agent Skills. `name` e `description` são obrigatórios; o resto entra só quando há
+razão:
 
 ```markdown
 ---
 name: nome-skill
-description: Uma linha descrevendo quando e para que a skill é usada.
+description: O que a skill faz e quando usá-la. Máx. 1024 chars — é o único texto que o cliente
+  carrega no startup, então é ele que decide se a skill é ativada.
+compatibility: (opcional) exigências de ambiente. Ver § Skills que exigem um harness específico.
 ---
 ```
 
-### Adapter Cursor
+`name` deve ser lowercase com hífens, máx. 64 chars, e **bater com o nome do diretório**.
+Há ainda `license`, `metadata` (mapa livre) e `allowed-tools` (experimental) — ver a spec.
 
-O adapter Cursor deve ser Markdown simples, sem frontmatter obrigatório, para poder ser usado como Custom Command em `.cursor/commands/{nome-skill}.md`.
+### Anatomia do `SKILL.md`
 
-Todo adapter Cursor deve incluir:
-- Trigger esperado no chat (`/nome-skill`)
-- Referência ao processo completo em `SKILLS/SHARED/{nome-skill}.md`
-- Seção `Notas Específicas do Cursor`
-- Orientação para usar o Agent do Cursor para leitura/edição e o terminal integrado apenas para build, testes e git
-- Adaptação de comandos para PowerShell quando o ambiente for Windows
+Alvo: **50-70 linhas**. Passou de 100, você está copiando processo do SHARED — pare.
 
-Instruções persistentes de comportamento do Cursor devem ficar em `CURSOR/RULES/*.mdc`.
+| Seção | Papel |
+|---|---|
+| `## Trigger` | Comandos e frases que ativam a skill |
+| `## Processo Completo` | Uma linha: `Leia e siga: SKILLS/SHARED/{nome}.md` + a âncora de path |
+| `## Ambiente` | Como resolver arquivos, shell e perguntas **sem** nomear tool de CLI |
+| `## Invariantes` | O que vale em todo cliente (worktree, regras de commit…) |
+| `## Próximos Skills` | O que sugerir ao terminar |
+
+A **âncora de path** é obrigatória: os paths do repo são relativos à raiz do ai-flow, e o cliente
+não tem como adivinhar isso — diga a ele que a raiz é o diretório que contém `CONVENTIONS.md`.
 
 ---
 
@@ -94,10 +120,18 @@ Racional completo em `AGENTS/DESIGN.md`.
 ### Estrutura
 
 ```
-AGENTS/SHARED/{papel}.md            ← persona canônica, agnóstica (fonte de verdade)
+AGENTS/SHARED/{papel}.md            ← persona canônica (fonte de verdade — é o arquivo que RODA)
 AGENTS/SHARED/lenses/{linguagem}.md ← lentes de linguagem (só conhecimento idiomático)
-CLAUDE/AGENTS/{papel}.md            ← adapter Claude Code (instala em .claude/agents/)
 ```
+
+Instalação: `ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md`.
+
+> **A camada de agentes é Claude-only, e está tudo bem.** `AGENTS/SHARED/{papel}.md` carrega `tools:`
+> e `model:` no frontmatter — vocabulário do Claude Code — porque é assim que ele funciona. Chamar
+> esse arquivo de "agnóstico" seria mentira: subagent com janela isolada não é uma capability que os
+> outros clientes tenham hoje. Quando tiverem, revisite. **Não** existe `CLAUDE/AGENTS/` — houve, e
+> era código morto: os symlinks sempre apontaram para o SHARED, e o adapter acumulou instrução que
+> nunca chegou ao arquivo vivo.
 
 ### Contrato de conteúdo de uma persona (regra de ouro contra duplicação)
 
@@ -181,10 +215,15 @@ estabelecido, e N devs em paralelo como primeiro código convergem para N dialet
 
 ### Adicionando um Novo Agente
 
-1. Crie a persona em `AGENTS/SHARED/{papel}.md` (seguindo o contrato acima).
-2. Crie o adapter em `CLAUDE/AGENTS/{papel}.md` (frontmatter + "leia `AGENTS/SHARED/{papel}.md`" + notas Claude).
-3. Instale em `.claude/agents/` (copie o adapter) no repositório/cliente.
-4. Documente na tabela do `README.md`.
+1. Crie a persona em `AGENTS/SHARED/{papel}.md` (seguindo o contrato acima) — frontmatter com
+   `name`, `description`, `tools` (least-privilege) e `model`.
+2. Instale: `ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md` e
+   **reinicie a sessão**.
+3. Documente na tabela do `README.md`.
+
+> A `description` não é decoração: é o texto que o orquestrador lê para decidir se delega a você.
+> Se o papel tem um limite duro (ex.: *"HARD STOP após o PLAN (não implementa)"*), ele pertence à
+> `description` **e** ao corpo — quem roteia só enxerga a primeira.
 
 ---
 
@@ -461,19 +500,33 @@ Cada boilerplate deve conter um `README.md` explicando:
 ## Adicionando uma Nova Skill
 
 1. Crie a lógica central em `SKILLS/SHARED/nome-skill.md`
-2. Crie o adapter em `CLAUDE/SKILLS/nome-skill/SKILL.md`
-3. Crie o adapter em `GEMINI/SKILLS/nome-skill/SKILL.md`
-4. Crie o adapter em `COPILOT/SKILLS/nome-skill/SKILL.md`
-5. Crie o adapter em `CURSOR/SKILLS/nome-skill/SKILL.md`
-6. Documente na tabela em `README.md`
+2. Crie `SKILLS/nome-skill/SKILL.md` seguindo o § Anatomia. **Um arquivo, para todos os clientes.**
+3. Instale: `ln -sf {ai-flow}/SKILLS/nome-skill/SKILL.md {repo}/.claude/skills/nome-skill/SKILL.md`
+   e **reinicie a sessão** — o registro de skills é snapshot de startup.
+4. Documente na tabela em `README.md`
 
-### Exceção: skills orquestradoras são Claude-only no 1º corte
+### Skills que exigem um harness específico
 
-`/feature-workflow` e `/epic-workflow` têm **apenas** o adapter Claude, de propósito: elas delegam a
-subagents, e isso depende da tool `Agent` e de `.claude/agents/` — mecânica que hoje só existe no
-Claude Code (a regra "só Claude Code no 1º corte" do § Agentes cobre os **agentes**; esta cláusula
-estende às skills que dependem deles). Um adapter Gemini/Copilot/Cursor de orquestrador seria uma
-promessa que a ferramenta não cumpre.
+`/feature-workflow` e `/epic-workflow` delegam a subagents, e isso depende da tool `Agent` e de
+`.claude/agents/` — mecânica que hoje só existe no Claude Code. Uma versão Gemini/Copilot/Cursor
+delas seria uma promessa que a ferramenta não cumpre.
 
-Skills que **não** delegam (`/spec`, `/planejar`, `/implementar`, `/code-review`, `/test-e2e`,
-`/setup-project`, `/start-project`) seguem a regra dos 4 adapters normalmente.
+Isso **não** é motivo para escrever arquivo por CLI. O gate tem três camadas, e a primeira é a que
+importa:
+
+1. **Topológica (o mecanismo).** A skill só recebe symlink em `.claude/skills/`. Ausência é
+   enforcement — o que não existe no disco não roda, e ninguém precisa manter nada.
+2. **Declarada (o contrato).** `compatibility:` no frontmatter diz por quê, num campo que o
+   ecossistema entende:
+   ```yaml
+   compatibility: Requer subagents (tool Agent + .claude/agents/) e paralelismo real — hoje só Claude Code
+   ```
+3. **Defensiva (o cinto).** Um `## ⛔ Requisito de harness (HARD STOP)` no topo do corpo, mandando
+   parar e cair para o fluxo manual. Cinto de segurança, não mecanismo.
+
+**Nunca escreva uma versão degradada** de uma skill que delega. Sem janela isolada, o ask-upfront
+perde a razão de existir e as ondas viram cerimônia: seria outra skill com o nome da certa.
+
+> **Tripwire.** Se um dia o bloco `## Ambiente` de alguma skill passar de ~10 linhas de condicional
+> por cliente, o custo virou real e o adapter volta — **só para aquela skill**. Hoje são 4-6 linhas,
+> e caindo, porque os clientes estão convergindo no padrão.

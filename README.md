@@ -8,14 +8,9 @@ Repositório central de configurações, skills e contexto para uso de IA no dia
 
 ```
 ai-flow/
-  CLAUDE/SKILLS/          Skills para Claude Code (adapters)
-  GEMINI/SKILLS/          Skills para Gemini (adapters)
-  COPILOT/SKILLS/         Skills para GitHub Copilot CLI (adapters)
-  CURSOR/SKILLS/          Skills para Cursor (adapters para Commands/Agent)
-  CURSOR/RULES/           Regras opcionais para contexto persistente no Cursor
-  SKILLS/SHARED/          Lógica central das skills (agnóstica de provider)
-  AGENTS/SHARED/          Personas por papel (agnóstico) + lenses/ de linguagem
-  CLAUDE/AGENTS/          Agentes para Claude Code (adapters → .claude/agents/)
+  SKILLS/{nome}/SKILL.md  A skill: uma por pasta, lida por todos os clientes
+  SKILLS/SHARED/          O processo de cada skill (agnóstico de provider)
+  AGENTS/SHARED/          Personas por papel + lenses/ de linguagem (→ .claude/agents/)
   BOILERPLATES/
     BACK/                 Boilerplates de backend (dotnet-api, dotnet-worker, ...)
     FRONT/                Boilerplates de frontend (react, angular, ...)
@@ -33,12 +28,22 @@ ai-flow/
 
 As skills são instruções para a IA executar tarefas padronizadas (code review, implementação, planejamento, etc.).
 
-Cada skill tem uma lógica central e adapters por ferramenta:
-- **SHARED:** lógica central reutilizável, sem contexto de projeto embutido
-- **CLAUDE/SKILLS:** adapter com frontmatter e sintaxe do Claude Code
-- **GEMINI/SKILLS:** adapter com sintaxe do Gemini
-- **COPILOT/SKILLS:** adapter com sintaxe do GitHub Copilot CLI (Windows/PowerShell)
-- **CURSOR/SKILLS:** adapter em Markdown para Cursor Commands/Agent
+Cada skill são **dois arquivos, sem adapter por ferramenta**:
+- **`SKILLS/{nome}/SKILL.md`:** a porta de entrada — frontmatter, triggers, invariantes e como resolver
+  o ambiente. É o que o cliente carrega.
+- **`SKILLS/SHARED/{nome}.md`:** o processo completo, sem contexto de projeto embutido.
+
+O `SKILL.md` segue o padrão aberto **Agent Skills** (`agentskills.io`) — criado pela Anthropic e
+liberado como spec aberta, hoje lido nativamente por **Claude Code, Cursor, Gemini CLI, GitHub
+Copilot e VS Code**, entre outros. Por isso um arquivo só serve todos os clientes: o vocabulário de
+tool que os adapters traduziam à mão, o modelo resolve em runtime.
+
+**Instalação:** symlink de arquivo para `.claude/skills/{nome}/SKILL.md` no repositório (ou
+`~/.claude/skills/` para todos), e **reinicie a sessão** — o registro é snapshot de startup.
+
+```bash
+ln -sf {ai-flow}/SKILLS/{nome}/SKILL.md {repo}/.claude/skills/{nome}/SKILL.md
+```
 
 ### 2. Maps
 
@@ -130,11 +135,17 @@ Nenhum dos dois faz push/PR automático — o relatório final só sugere.
 > outros papéis são folhas de propósito, e a comunicação entre eles é sempre via broker. Ver
 > `CONVENTIONS.md` § Delegação.
 
-**Instalação (Claude Code):** copie os adapters de `CLAUDE/AGENTS/*.md` para `.claude/agents/` do
-repositório (ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**.
-`.claude/agents/` também é lido nativamente por Cursor e Copilot (VS Code).
+**Instalação (Claude Code):** symlink de `AGENTS/SHARED/*.md` para `.claude/agents/` do repositório
+(ou `~/.claude/agents/` para todos os projetos) e **reinicie a sessão**. `.claude/agents/` também é
+lido nativamente por Cursor e Copilot (VS Code).
 
-> 1º corte: **só Claude Code**. Gemini (`.gemini/agents/`) fica para quando for cobrir essa ferramenta.
+```bash
+ln -sf {ai-flow}/AGENTS/SHARED/{papel}.md {repo}/.claude/agents/{papel}.md
+```
+
+> A camada de agentes é **Claude-only**, e por um motivo estrutural: subagent com janela isolada não
+> é capability que os outros clientes tenham hoje. Por isso `AGENTS/SHARED/*.md` carrega `tools:` e
+> `model:` no frontmatter — vocabulário do Claude Code — e está tudo bem. Revisite quando mudar.
 
 ---
 
@@ -171,10 +182,8 @@ Consulte `CONVENTIONS.md` para detalhes e regras de nomenclatura.
 ## Adicionando uma Nova Skill
 
 1. Crie a lógica central em `SKILLS/SHARED/nome-skill.md`
-2. Crie o adapter em `CLAUDE/SKILLS/nome-skill/SKILL.md`
-3. Crie o adapter em `GEMINI/SKILLS/nome-skill/SKILL.md`
-4. Crie o adapter em `COPILOT/SKILLS/nome-skill/SKILL.md`
-5. Crie o adapter em `CURSOR/SKILLS/nome-skill/SKILL.md`
-6. Documente na tabela acima
+2. Crie `SKILLS/nome-skill/SKILL.md` — **um arquivo, para todos os clientes**
+3. Instale o symlink e reinicie a sessão
+4. Documente na tabela acima
 
 Consulte `CONVENTIONS.md` para o template e regras de escrita.

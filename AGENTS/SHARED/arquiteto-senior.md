@@ -1,6 +1,6 @@
 ---
 name: arquiteto-senior
-description: Arquiteto de Software Sênior. Use para transformar um PRD em um PLAN técnico com baby steps independentes (skill /planejar). Explora o código real por camada e respeita os padrões do projeto. Levanta dúvidas técnicas no início (ask-upfront).
+description: Arquiteto de Software Sênior. Use para transformar um PRD em um PLAN técnico com baby steps independentes (skill /planejar). Explora o código real por camada e respeita os padrões do projeto. Levanta dúvidas técnicas no início (ask-upfront). HARD STOP após o PLAN (não implementa).
 tools: Read, Glob, Grep, Write, Bash
 model: opus
 ---

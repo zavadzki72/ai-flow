@@ -5,6 +5,15 @@
 > **Autor:** Marccus + IA
 > **Escopo:** meta-repo `ai-flow` (não é um projeto específico em `MAPS/`)
 
+> ⚠️ **Registro histórico — a camada de adapters descrita aqui não existe mais (07/2026).**
+> As decisões de fundo deste documento continuam valendo: agente ≠ skill, janela isolada por agente,
+> comunicação por arquivo, `Agent` só no `engineering-manager`. O que caiu foi a **topologia**: não há
+> mais `CLAUDE/AGENTS/` nem `{CLAUDE,GEMINI,COPILOT,CURSOR}/SKILLS/`. Hoje a persona é
+> `AGENTS/SHARED/{papel}.md` (symlinkada direto para `.claude/agents/`) e a skill é
+> `SKILLS/{nome}/SKILL.md` no padrão aberto Agent Skills. Onde este doc citar esses paths, leia a
+> topologia atual em `CONVENTIONS.md`. O texto abaixo fica como estava, de propósito — é o registro
+> do que se decidiu em 06/2026, não a descrição do repo de hoje.
+
 Documento de estruturação para introduzir **agentes por papel** que usam as skills
 existentes do ai-flow, preservando a filosofia agnóstica (`SHARED` + adapters por ferramenta,
 maps como appsettings, handoff via arquivos).
