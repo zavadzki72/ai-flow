@@ -1,8 +1,10 @@
 'use strict';
 
 // ai-flow · Orchestrator — daemon local.
-// Serve o dashboard (public/) + API JSON + stream SSE de atualizações.
-// Observa MAPS/ e faz push pro browser quando um PLAN muda (near-live).
+// Dashboard "por terminal": cada sessão do Claude Code é um terminal, e a partir
+// dele desce a escadinha Terminal → Agentes → sub-Agentes, com custo em cada nível.
+// Fonte de verdade da árvore + custo = os transcripts em disco (lib/usage.js);
+// overlay ao vivo = os hooks do Claude Code (POST /api/events → SSE).
 // Zero dependências: só a stdlib do Node.
 //
 //   node server.js            # porta padrão 4319
@@ -10,12 +12,14 @@
 
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { scanAll, MAPS_DIR, AI_FLOW_ROOT } = require('./lib/scanner');
+const { scanAll, AI_FLOW_ROOT } = require('./lib/scanner');
 const usage = require('./lib/usage');
 
 const PORT = Number(process.env.PORT || 4319);
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const LIVE_WINDOW_MS = 10 * 60 * 1000; // "ativo" = atividade nos últimos 10 min
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -40,10 +44,26 @@ function broadcast(event, data) {
   }
 }
 
-// ---- cache do snapshot + rescan debounced ----
-let snapshotCache = null;
-let scanning = false;
-let rescanTimer = null;
+// ---- registro de projetos (só p/ rotular terminal→projeto via cwd) ----
+let registry = { projects: [], root: AI_FLOW_ROOT };
+function refreshRegistry() {
+  try {
+    registry = scanAll();
+  } catch (e) {
+    console.error('[registry] erro:', e);
+  }
+}
+
+// ---- cache de árvore por sessão (invalidado pelo mtime do transcript) ----
+const treeCache = new Map(); // sessionId -> { mtime, tree }
+function treeForSession(sessionId, mtime) {
+  const c = treeCache.get(sessionId);
+  if (c && c.mtime === mtime) return c.tree;
+  const tree = usage.sessionTree(sessionId);
+  treeCache.set(sessionId, { mtime, tree });
+  if (treeCache.size > 400) treeCache.delete(treeCache.keys().next().value);
+  return tree;
+}
 
 // buffer dos últimos eventos de agente (para reenviar a quem abre/reconecta o dashboard)
 const recentEvents = [];
@@ -99,42 +119,35 @@ function recentRuns() {
   return [...agentRuns.values()].sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0)).slice(0, 80);
 }
 
-// Custo & uso (/usage) de uma feature: agrega as sessões do Claude Code envolvidas.
-// Fonte primária: os session_ids capturados pelos hooks (agentRuns). Fallback (após
-// restart do daemon, quando o buffer de runs esvazia): varre os transcripts em disco
-// e casa o cwd de cada sessão ao slug do projeto via resolveSlug.
-function usageForSlug(slug) {
-  let sessionIds = [
-    ...new Set(
-      [...agentRuns.values()]
-        .filter((r) => r.slug === slug && r.runId && r.runId !== 'unknown')
-        .map((r) => r.runId)
-    ),
-  ];
-  let inferred = false;
-  if (!sessionIds.length) {
-    inferred = true;
-    sessionIds = usage
-      .listAllSessions()
-      .filter((s) => (s.cwds || [s.cwd]).some((c) => resolveSlug(c, null) === slug))
-      .slice(0, 12) // teto de segurança
-      .map((s) => s.sessionId);
+// ---- sinais "ao vivo" derivados dos hooks ----
+// sessões (terminais) com agente rodando agora
+function liveSessionIds() {
+  const now = Date.now();
+  const ids = new Set();
+  for (const r of agentRuns.values()) {
+    if (r.status === 'running' && r.runId && r.runId !== 'unknown' && (!r.startedAt || now - r.startedAt < LIVE_WINDOW_MS)) {
+      ids.add(r.runId);
+    }
   }
-  const data = usage.featureUsage(sessionIds);
-  data.inferred = inferred;
-  data.slug = slug;
-  return data;
+  return ids;
+}
+// toolUseIds de agentes rodando agora (p/ acender o nó certo na árvore)
+function runningToolUseIds() {
+  const now = Date.now();
+  const set = new Set();
+  for (const r of agentRuns.values()) {
+    if (r.status === 'running' && (!r.startedAt || now - r.startedAt < LIVE_WINDOW_MS)) set.add(r.id);
+  }
+  return set;
 }
 
-// Resolve o slug do projeto a partir do cwd do evento, cruzando com os paths dos
-// repositórios de cada projeto. Robusto a subdiretórios (ex.: {repo}/backend) e a
-// git worktrees (ex.: {repo}-worktrees/feature-x). Sem isso, um dev-senior rodando
-// em {projeto}/backend viraria slug="backend" e o evento seria descartado no filtro.
+// Resolve o slug do projeto a partir do cwd, cruzando com os paths dos repositórios.
+// Robusto a subdiretórios (ex.: {repo}/backend) e a git worktrees ({repo}-worktrees/x).
 function resolveSlug(cwd, fallback) {
-  if (!cwd || !snapshotCache) return fallback;
+  if (!cwd) return fallback;
   let best = fallback;
   let bestLen = -1;
-  for (const proj of snapshotCache.projects) {
+  for (const proj of registry.projects) {
     for (const repo of proj.repositories || []) {
       if (!repo.path) continue;
       const base = repo.path.replace(/\/+$/, '');
@@ -154,43 +167,92 @@ function resolveSlug(cwd, fallback) {
   return best;
 }
 
-async function rescan(reason) {
-  if (scanning) return;
-  scanning = true;
-  try {
-    snapshotCache = await scanAll();
-    snapshotCache.reason = reason || 'manual';
-    broadcast('snapshot', { generatedAt: snapshotCache.generatedAt, reason: snapshotCache.reason });
-  } catch (e) {
-    console.error('[rescan] erro:', e);
-  } finally {
-    scanning = false;
+// ---- lista de terminais (resumos) ----
+function listTerminals(sinceMs) {
+  const now = Date.now();
+  const live = liveSessionIds();
+  const out = [];
+  for (const s of usage.listAllSessions()) {
+    const isLive = live.has(s.sessionId) || now - s.mtime < LIVE_WINDOW_MS;
+    if (sinceMs && s.mtime < sinceMs && !isLive) continue; // fora da janela (vivos sempre entram)
+    const tree = treeForSession(s.sessionId, s.mtime);
+    if (!tree.found) continue;
+    const cwd = tree.cwd || s.cwd || null;
+    out.push({
+      sessionId: s.sessionId,
+      slug: resolveSlug(cwd, null),
+      cwd,
+      title: tree.title,
+      branch: tree.branch,
+      model: tree.model,
+      totalCostUSD: tree.totalCostUSD,
+      totalTokens: tree.totalTokens,
+      ownCostUSD: tree.own.costUSD,
+      agentCount: tree.agentCount,
+      startedAt: tree.startedAt,
+      endedAt: tree.endedAt,
+      durationMs: tree.durationMs,
+      mtime: s.mtime,
+      live: isLive,
+      resumeCommand: tree.resumeCommand,
+    });
   }
+  out.sort((a, b) => Number(b.live) - Number(a.live) || b.mtime - a.mtime);
+  return out;
 }
 
-function scheduleRescan(reason) {
-  clearTimeout(rescanTimer);
-  rescanTimer = setTimeout(() => rescan(reason), 400); // debounce
+// árvore de um terminal + overlay ao vivo por toolUseId
+function terminalTree(sessionId) {
+  const sessions = usage.listAllSessions();
+  const s = sessions.find((x) => x.sessionId === sessionId);
+  const mtime = s ? s.mtime : 0;
+  const tree = usage.sessionTree(sessionId); // sempre fresco no detalhe (barato p/ 1 sessão)
+  treeCache.set(sessionId, { mtime, tree });
+  if (!tree.found) return tree;
+  const running = runningToolUseIds();
+  const walk = (n) => {
+    n.live = running.has(n.id) || (n.toolUseId ? running.has(n.toolUseId) : false);
+    n.children.forEach(walk);
+  };
+  tree.agents.forEach(walk);
+  tree.cwd = tree.cwd || (s && s.cwd) || null;
+  tree.slug = resolveSlug(tree.cwd, null);
+  tree.live = liveSessionIds().has(sessionId) || (mtime > 0 && Date.now() - mtime < LIVE_WINDOW_MS);
+  return tree;
 }
 
-// ---- file watcher em MAPS/ ----
+// ---- watcher dos transcripts → push "terminals" (near-live sem hooks) ----
+let termTimer = null;
+function scheduleTerminalsPush(reason) {
+  clearTimeout(termTimer);
+  termTimer = setTimeout(() => broadcast('terminals', { reason, ts: Date.now() }), 600);
+}
+function transcriptRoots() {
+  const home = os.homedir();
+  return [path.join(home, '.claude-personal', 'projects'), path.join(home, '.claude', 'projects')].filter((p) => {
+    try {
+      return fs.statSync(p).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+}
 function startWatcher() {
-  if (!fs.existsSync(MAPS_DIR)) {
-    console.warn('[watch] MAPS não encontrado em', MAPS_DIR);
+  const roots = transcriptRoots();
+  if (!roots.length) {
+    console.warn('[watch] nenhum root de transcript encontrado');
     return;
   }
-  try {
-    fs.watch(MAPS_DIR, { recursive: true }, (evt, file) => {
-      if (!file) return;
-      // reage a PLANs e maps; ignora ruído
-      if (/\.md$/.test(file) || /-map\.json$/.test(file)) {
-        scheduleRescan(`fs:${path.basename(file)}`);
-      }
-    });
-    console.log('[watch] observando', MAPS_DIR, '(recursivo)');
-  } catch (e) {
-    console.warn('[watch] recursivo indisponível, usando polling 5s:', e.message);
-    setInterval(() => scheduleRescan('poll'), 5000);
+  for (const root of roots) {
+    try {
+      fs.watch(root, { recursive: true }, (_evt, file) => {
+        if (file && /\.jsonl$/.test(String(file))) scheduleTerminalsPush(`fs:${path.basename(String(file))}`);
+      });
+      console.log('[watch] observando', root, '(recursivo)');
+    } catch (e) {
+      console.warn('[watch] recursivo indisponível em', root, '— poll 5s:', e.message);
+      setInterval(() => scheduleTerminalsPush('poll'), 5000);
+    }
   }
 }
 
@@ -221,10 +283,10 @@ function serveStatic(req, res) {
 }
 
 // ---- servidor ----
-const server = http.createServer(async (req, res) => {
+const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
 
-  // Ingestão de eventos ao vivo (hooks do Claude Code postam aqui) — Camada 2b.
+  // Ingestão de eventos ao vivo (hooks do Claude Code postam aqui).
   if (url === '/api/events' && req.method === 'POST') {
     let body = '';
     req.on('data', (c) => (body += c));
@@ -236,42 +298,56 @@ const server = http.createServer(async (req, res) => {
       evt.receivedAt = Date.now();
       // corrige o slug pelo cwd (o dev roda em subdir/worktree; o notify.js só chuta o último segmento)
       evt.slug = resolveSlug(evt.cwd, evt.slug);
-      // log de depuração: prova que um hook chegou (ver events.log)
       const line = `[${new Date(evt.receivedAt).toISOString()}] ${evt.event || '?'} agent=${evt.agent || '?'} slug=${evt.slug || '?'} desc=${evt.description || ''}`;
       console.log('[event]', line);
       try {
         fs.appendFileSync(path.join(__dirname, 'events.log'), line + '\n');
       } catch {}
-      pushEvent(evt); // guarda no buffer para reenvio
-      const run = upsertRun(evt); // correlaciona no registro do agente
+      pushEvent(evt);
+      const run = upsertRun(evt);
       broadcast('agent', evt); // evento cru (log ao vivo)
       broadcast('run', run); // run consolidado (tarefa/resultado/timeline)
+      broadcast('terminals', { reason: 'event', ts: evt.receivedAt }); // pisca a lista
       sendJSON(res, 200, { ok: true });
     });
     return;
   }
 
-  if (url === '/api/snapshot') {
-    if (!snapshotCache) await rescan('first');
-    return sendJSON(res, 200, { ...snapshotCache, recentEvents, agentRuns: recentRuns() });
+  if (url === '/api/terminals') {
+    const q = new URL(req.url, 'http://localhost');
+    const since = Number(q.searchParams.get('since') || 0) || 0;
+    try {
+      return sendJSON(res, 200, {
+        generatedAt: Date.now(),
+        root: registry.root,
+        projects: registry.projects.map((p) => ({ slug: p.slug, name: p.name })),
+        terminals: listTerminals(since),
+        recentEvents,
+        agentRuns: recentRuns(),
+      });
+    } catch (e) {
+      console.error('[terminals] erro:', e);
+      return sendJSON(res, 500, { error: String(e) });
+    }
   }
 
-  if (url === '/api/usage') {
+  if (url === '/api/terminal') {
     const q = new URL(req.url, 'http://localhost');
-    const slug = q.searchParams.get('slug');
-    if (!slug) return sendJSON(res, 400, { error: 'slug obrigatório' });
-    if (!snapshotCache) await rescan('first');
+    const session = q.searchParams.get('session');
+    if (!session) return sendJSON(res, 400, { error: 'session obrigatório' });
     try {
-      return sendJSON(res, 200, usageForSlug(slug));
+      return sendJSON(res, 200, terminalTree(session));
     } catch (e) {
-      console.error('[usage] erro:', e);
+      console.error('[terminal] erro:', e);
       return sendJSON(res, 500, { error: String(e) });
     }
   }
 
   if (url === '/api/rescan') {
-    await rescan('manual');
-    return sendJSON(res, 200, { ok: true, generatedAt: snapshotCache.generatedAt });
+    refreshRegistry();
+    treeCache.clear();
+    broadcast('terminals', { reason: 'manual', ts: Date.now() });
+    return sendJSON(res, 200, { ok: true, generatedAt: Date.now() });
   }
 
   if (url === '/api/stream') {
@@ -309,6 +385,7 @@ server.listen(PORT, () => {
   console.log(`\n  ai-flow · Orchestrator`);
   console.log(`  ▸ http://localhost:${PORT}`);
   console.log(`  ▸ raiz: ${AI_FLOW_ROOT}`);
-  rescan('boot');
+  refreshRegistry();
+  setInterval(refreshRegistry, 60000); // registro de projetos muda pouco
   startWatcher();
 });

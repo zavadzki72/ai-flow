@@ -79,6 +79,11 @@ function costOf(tok, model) {
 function totalTokens(tok) {
   return tok.input + tok.output + tok.cacheWrite5m + tok.cacheWrite1h + tok.cacheRead;
 }
+function tsMs(s) {
+  if (!s) return 0;
+  const t = Date.parse(s);
+  return isFinite(t) ? t : 0;
+}
 
 // Lê um .jsonl de transcript e devolve { byModel:{model:tok}, tokens:totalTok, costUSD, model:principal }.
 function transcriptUsage(file) {
@@ -115,6 +120,34 @@ function transcriptUsage(file) {
     };
     byModel[model] = addTok(byModel[model] || emptyTok(), tok);
   }
+  return summarizeByModel(byModel);
+}
+
+// extrai o tok de uma linha `assistant` (ou null se não tiver usage)
+function usageOfLine(d) {
+  const msg = d.message;
+  if (!msg || d.type !== 'assistant') return null;
+  const u = msg.usage;
+  if (!u) return null;
+  const model = msg.model || 'unknown';
+  if (/synthetic|<.*>/.test(model)) return null;
+  const cc = u.cache_creation || {};
+  const w5 = cc.ephemeral_5m_input_tokens != null ? cc.ephemeral_5m_input_tokens : (u.cache_creation_input_tokens || 0);
+  const w1 = cc.ephemeral_1h_input_tokens || 0;
+  return {
+    model,
+    tok: {
+      input: u.input_tokens || 0,
+      output: u.output_tokens || 0,
+      cacheWrite5m: w5,
+      cacheWrite1h: w1,
+      cacheRead: u.cache_read_input_tokens || 0,
+    },
+  };
+}
+
+// consolida um {model:tok} em {byModel, tokens, costUSD, model:principal, empty}
+function summarizeByModel(byModel) {
   const tokens = emptyTok();
   let costUSD = 0;
   let topModel = null;
@@ -358,6 +391,299 @@ function listAllSessions() {
   return out.sort((a, b) => b.mtime - a.mtime);
 }
 
+// primeiro/último timestamp de um transcript (ms epoch) — serve de início/fim do nó.
+function transcriptTimeRange(file) {
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { first: 0, last: 0 };
+  }
+  let first = 0;
+  let last = 0;
+  for (const line of raw.split('\n')) {
+    if (!line) continue;
+    let d;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const t = tsMs(d.timestamp);
+    if (!t) continue;
+    if (!first) first = t;
+    last = t;
+  }
+  return { first, last };
+}
+
+// ids dos blocos tool_use que ESTE transcript disparou para criar subagentes
+// (name Agent/Task). Casam com o `toolUseId` do .meta.json do filho → linkagem pai↔filho.
+function transcriptChildToolUseIds(file) {
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return [];
+  }
+  const ids = [];
+  for (const line of raw.split('\n')) {
+    if (!line || !line.includes('"tool_use"')) continue;
+    let d;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const content = d.message && d.message.content;
+    if (!Array.isArray(content)) continue;
+    for (const b of content) {
+      if (b && b.type === 'tool_use' && (b.name === 'Agent' || b.name === 'Task') && b.id) ids.push(b.id);
+    }
+  }
+  return ids;
+}
+
+// texto de uma mensagem de usuário (string direta ou primeiro bloco de texto)
+function userText(d) {
+  const c = d.message && d.message.content;
+  if (typeof c === 'string') return c;
+  if (Array.isArray(c)) {
+    for (const b of c) if (b && b.type === 'text' && typeof b.text === 'string') return b.text;
+  }
+  return null;
+}
+
+// normaliza o texto de um turno do usuário para exibição; devolve null se for ruído
+// de sistema (não é um turno humano). Slash-commands e `!bash` viram legíveis — eles
+// contam como turno porque custam dinheiro.
+function cleanPrompt(txt) {
+  if (!txt) return null;
+  const s = txt.trim();
+  if (!s) return null;
+  const name = s.match(/<command-name>([^<]+)<\/command-name>/);
+  if (name) {
+    const args = s.match(/<command-args>([\s\S]*?)<\/command-args>/);
+    const a = args ? args[1].trim() : '';
+    return (name[1].trim() + (a ? ' ' + a : '')).trim();
+  }
+  const bash = s.match(/<bash-input>([\s\S]*?)<\/bash-input>/);
+  if (bash) return '! ' + bash[1].trim();
+  if (/^<[a-z][\w-]*[\s>]/i.test(s)) return null; // system-reminder, local-command-stdout, etc.
+  return s;
+}
+
+// Leitura ÚNICA do transcript principal: custo + janela de tempo + ids de spawn +
+// metadados (título gerado, primeiro/último prompt, branch). Evita reler o arquivo.
+function mainTranscriptData(file) {
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  const byModel = {};
+  let first = 0;
+  let last = 0;
+  const childIds = [];
+  let aiTitle = null;
+  let lastPrompt = null;
+  let firstPrompt = null;
+  let branch = null;
+  // turnos do usuário: cada prompt + o custo do main-loop entre ele e o próximo prompt
+  const turns = [];
+  let cur = null;
+  let preCost = 0; // custo antes do 1º prompt (raro) → vai pro 1º turno
+  for (const line of raw.split('\n')) {
+    if (!line) continue;
+    let d;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const t = tsMs(d.timestamp);
+    if (t) {
+      if (!first) first = t;
+      last = t;
+    }
+    const type = d.type;
+    if (type === 'ai-title') {
+      if (d.aiTitle) aiTitle = d.aiTitle;
+    } else if (type === 'last-prompt') {
+      if (d.lastPrompt) lastPrompt = d.lastPrompt;
+    } else if (type === 'assistant') {
+      if (!branch && d.gitBranch && d.gitBranch !== 'HEAD') branch = d.gitBranch;
+      const u = usageOfLine(d);
+      if (u) {
+        byModel[u.model] = addTok(byModel[u.model] || emptyTok(), u.tok);
+        const c = costOf(u.tok, u.model);
+        if (cur) cur.mainCostUSD += c;
+        else preCost += c;
+      }
+      const content = d.message && d.message.content;
+      if (Array.isArray(content)) {
+        for (const b of content) {
+          if (b && b.type === 'tool_use' && (b.name === 'Agent' || b.name === 'Task') && b.id) childIds.push(b.id);
+        }
+      }
+    } else if (type === 'user' && !d.isSidechain) {
+      const clean = cleanPrompt(userText(d));
+      if (clean) {
+        const text = clean.length > 8000 ? clean.slice(0, 8000) + '…' : clean;
+        cur = { ts: t || null, text, mainCostUSD: preCost };
+        preCost = 0;
+        turns.push(cur);
+        if (!firstPrompt) firstPrompt = clean;
+      }
+    }
+  }
+  return { ...summarizeByModel(byModel), first, last, childIds, aiTitle, lastPrompt, firstPrompt, branch, turns };
+}
+
+// Árvore de UM terminal (sessão): nó-terminal com custo do main-loop ("conteúdo") +
+// agentes aninhados (cada um com custo próprio e de subtree). É a "escadinha"
+// Terminal → Agente → sub-Agente reconstruída dos transcripts em disco.
+function sessionTree(sessionId) {
+  const loc = locateSession(sessionId);
+  if (!loc) {
+    return { sessionId, found: false, resumeCommand: `claude --resume ${sessionId}` };
+  }
+  const main = mainTranscriptData(loc.transcript) || { byModel: {}, tokens: emptyTok(), costUSD: 0, model: null, first: 0, last: 0, childIds: [] };
+  const mainChildIds = main.childIds;
+  const cwd = transcriptCwd(loc.transcript);
+  // agrega custo por modelo do terminal inteiro (main-loop + todos os agentes)
+  const aggByModel = {};
+  for (const [m, tok] of Object.entries(main.byModel || {})) aggByModel[m] = addTok(aggByModel[m] || emptyTok(), tok);
+
+  // um nó por subagente (custo próprio + a quem ele mesmo deu spawn)
+  const nodes = listAgentFiles(loc.subDir).map(({ file, meta }) => {
+    const u = transcriptUsage(file);
+    const range = transcriptTimeRange(file);
+    for (const [m, tok] of Object.entries(u.byModel || {})) aggByModel[m] = addTok(aggByModel[m] || emptyTok(), tok);
+    return {
+      id: meta.toolUseId || path.basename(file),
+      toolUseId: meta.toolUseId || null,
+      agentType: meta.agentType || null,
+      description: meta.description || null,
+      model: meta.model || u.model || null,
+      spawnDepth: meta.spawnDepth != null ? meta.spawnDepth : null,
+      ownCostUSD: +u.costUSD.toFixed(4),
+      ownTokens: u.tokens,
+      byModel: u.byModel,
+      startedAt: range.first || null,
+      endedAt: range.last || null,
+      file: path.basename(file),
+      _childIds: transcriptChildToolUseIds(file),
+      children: [],
+    };
+  });
+
+  const byTuid = new Map();
+  for (const n of nodes) if (n.toolUseId) byTuid.set(n.toolUseId, n);
+
+  // liga cada nó aos filhos que o transcript dele declara ter disparado
+  const claimed = new Set();
+  for (const n of nodes) {
+    for (const cid of n._childIds) {
+      const child = byTuid.get(cid);
+      if (child && child !== n && !claimed.has(child.id)) {
+        n.children.push(child);
+        claimed.add(child.id);
+      }
+    }
+  }
+  // raízes = filhas diretas do main; órfãs (spawn não rastreado, ex.: workflow) penduram no terminal
+  const roots = [];
+  for (const n of nodes) {
+    if (n.toolUseId && mainChildIds.includes(n.toolUseId) && !claimed.has(n.id)) {
+      roots.push(n);
+      claimed.add(n.id);
+    }
+  }
+  for (const n of nodes) if (!claimed.has(n.id)) roots.push(n);
+
+  // custo/tokens de subtree, recursivo; limpa o campo interno _childIds
+  const decorate = (n) => {
+    let cost = n.ownCostUSD;
+    let tok = totalTokens(n.ownTokens);
+    n.children.sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+    for (const c of n.children) {
+      const r = decorate(c);
+      cost += r.cost;
+      tok += r.tok;
+    }
+    n.subtreeCostUSD = +cost.toFixed(4);
+    n.subtreeTokens = tok;
+    delete n._childIds;
+    return { cost, tok };
+  };
+  let agentsCost = 0;
+  let agentsTok = 0;
+  roots.sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+  for (const r of roots) {
+    const d = decorate(r);
+    agentsCost += d.cost;
+    agentsTok += d.tok;
+  }
+
+  // custo por modelo do terminal inteiro (main + agentes)
+  const byModel = {};
+  for (const [m, tok] of Object.entries(aggByModel)) byModel[m] = { tokens: tok, costUSD: +costOf(tok, m).toFixed(4) };
+
+  // custo por prompt: main-loop do turno + agentes-raiz disparados naquele intervalo.
+  // (só os roots — o subtree deles já embute os filhos; agentes aninhados foram
+  // disparados por outro agente, não diretamente por um prompt.)
+  const turns = (main.turns || []).map((t) => ({ ts: t.ts, text: t.text, mainCostUSD: t.mainCostUSD || 0, agentCostUSD: 0 }));
+  for (const r of roots) {
+    if (!r.startedAt) continue;
+    let idx = -1;
+    for (let i = 0; i < turns.length; i++) {
+      if (turns[i].ts != null && turns[i].ts <= r.startedAt) idx = i;
+      else break; // turnos estão em ordem cronológica
+    }
+    if (idx >= 0) turns[idx].agentCostUSD += r.subtreeCostUSD;
+  }
+  const prompts = turns.map((t) => ({
+    ts: t.ts,
+    text: t.text,
+    costUSD: +(t.mainCostUSD + t.agentCostUSD).toFixed(4),
+    mainCostUSD: +t.mainCostUSD.toFixed(4),
+    agentCostUSD: +t.agentCostUSD.toFixed(4),
+  }));
+
+  const start = main.first || null;
+  const end = main.last || null;
+  return {
+    sessionId,
+    found: true,
+    resumeCommand: `claude --resume ${sessionId}`,
+    cwd,
+    model: main.model,
+    title: main.aiTitle || (main.firstPrompt ? main.firstPrompt.slice(0, 90) : null),
+    aiTitle: main.aiTitle || null,
+    firstPrompt: main.firstPrompt || null,
+    lastPrompt: main.lastPrompt || null,
+    prompts,
+    branch: main.branch || null,
+    byModel,
+    own: {
+      costUSD: +main.costUSD.toFixed(4),
+      tokens: main.tokens,
+      byModel: main.byModel,
+      startedAt: start,
+      endedAt: end,
+    },
+    totalCostUSD: +(main.costUSD + agentsCost).toFixed(4),
+    totalTokens: totalTokens(main.tokens) + agentsTok,
+    agentCount: nodes.length,
+    startedAt: start,
+    endedAt: end,
+    durationMs: start && end ? end - start : null,
+    agents: roots,
+  };
+}
+
 module.exports = {
   PRICING,
   priceForModel,
@@ -366,4 +692,7 @@ module.exports = {
   featureUsage,
   locateSession,
   listAllSessions,
+  transcriptTimeRange,
+  transcriptChildToolUseIds,
+  sessionTree,
 };
