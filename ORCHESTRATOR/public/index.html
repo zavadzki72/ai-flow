@@ -5,27 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ai-flow · Orchestrator</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8E%9B%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand" id="brandHome" title="Voltar ao início">🎛️ ai-flow <span class="dot">·</span> <span>Orchestrator</span></div>
-    <small id="rootPath" class="rootpath"></small>
+    <div class="brand" id="brandHome" title="Voltar ao início">
+      <div class="brand-tile">◆</div>
+      <span class="brand-name">ai-flow<span class="brand-dot">·</span><span class="brand-sub">Orchestrator</span></span>
+    </div>
+    <div class="root-chip">
+      <span class="root-k">root</span>
+      <span class="root-v" id="rootPath">…</span>
+    </div>
     <div class="spacer"></div>
-    <div class="conn" id="conn"><span class="pulse"></span><span id="connLabel">conectando…</span></div>
-    <button class="btn" id="rescanBtn" title="Reescanear">↻</button>
+    <div class="conn" id="conn">
+      <span class="conn-dot"></span>
+      <span class="conn-label" id="connLabel">conectando…</span>
+    </div>
+    <button class="refresh-btn" id="rescanBtn" title="Rescan"><span id="refreshIcon">↻</span></button>
   </header>
 
-  <div class="shell">
-    <aside class="sidebar">
-      <nav class="side-nav" id="sideNav"></nav>
-      <div class="side-foot" id="sideFoot"></div>
-    </aside>
-    <div class="content">
-      <div id="liveBar" class="livebar" hidden></div>
-      <main id="app"><div class="empty">Carregando…</div></main>
-    </div>
-  </div>
+  <div id="app" class="app oc-scroll"><div class="empty">Carregando…</div></div>
 
   <script src="/app.js"></script>
 </body>

@@ -1,8 +1,9 @@
 'use strict';
 
 // ai-flow · Orchestrator — dashboard "por terminal".
-// Home = lista de terminais (sessões do Claude Code). Expandir um terminal desce a
-// escadinha Terminal → Conteúdo + Agentes → Conteúdo + sub-Agentes → … com custo por nó.
+// Visual portado do protótipo Claude Design (Orchestrator.dc.html):
+// home = KPIs + feed ao vivo + cards de terminal; página do terminal com
+// prompts/escadinha/timeline + sidebar sticky; modal rico por nó de agente.
 
 // ---------- estado ----------
 const state = {
@@ -12,7 +13,6 @@ const state = {
   trees: {},               // sessionId -> árvore completa (/api/terminal), lazy
   loading: {},             // sessionId -> true enquanto busca a árvore
   expanded: new Set(),     // terminais abertos
-  expandedNodes: new Set(),// nós de agente abertos (por node id)
   // filtros
   q: '',
   projectSlug: '',
@@ -25,12 +25,30 @@ const state = {
   modal: null,             // {type:'run',id} | {type:'node',sessionId,nodeId}
 };
 
-const AGENT_ICON = {
-  'product-manager': '📋', 'arquiteto-senior': '📐', 'dev-senior': '⚙️',
-  'tech-lead': '🔍', 'engineering-manager': '🎯', qa: '🧪',
-  'general-purpose': '🤖', 'claude-code-guide': '📖', Explore: '🔭', Plan: '🗺️',
+// papel do agente → código de duas/três letras + cor (tiles do design)
+const ROLE = {
+  terminal:            { code: 'SH',  c: '#aab1bd' },
+  'product-manager':   { code: 'PM',  c: '#d9a441' },
+  'arquiteto-senior':  { code: 'ARQ', c: '#a78bfa' },
+  'dev-senior':        { code: 'DEV', c: '#6aa8f5' },
+  'tech-lead':         { code: 'TL',  c: '#56c7d6' },
+  'engineering-manager': { code: 'EM', c: '#d98d5f' },
+  qa:                  { code: 'QA',  c: '#e8809b' },
+  'general-purpose':   { code: 'GP',  c: '#9aa4b2' },
+  'claude-code-guide': { code: 'DOC', c: '#c9b458' },
+  Explore:             { code: 'EXP', c: '#4fd0a8' },
+  Plan:                { code: 'PLN', c: '#8390f0' },
 };
-const agIcon = (t) => AGENT_ICON[t] || '🤖';
+function tileOf(role) {
+  const r = ROLE[role];
+  if (r) return r;
+  const code = String(role || 'AGT').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'AGT';
+  return { code, c: '#9aa4b2' };
+}
+function tileHTML(role, size) {
+  const t = tileOf(role);
+  return `<span class="tile ${size || 'md'}" style="background:color-mix(in srgb,${t.c} 15%,transparent);border-color:color-mix(in srgb,${t.c} 34%,transparent);color:${t.c}">${t.code}</span>`;
+}
 
 const PERIODS = [
   { key: 'hoje', label: 'Hoje' },
@@ -74,7 +92,7 @@ function fmtUSD(n) {
   if (n == null) return '—';
   if (n === 0) return '$0';
   if (n < 0.01) return '$' + n.toFixed(4);
-  return '$' + n.toFixed(2);
+  return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 function fmtTok(n) {
   if (n == null) return '0';
@@ -89,15 +107,14 @@ function tokTotal(t) {
 }
 function shortCwd(cwd) {
   if (!cwd) return '';
-  const home = cwd.replace(/^\/Users\/[^/]+/, '~');
-  const parts = home.split('/').filter(Boolean);
+  const home = cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^[A-Za-z]:[\\/]Users[\\/][^\\/]+/, '~');
+  const parts = home.split(/[\\/]/).filter(Boolean);
   return parts.length > 3 ? '…/' + parts.slice(-2).join('/') : home;
 }
-// rótulo de projeto do terminal: slug do MAPS, senão a pasta do cwd (nunca "sem projeto" à toa)
 function projLabel(t) {
   if (t.slug) return t.slug;
   if (!t.cwd) return null;
-  const p = t.cwd.replace(/\/+$/, '').split('/').filter(Boolean);
+  const p = t.cwd.replace(/[\\/]+$/, '').split(/[\\/]/).filter(Boolean);
   return p[p.length - 1] || null;
 }
 function termTitle(t) {
@@ -158,6 +175,12 @@ function scheduleRefetch() {
       const t = state.terminals.find((x) => x.sessionId === sid);
       if (t && t.live) loadTree(sid);
     }
+    // a página exclusiva do terminal também precisa da árvore fresca (status/custo ao vivo)
+    if (state.view.type === 'terminal') {
+      const sid = state.view.sessionId;
+      const t = state.terminals.find((x) => x.sessionId === sid);
+      if (!t || t.live) loadTree(sid);
+    }
   }, 1500);
 }
 function connectStream() {
@@ -179,7 +202,7 @@ function connectStream() {
     try {
       const run = JSON.parse(e.data);
       state.agentRuns[run.id] = { ...state.agentRuns[run.id], ...run };
-      renderLiveBar();
+      if (state.view.type === 'list' && !state.modal) render();
     } catch {}
   });
   es.onerror = () => {
@@ -188,7 +211,7 @@ function connectStream() {
   };
 }
 
-// ---------- runs de hook (barra "rodando agora") ----------
+// ---------- runs de hook ----------
 function allRuns() {
   return Object.values(state.agentRuns).filter((r) => !r._usageOnly && (r.agent || r.task || r.description) && r.startedAt);
 }
@@ -198,6 +221,53 @@ function runningRuns() {
     .filter((r) => r.status === 'running' && now - r.startedAt < 15 * 60000)
     .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
 }
+// um run de hook só conta como "rodando" enquanto é plausível: eventos de término
+// podem se perder (fire-and-forget), então run velho demais é tratado como encerrado
+function runLooksRunning(r) {
+  return r.status === 'running' && Date.now() - (r.startedAt || 0) < 15 * 60000;
+}
+
+// feed "ao vivo": runs recentes (rodando primeiro, depois os últimos concluídos)
+function feedRuns() {
+  const now = Date.now();
+  return allRuns()
+    .filter((r) => now - (r.endedAt || r.startedAt) < 60 * 60000)
+    .sort((a, b) => {
+      const ra = runLooksRunning(a) ? 1 : 0;
+      const rb = runLooksRunning(b) ? 1 : 0;
+      if (ra !== rb) return rb - ra;
+      return (b.endedAt || b.startedAt || 0) - (a.endedAt || a.startedAt || 0);
+    })
+    .slice(0, 12);
+}
+
+// status de um nó da escadinha. Nenhum dos dois sinais é confiável sozinho:
+// - o "done" do hook mente para agentes em background (PostToolUse dispara no lançamento);
+// - o "running" do hook mente quando o evento de término se perde (fire-and-forget).
+// Regra: transcript escrito há <2 min = rodando (agente ativo escreve o tempo todo);
+// o "running" do hook só vale na janela de subida (<3 min), quando o transcript
+// ainda não existe. Fora disso, transcript parado = concluído.
+function nodeStatus(node, terminalLive) {
+  if (!terminalLive) return 'done';
+  const now = Date.now();
+  if (node.endedAt && now - node.endedAt < 2 * 60000) return 'running';
+  const hookRun = node.toolUseId ? state.agentRuns[node.toolUseId] : null;
+  if (hookRun && hookRun.status === 'running' && now - (hookRun.startedAt || 0) < 3 * 60000) return 'running';
+  return 'done';
+}
+
+// resultado pode ter sido gravado como objeto/array de blocos por versões antigas do notify.js
+function resText(v) {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v.map(resText).filter(Boolean).join('\n');
+  if (typeof v === 'object') {
+    if (typeof v.text === 'string') return v.text;
+    if (v.content != null) return resText(v.content);
+    return JSON.stringify(v, null, 2);
+  }
+  return String(v);
+}
 
 // ---------- filtro/ordenação da lista de terminais ----------
 function visibleTerminals() {
@@ -206,7 +276,7 @@ function visibleTerminals() {
   else if (state.status === 'encerrados') ts = ts.filter((t) => !t.live);
   if (state.projectSlug) ts = ts.filter((t) => (t.slug || '—') === state.projectSlug);
   const q = state.q.trim().toLowerCase();
-  if (q) ts = ts.filter((t) => [t.slug, t.cwd, t.sessionId, t.model].some((s) => (s || '').toLowerCase().includes(q)));
+  if (q) ts = ts.filter((t) => [termTitle(t), t.slug, t.cwd, t.sessionId, t.model].some((s) => (s || '').toLowerCase().includes(q)));
   const cmp = {
     recent: (a, b) => (b.mtime || 0) - (a.mtime || 0),
     cost: (a, b) => (b.totalCostUSD || 0) - (a.totalCostUSD || 0),
@@ -229,209 +299,214 @@ function allSlugs() {
 }
 
 // ---------- componentes ----------
-function projectSelectHTML() {
+function badgeHTML(live, lg) {
+  return `<span class="badge ${live ? 'active' : ''} ${lg ? 'lg' : ''}"><span class="bdot"></span><span class="blabel">${live ? 'ativo' : 'encerrado'}</span></span>`;
+}
+
+function sidebarHTML() {
+  const counts = statusCounts();
+  const statusItems = STATUS.map((s) => `
+    <div class="sopt ${state.status === s.key ? 'active' : ''}" data-status="${s.key}">
+      <span class="si">${s.icon}</span><span class="sl">${s.label}</span><span class="sc">${counts[s.key]}</span>
+    </div>`).join('');
+  const periodItems = PERIODS.map((p) => `<button class="pchip ${state.period === p.key ? 'active' : ''}" data-period="${p.key}">${p.label}</button>`).join('');
   const slugs = allSlugs();
   if (state.projectSlug && !slugs.includes(state.projectSlug)) slugs.push(state.projectSlug);
   const opts = ['<option value="">Todos os projetos</option>']
     .concat(slugs.map((s) => `<option value="${esc(s)}" ${state.projectSlug === s ? 'selected' : ''}>${s === '—' ? '(sem projeto)' : esc(s)}</option>`))
     .join('');
-  return `<label for="projectSelect">projeto</label><select class="select" id="projectSelect">${opts}</select>`;
-}
-
-function toolbarHTML() {
-  const opt = (v, l) => `<option value="${v}" ${state.sort === v ? 'selected' : ''}>${l}</option>`;
-  return `<div class="toolbar">
-    <div class="grow"><input class="input" id="filterInput" type="search" placeholder="Filtrar por projeto, cwd, sessão…" value="${esc(state.q)}" /></div>
-    ${projectSelectHTML()}
-    <label for="sortSelect">ordenar</label>
-    <select class="select" id="sortSelect">
-      ${opt('recent', 'Atividade recente')}
-      ${opt('cost', 'Custo')}
-      ${opt('name', 'Projeto (A–Z)')}
-    </select>
-  </div>`;
-}
-
-// custo do subtree quando o nó tem filhos; senão o próprio
-function nodeCostHTML(node) {
-  const hasKids = node.children && node.children.length;
-  if (hasKids) {
-    return `<span class="run-meta">Σ ${fmtUSD(node.subtreeCostUSD)} <span class="muted">· ${fmtUSD(node.ownCostUSD)} próprio</span></span>`;
-  }
-  return `<span class="run-meta">${fmtUSD(node.ownCostUSD)}</span>`;
-}
-
-// linha de um nó de agente (recursiva)
-function agentNodeHTML(sessionId, node, depth) {
-  const hasKids = node.children && node.children.length;
-  const open = state.expandedNodes.has(node.id);
-  const pad = 10 + depth * 20;
-  const caret = hasKids ? `<span class="tcaret ${open ? 'open' : ''}" data-node-toggle="${esc(node.id)}">▶</span>` : '<span class="tcaret spacer"></span>';
-  const running = node.live;
-  const label = node.description || node.agentType || 'agent';
-  const kids = hasKids && open
-    ? `<div class="tchildren">${node.children.map((c) => agentNodeHTML(sessionId, c, depth + 1)).join('')}</div>`
-    : '';
-  return `<div class="tnode-wrap">
-    <div class="tnode run-row ${running ? 'running' : ''}" data-node="${esc(node.id)}" data-session="${esc(sessionId)}" style="padding-left:${pad}px">
-      ${caret}
-      <span class="run-ic">${agIcon(node.agentType)}</span>
-      <span class="run-body">
-        <span class="run-agent">${esc(node.agentType || 'agent')}${hasKids ? ` <span class="run-slug">· ${node.children.length} sub</span>` : ''}${node.spawnDepth != null ? ` <span class="run-slug">d${node.spawnDepth}</span>` : ''}</span>
-        <span class="run-desc">${esc(String(label).slice(0, 80))}${String(label).length > 80 ? '…' : ''}</span>
-      </span>
-      ${running ? '<i class="spin">⣷</i>' : ''}
-      ${nodeCostHTML(node)}
+  const sortItems = [['recent', 'recentes'], ['cost', 'custo'], ['name', 'nome']]
+    .map(([k, l]) => `<button class="${state.sort === k ? 'active' : ''}" data-sort="${k}">${l}</button>`).join('');
+  return `<aside class="side oc-scroll">
+    <div>
+      <div class="side-h">Status</div>
+      <div class="sopt-list">${statusItems}</div>
     </div>
-    ${kids}
+    <div>
+      <div class="side-h">Período</div>
+      <div class="period-grid">${periodItems}</div>
+    </div>
+    <div>
+      <div class="side-h">Projeto</div>
+      <select class="select" id="projectSelect">${opts}</select>
+    </div>
+    <div>
+      <div class="side-h">Busca</div>
+      <div class="search-wrap"><span class="glass">⌕</span><input id="filterInput" type="search" placeholder="filtrar por título…" value="${esc(state.q)}" /></div>
+    </div>
+    <div>
+      <div class="side-h">Ordenar por</div>
+      <div class="sort-seg">${sortItems}</div>
+    </div>
+    <div class="side-foot">${counts.todos} terminais · ${counts.ativos} ativo(s)<br/><span class="ghost">custo por terminal → agente → sub-agente</span></div>
+  </aside>`;
+}
+
+function kpisHTML(ts) {
+  const counts = statusCounts();
+  const total = ts.reduce((a, t) => a + (t.totalCostUSD || 0), 0);
+  const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+  const today = state.terminals.filter((t) => (t.mtime || 0) >= dayStart.getTime()).reduce((a, t) => a + (t.totalCostUSD || 0), 0);
+  const periodLabel = { hoje: 'hoje', '7d': '7 dias', '30d': '30 dias', tudo: 'tudo' }[state.period];
+  return `<div class="kpis">
+    <div class="kpi"><div class="kpi-k">Gasto na janela</div><div class="kpi-v">${fmtUSD(total)}</div><div class="kpi-s">${ts.length} sessões · ${periodLabel}</div></div>
+    <div class="kpi"><div class="kpi-k">Sessões de hoje</div><div class="kpi-v">${fmtUSD(today)}</div><div class="kpi-s">custo total das sessões ativas hoje</div></div>
+    <div class="kpi"><div class="kpi-k">Ativos agora</div><div class="kpi-v green">${counts.ativos}${counts.ativos ? '<span class="pulse-dot"></span>' : ''}</div><div class="kpi-s">rodando neste momento</div></div>
+    <div class="kpi"><div class="kpi-k">Terminais</div><div class="kpi-v">${counts.todos}</div><div class="kpi-s">${counts.encerrados} encerrados</div></div>
   </div>`;
 }
 
-// escadinha de um terminal expandido
-function treeBodyHTML(sessionId, withResume = true) {
-  if (state.loading[sessionId] && !state.trees[sessionId]) return `<div class="skeleton" style="padding:10px 14px">montando a escadinha…</div>`;
-  const t = state.trees[sessionId];
-  if (!t) return `<div class="skeleton" style="padding:10px 14px">carregando…</div>`;
-  if (!t.found) return `<div class="muted" style="padding:10px 14px">Transcript não localizado para esta sessão.</div>`;
-  const own = t.own || {};
-  const contentNode = `<div class="tnode run-row" style="padding-left:10px">
-      <span class="tcaret spacer"></span>
-      <span class="run-ic">🖥️</span>
-      <span class="run-body">
-        <span class="run-agent">Conteúdo do terminal <span class="run-slug">main-loop · ${esc(t.model || '—')}</span></span>
-        <span class="run-desc">${fmtTok(tokTotal(own.tokens))} tokens próprios</span>
-      </span>
-      <span class="run-meta">${fmtUSD(own.costUSD)}</span>
+function feedHTML() {
+  const runs = feedRuns();
+  if (!runs.length) return '';
+  const items = runs.map((r) => {
+    const running = runLooksRunning(r);
+    const verb = running ? 'rodando' : 'terminou';
+    // slug pode vir como path completo quando o cwd não casa nenhum projeto do MAPS
+    const slug = r.slug && /[\\/]/.test(r.slug) ? r.slug.split(/[\\/]/).filter(Boolean).pop() : r.slug;
+    const label = `${r.agent || 'agent'} ${verb}${slug ? ' · ' + slug : ''}`;
+    return `<div class="feed-item" data-run="${esc(r.id)}">
+      ${tileHTML(r.agent, 'sm')}
+      <span class="ftext">${esc(label)}</span>
+      <span class="fage">${running ? fmtDuration(Date.now() - (r.startedAt || Date.now())) : fmtAge(r.endedAt || r.startedAt)}</span>
     </div>`;
-  const agents = (t.agents || []).map((n) => agentNodeHTML(sessionId, n, 0)).join('');
-  const resume = withResume ? `<div class="resume" style="margin:10px 14px 4px">
-      <code>${esc(t.resumeCommand || '')}</code>
-      <button class="copy-btn" data-copy="${esc(t.resumeCommand || '')}">copiar</button>
-    </div>` : '';
-  return `<div class="tree">${contentNode}${agents || '<div class="muted" style="padding:8px 14px 4px">Nenhum agente neste terminal — só o main-loop.</div>'}</div>${resume}`;
+  }).join('');
+  return `<div class="feedbar">
+    <div class="feedbar-h"><span class="pulse-dot"></span><span>Ao vivo</span></div>
+    <div class="feedbar-sep"></div>
+    <div class="feed-list oc-scroll">${items}</div>
+  </div>`;
 }
 
-function terminalCardHTML(t) {
+// achata a árvore de agentes (com o main-loop como raiz) para as linhas da escadinha
+function flattenTree(t, sessionId) {
+  const rows = [];
+  const own = t.own || {};
+  rows.push({
+    kind: 'root', depth: 0, label: `Conteúdo do terminal · main-loop`, role: 'terminal',
+    running: false, hasSub: false,
+    c1: fmtUSD(own.costUSD), c2: `${fmtTok(tokTotal(own.tokens))} tokens · ${esc(t.model || '—')}`,
+  });
+  const walk = (n, depth) => {
+    const hasSub = n.children && n.children.length > 0;
+    const running = nodeStatus(n, t.live) === 'running';
+    rows.push({
+      kind: 'node', depth, nodeId: n.id, role: n.agentType, running, hasSub,
+      label: n.description || n.agentType || 'agent',
+      subCount: hasSub ? n.children.length : 0,
+      c1: hasSub ? `Σ ${fmtUSD(n.subtreeCostUSD)}` : fmtUSD(n.ownCostUSD),
+      c2: hasSub ? `${fmtUSD(n.ownCostUSD)} próprio` : '',
+    });
+    (n.children || []).forEach((c) => walk(c, depth + 1));
+  };
+  (t.agents || []).forEach((n) => walk(n, 1));
+  return rows;
+}
+
+function treeRowsHTML(t, sessionId) {
+  return flattenTree(t, sessionId).map((row) => {
+    const rail = Math.max(0, (row.depth - 1) * 22);
+    const elbow = row.depth > 0 && row.kind === 'node' ? '<span class="node-elbow"></span>' : '';
+    const attrs = row.kind === 'node' ? `data-node="${esc(row.nodeId)}" data-session="${esc(sessionId)}"` : '';
+    return `<div class="node-line">
+      <span class="node-rail" style="width:${rail}px"></span>
+      ${elbow}
+      <div class="node-row ${row.kind === 'root' ? 'root' : ''} ${row.running ? 'running' : ''}" ${attrs}>
+        ${tileHTML(row.role, 'md')}
+        <div class="node-mid">
+          <span class="node-label">${esc(String(row.label).slice(0, 90))}</span>
+          ${row.hasSub ? `<span class="node-subcount">${row.subCount} sub</span>` : ''}
+          ${row.running ? '<span class="node-runpill"><span class="bdot"></span>rodando</span>' : ''}
+        </div>
+        <div class="node-cost"><div class="c1">${row.c1}</div>${row.c2 ? `<div class="c2">${row.c2}</div>` : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function treeBodyHTML(sessionId) {
+  if (state.loading[sessionId] && !state.trees[sessionId]) return `<div class="tree-body"><div class="skeleton" style="padding:6px 4px">montando a escadinha…</div></div>`;
+  const t = state.trees[sessionId];
+  if (!t) return `<div class="tree-body"><div class="skeleton" style="padding:6px 4px">carregando…</div></div>`;
+  if (!t.found) return `<div class="tree-body"><div class="muted" style="padding:6px 4px;font-size:12px">Transcript não localizado para esta sessão.</div></div>`;
+  return `<div class="tree-body">
+    ${treeRowsHTML(t, sessionId)}
+    <div class="open-page-btn" data-more="${esc(sessionId)}">abrir página do terminal →</div>
+  </div>`;
+}
+
+function terminalCardHTML(t, maxCost) {
   const open = state.expanded.has(t.sessionId);
-  const badge = t.live ? '<span class="badge active">● ativo</span>' : '<span class="badge done">encerrado</span>';
   const proj = projLabel(t);
-  const projChip = proj ? `<span class="tchip">${esc(proj)}</span>` : '';
-  return `<div class="tcard ${t.live ? 'live' : ''} ${open ? 'open' : ''}" data-session="${esc(t.sessionId)}">
+  const share = Math.max(4, Math.round(((t.totalCostUSD || 0) / (maxCost || 1)) * 100));
+  return `<div class="tcard ${t.live ? 'live' : ''}" data-session="${esc(t.sessionId)}">
     <div class="tcard-head" data-toggle="${esc(t.sessionId)}">
-      <span class="tcaret ${open ? 'open' : ''}">▶</span>
+      <span class="tcaret ${open ? 'open' : ''}">▸</span>
+      <span class="sh-tile ${t.live ? 'live' : ''}">&gt;_</span>
       <div class="tcard-main">
-        <div class="tcard-title">${esc(termTitle(t))} ${badge}</div>
+        <div class="tcard-title-row">
+          <span class="tcard-title">${esc(termTitle(t))}</span>
+          ${badgeHTML(t.live)}
+        </div>
         <div class="tcard-sub">
-          ${projChip}<code>${esc(shortCwd(t.cwd))}</code> · ${esc(t.model || '—')} · ${t.agentCount} ${t.agentCount === 1 ? 'agente' : 'agentes'} · ${fmtAge(t.mtime)}
+          ${proj ? `<span class="proj">${esc(proj)}</span><span class="sep">/</span>` : ''}
+          <span>${t.agentCount} ${t.agentCount === 1 ? 'agente' : 'agentes'}</span>
+          <span class="sep">/</span>
+          <span>${fmtAge(t.mtime)}</span>
+          <span class="sep">/</span>
+          <span class="cwd">${esc(shortCwd(t.cwd))}</span>
         </div>
       </div>
-      <button class="tmore" data-more="${esc(t.sessionId)}" title="Ver detalhes do terminal">ver mais</button>
       <div class="tcard-cost">
         <div class="tc-total">${fmtUSD(t.totalCostUSD)}</div>
-        <div class="tc-tok">${fmtTok(t.totalTokens)} tok</div>
+        <div class="tc-share"><i style="width:${share}%"></i></div>
       </div>
     </div>
-    ${open ? `<div class="tcard-body">${treeBodyHTML(t.sessionId)}</div>` : ''}
+    ${open ? treeBodyHTML(t.sessionId) : ''}
   </div>`;
 }
 
-// ---------- barra "rodando agora" (hooks) ----------
-function runRowHTML(r) {
-  const running = r.status === 'running';
-  const dur = running ? fmtDuration(Date.now() - (r.startedAt || Date.now())) : fmtDuration((r.endedAt || 0) - (r.startedAt || 0));
-  const label = r.description || (r.task ? r.task.split('\n')[0] : '') || '—';
-  return `<div class="run-row ${running ? 'running' : ''}" data-run="${esc(r.id)}">
-    <span class="run-ic">${agIcon(r.agent)}</span>
-    <span class="run-body">
-      <span class="run-agent">${esc(r.agent || 'agent')}${r.slug ? ` <span class="run-slug">· ${esc(r.slug)}</span>` : ''}</span>
-      <span class="run-desc">${esc(label.slice(0, 72))}${label.length > 72 ? '…' : ''}</span>
-    </span>
-    <span class="run-meta">${running ? '<i class="spin">⣷</i> ' : ''}${dur}</span>
-  </div>`;
-}
-function renderLiveBar() {
-  const bar = el('liveBar');
-  if (!bar) return;
-  const running = runningRuns();
-  if (!running.length) {
-    bar.hidden = true;
-    bar.innerHTML = '';
-    return;
-  }
-  bar.hidden = false;
-  bar.innerHTML = `<div class="livebar-h">⣷ rodando agora <span>${running.length}</span></div>
-    <div class="livebar-list">${running.map(runRowHTML).join('')}</div>`;
-  bar.querySelectorAll('.run-row').forEach((row) => {
-    row.onclick = () => { state.modal = { type: 'run', id: row.dataset.run }; mountModal(); };
-  });
-}
-
-// ---------- sidebar (status + período) ----------
-function renderSidebar() {
-  const counts = statusCounts();
-  const nav = STATUS.map((s) => `
-    <div class="side-link ${state.status === s.key ? 'active' : ''}" data-status="${s.key}">
-      <span class="si">${s.icon}</span><span>${s.label}</span><span class="sc">${counts[s.key]}</span>
-    </div>`).join('');
-  const periods = `<div class="side-period">
-    <div class="side-period-h">Período</div>
-    ${PERIODS.map((p) => `<button class="pchip ${state.period === p.key ? 'active' : ''}" data-period="${p.key}">${p.label}</button>`).join('')}
-  </div>`;
-  el('sideNav').innerHTML = nav + periods;
-  el('sideNav').querySelectorAll('.side-link').forEach((lnk) => {
-    lnk.onclick = () => { state.status = lnk.dataset.status; render(); };
-  });
-  el('sideNav').querySelectorAll('.pchip').forEach((b) => {
-    b.onclick = () => { state.period = b.dataset.period; fetchTerminals(); };
-  });
-  const live = counts.ativos;
-  el('sideFoot').innerHTML = `${counts.todos} terminais · ${live} ativo(s)<br/>custo por terminal → agente → sub-agente`;
-}
-
-// ---------- render principal (dispatcher) ----------
+// ---------- render principal ----------
 function render() {
-  renderSidebar();
-  renderLiveBar();
   if (state.view.type === 'terminal') {
     renderTerminalPage(state.view.sessionId);
     mountModal();
     return;
   }
-  renderList();
+  renderHome();
   mountModal();
 }
 
-function renderList() {
-  // preserva foco+cursor da busca através de qualquer re-render (inclusive os
-  // disparados por eventos ao vivo), senão a digitação é interrompida.
+function renderHome() {
+  // preserva foco+cursor da busca através de qualquer re-render
   const active = document.activeElement;
   const filterFocused = active && active.id === 'filterInput';
   const caret = filterFocused ? active.selectionStart : null;
 
   const ts = visibleTerminals();
-  const live = ts.filter((t) => t.live);
-  const dead = ts.filter((t) => !t.live);
+  const maxCost = ts.reduce((m, t) => Math.max(m, t.totalCostUSD || 0), 0);
 
-  let html = `<div class="section-title">Terminais <span class="count">${ts.length}</span></div>`;
-  html += toolbarHTML();
-
+  let cards;
   if (!state.terminals.length) {
-    html += `<div class="empty">Nenhum terminal na janela selecionada.<br/>Rode <code>claude</code> em qualquer projeto e ele aparece aqui.</div>`;
+    cards = `<div class="empty">Nenhum terminal na janela selecionada.<br/>Rode <code>claude</code> em qualquer projeto e ele aparece aqui.</div>`;
   } else if (!ts.length) {
-    html += `<div class="empty">Nenhum terminal para este filtro.</div>`;
+    cards = `<div class="empty">Nenhum terminal para este filtro.</div>`;
   } else {
-    if (state.status !== 'encerrados' && live.length) {
-      html += `<div class="section-title sub">⣷ Ativos agora <span class="count">${live.length}</span></div>`;
-      html += `<div class="tlist">${live.map(terminalCardHTML).join('')}</div>`;
-    }
-    if (state.status !== 'ativos' && dead.length) {
-      if (live.length && state.status === 'todos') html += `<div class="section-title sub">Encerrados <span class="count">${dead.length}</span></div>`;
-      html += `<div class="tlist">${dead.map(terminalCardHTML).join('')}</div>`;
-    }
+    cards = `<div class="tlist">${ts.map((t) => terminalCardHTML(t, maxCost)).join('')}</div>`;
   }
-  el('app').innerHTML = html;
-  bindControls();
+
+  el('app').innerHTML = `<div class="home">
+    ${sidebarHTML()}
+    <main class="main oc-scroll">
+      ${kpisHTML(ts)}
+      ${feedHTML()}
+      ${cards}
+    </main>
+  </div>`;
+
+  bindSidebar();
   bindCards();
+  bindFeed();
 
   if (filterFocused) {
     const fi = el('filterInput');
@@ -446,16 +521,16 @@ function renderList() {
 // ---------- página do terminal (URL própria: #/t/<sessão>) ----------
 function renderTerminalPage(sessionId) {
   const app = el('app');
-  const back = `<a class="back" id="backBtn">← terminais</a>`;
+  const back = `<a class="back" id="backBtn">← todos os terminais</a>`;
   const t = state.trees[sessionId];
   if (!t) {
-    app.innerHTML = back + `<div class="skeleton" style="padding:20px 0">carregando o terminal…</div>`;
+    app.innerHTML = `<div class="tpage oc-scroll"><div class="tpage-inner">${back}<div class="skeleton" style="padding:20px 0">carregando o terminal…</div></div></div>`;
     bindBack();
     if (!state.loading[sessionId]) loadTree(sessionId);
     return;
   }
   if (!t.found) {
-    app.innerHTML = back + `<div class="empty">Transcript não localizado para esta sessão.</div>`;
+    app.innerHTML = `<div class="tpage oc-scroll"><div class="tpage-inner">${back}<div class="empty">Transcript não localizado para esta sessão.</div></div></div>`;
     bindBack();
     return;
   }
@@ -464,100 +539,169 @@ function renderTerminalPage(sessionId) {
   const proj = projLabel({ slug: t.slug, cwd: t.cwd });
   const title = t.title || shortCwd(t.cwd) || ('Terminal ' + sessionId.slice(0, 8));
   const dur = t.durationMs ? fmtDuration(t.durationMs) : '—';
-  const badge = live ? '<span class="badge active">● ativo</span>' : '<span class="badge done">encerrado</span>';
 
   const chips = [
-    proj ? `<span class="chip">${esc(proj)}</span>` : '',
-    t.cwd ? `<span class="chip"><code>${esc(shortCwd(t.cwd))}</code></span>` : '',
-    t.branch ? `<span class="chip">branch <code>${esc(t.branch)}</code></span>` : '',
-    t.model ? `<span class="chip">${esc(t.model)}</span>` : '',
-    `<span class="chip">iniciado ${fmtClock(t.startedAt)} · ${dur}</span>`,
+    proj ? `<span class="chip"><span class="ck">projeto</span><span class="cv">${esc(proj)}</span></span>` : '',
+    t.branch ? `<span class="chip"><span class="ck">branch</span><span class="cv">${esc(t.branch)}</span></span>` : '',
+    t.cwd ? `<span class="chip"><span class="ck">cwd</span><span class="cv">${esc(shortCwd(t.cwd))}</span></span>` : '',
+    t.model ? `<span class="chip"><span class="ck">modelo</span><span class="cv">${esc(t.model)}</span></span>` : '',
+    `<span class="chip"><span class="ck">início</span><span class="cv">${fmtClock(t.startedAt)} · ${dur}</span></span>`,
+    t.resumeCommand ? `<span class="chip copy" data-copy="${esc(t.resumeCommand)}" title="${esc(t.resumeCommand)}"><span class="ck">retomar</span><span class="cv">copiar comando ⧉</span></span>` : '',
   ].join('');
 
+  // custo por modelo
   const models = Object.entries(t.byModel || {}).sort((a, b) => b[1].costUSD - a[1].costUSD);
-  const maxCost = models.reduce((m, [, v]) => Math.max(m, v.costUSD), 0) || 1;
-  const modelsHTML = models.length ? `<div class="tm-models">${models.map(([m, v]) => `
-    <div class="tmodel"><span class="tmname">${esc(m)}</span><span class="tmbar"><i style="width:${Math.max(4, (v.costUSD / maxCost) * 100)}%"></i></span><span class="tmcost">${fmtUSD(v.costUSD)}</span></div>`).join('')}</div>` : '';
+  const maxM = models.reduce((m, [, v]) => Math.max(m, v.costUSD), 0) || 1;
+  const modelRows = models.map(([m, v], i) => `
+    <div>
+      <div class="model-row-h"><span class="model-name">${esc(m)}</span><span class="model-cost">${fmtUSD(v.costUSD)}</span></div>
+      <div class="model-bar"><i style="width:${Math.max(3, Math.round((v.costUSD / maxM) * 100))}%;background:${i === 0 ? 'linear-gradient(90deg,#43dd88,#1c8552)' : 'linear-gradient(90deg,#79a9f2,#3d6fc4)'}"></i></div>
+    </div>`).join('') || '<div class="muted" style="font-size:12px">Sem dados por modelo.</div>';
 
+  // prompts
   const prompts = t.prompts || [];
-  const promptsHTML = prompts.length
-    ? `<div class="prompts">${prompts.map((p, i) => {
-        const agNote = p.agentCostUSD > 0 ? ` <span class="prompt-ag" title="custo dos agentes disparados por este prompt">+${fmtUSD(p.agentCostUSD)} ag</span>` : '';
-        return `<div class="prompt-item">
-          <div class="prompt-meta">
-            <span class="prompt-n">#${i + 1}</span>
-            <span class="prompt-time">${fmtClock(p.ts)}</span>
-            <span class="prompt-cost" title="main-loop ${fmtUSD(p.mainCostUSD)}${p.agentCostUSD > 0 ? ' · agentes ' + fmtUSD(p.agentCostUSD) : ''}">${fmtUSD(p.costUSD)}${agNote}</span>
-          </div>
-          <pre class="prompt-text">${esc(p.text)}</pre>
-        </div>`;
-      }).join('')}</div>`
-    : `<div class="muted">Nenhum prompt de usuário capturado neste transcript.</div>`;
-
-  const flat = flattenAgents(t.agents).filter((n) => n.startedAt).sort((a, b) => a.startedAt - b.startedAt);
-  const timeline = flat.length ? `<div class="tm-tl">${flat.map((n) => `
-      <div class="tm-tlrow">
-        <span class="tm-tltime">${fmtClock(n.startedAt)}</span>
-        <span class="run-ic">${agIcon(n.agentType)}</span>
-        <span class="tm-tlbody"><b>${esc(n.agentType || 'agent')}</b>${n.depth ? ` <span class="run-slug">d${n.spawnDepth}</span>` : ''} <span class="run-desc">${esc((n.description || '').slice(0, 72))}</span></span>
-        <span class="run-meta">${fmtUSD(n.subtreeCostUSD)}</span>
-      </div>`).join('')}</div>` : `<div class="muted" style="padding:8px 0">Sem agentes.</div>`;
-
-  app.innerHTML = `
-    ${back}
-    <div class="tpage-head">
-      <h1>🖥️ ${esc(title)} ${badge}</h1>
-      <div class="chips">${chips}</div>
-      <div class="resume" style="max-width:560px"><code>${esc(t.resumeCommand || '')}</code><button class="copy-btn" data-copy="${esc(t.resumeCommand || '')}">copiar</button></div>
-    </div>
-
-    <div class="tm-hero">
-      <div class="tm-cost"><span class="cur">$</span>${(t.totalCostUSD || 0).toFixed(2)}</div>
-      <div class="tm-sub"><b>${fmtTok(t.totalTokens)}</b> tokens · <b>${t.agentCount}</b> agentes · <b>${dur}</b> · main-loop ${fmtUSD(t.own.costUSD)}</div>
-    </div>
-    ${modelsHTML}
-
-    <div class="detail-grid">
-      <div>
-        <div class="section-title">Histórico de prompts <span class="count">${prompts.length}</span></div>
-        ${promptsHTML}
+  const promptRows = prompts.length ? prompts.map((p, i) => {
+    const metaBits = [`main-loop ${fmtUSD(p.mainCostUSD)}`];
+    if (p.agentCostUSD > 0) metaBits.push(`agentes ${fmtUSD(p.agentCostUSD)}`);
+    return `<div class="prompt-row">
+      <div class="prompt-time">#${i + 1} · ${fmtClock(p.ts)}</div>
+      <div class="prompt-body">
+        <pre class="prompt-text oc-scroll">${esc(p.text)}</pre>
+        <div class="prompt-meta">${metaBits.join(' · ')}</div>
       </div>
-      <div>
-        <div class="section-title sub" style="margin-top:0">Escadinha · agentes</div>
-        <div class="tcard-body" style="border:1px solid var(--border-soft);border-radius:var(--radius)">${treeBodyHTML(sessionId, false)}</div>
-        <div class="section-title sub">Timeline (${flat.length})</div>
-        ${timeline}
+      <div class="prompt-cost">${fmtUSD(p.costUSD)}</div>
+    </div>`;
+  }).join('') : '<div class="muted" style="padding:16px 17px;font-size:12px">Nenhum prompt de usuário capturado neste transcript.</div>';
+
+  // timeline
+  const flat = [];
+  const walkFlat = (n, d) => { flat.push({ ...n, depth: d }); (n.children || []).forEach((c) => walkFlat(c, d + 1)); };
+  (t.agents || []).forEach((n) => walkFlat(n, 0));
+  const tlNodes = flat.filter((n) => n.startedAt).sort((a, b) => a.startedAt - b.startedAt);
+  const timeline = tlNodes.length ? tlNodes.map((n, i) => {
+    const running = nodeStatus(n, live) === 'running';
+    const d = running ? fmtDuration(Date.now() - n.startedAt) : fmtDuration((n.endedAt || 0) - (n.startedAt || 0));
+    const tile = tileOf(n.agentType);
+    return `<div class="tl-row ${running ? 'running' : ''}" data-node="${esc(n.id)}" data-session="${esc(sessionId)}">
+      <div class="tl-time">${fmtClock(n.startedAt)}</div>
+      <div class="tl-spine">
+        <span class="tile md" style="background:color-mix(in srgb,${tile.c} 15%,transparent);border-color:color-mix(in srgb,${tile.c} 34%,transparent);color:${tile.c};${running ? 'box-shadow:0 0 16px -3px rgba(63,208,125,.6)' : ''}">${tile.code}</span>
+        ${i < tlNodes.length - 1 ? '<span class="tl-line"></span>' : ''}
+      </div>
+      <div class="tl-body">
+        <div class="tl-label-row"><span class="tl-label">${esc(n.agentType || 'agent')}${n.spawnDepth != null ? ` · d${n.spawnDepth}` : ''}</span>${running ? '<span class="tl-blink"></span>' : ''}</div>
+        <div class="tl-meta">${esc((n.description || '').slice(0, 80))}${d ? ` · ${running ? 'há ' + d : 'dur ' + d}` : ''} · ${fmtUSD(n.subtreeCostUSD)}</div>
       </div>
     </div>`;
+  }).join('') : '<div class="muted" style="font-size:12px">Sem agentes.</div>';
+
+  // resumo (tokens agregados: main-loop + agentes)
+  const acc = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+  const addTok = (tok) => {
+    if (!tok || typeof tok === 'number') return;
+    acc.input += tok.input || 0;
+    acc.output += tok.output || 0;
+    acc.cacheRead += tok.cacheRead || 0;
+    acc.cacheWrite += (tok.cacheWrite5m || 0) + (tok.cacheWrite1h || 0);
+  };
+  addTok((t.own || {}).tokens);
+  flat.forEach((n) => addTok(n.ownTokens));
+  const summary = [
+    ['Agentes', String(t.agentCount || 0)],
+    ['Tokens in', fmtTok(acc.input)],
+    ['Tokens out', fmtTok(acc.output)],
+    ['Cache read', fmtTok(acc.cacheRead)],
+    ['Cache write', fmtTok(acc.cacheWrite)],
+    ['Main-loop', fmtUSD((t.own || {}).costUSD)],
+    ['Duração', dur],
+  ].map(([k, v]) => `<div class="summary-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+
+  app.innerHTML = `<div class="tpage oc-scroll"><div class="tpage-inner">
+    ${back}
+    <div class="tpage-head">
+      <span class="sh-tile lg ${live ? 'live' : ''}">&gt;_</span>
+      <div class="tpage-main">
+        <div class="tpage-title-row"><h1>${esc(title)}</h1>${badgeHTML(live, true)}</div>
+        <div class="chips">${chips}</div>
+      </div>
+      <div class="tpage-cost">
+        <div class="big">${fmtUSD(t.totalCostUSD || 0)}</div>
+        <div class="cap">custo total da sessão</div>
+      </div>
+    </div>
+
+    <div class="tpage-grid">
+      <div class="tpage-col">
+        <section class="section">
+          <div class="section-head"><span class="st">Histórico de prompts</span><span class="scount">${prompts.length} prompts</span><div class="grow"></div><span class="shint">custo por turno</span></div>
+          <div>${promptRows}</div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><span class="st">Escadinha · agentes</span><span class="shint">clique num nó para detalhes</span></div>
+          <div class="tree-pad">${treeRowsHTML(t, sessionId)}</div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><span class="st">Timeline</span><span class="scount">${tlNodes.length}</span></div>
+          <div class="tl-pad">${timeline}</div>
+        </section>
+      </div>
+
+      <div class="tpage-side">
+        <section class="section">
+          <div class="section-head"><span class="st">Custo por modelo</span></div>
+          <div class="model-pad">${modelRows}</div>
+        </section>
+        <section class="section summary-pad">
+          <div class="summary-h">Resumo da sessão</div>
+          <div class="summary-list">${summary}</div>
+        </section>
+      </div>
+    </div>
+  </div></div>`;
 
   bindBack();
   bindCards();
 }
 
+// ---------- bindings ----------
 function bindBack() {
   const b = el('backBtn');
   if (b) b.onclick = () => { location.hash = '#/'; };
 }
 
-function bindControls() {
+function bindSidebar() {
+  document.querySelectorAll('.sopt[data-status]').forEach((lnk) => {
+    lnk.onclick = () => { state.status = lnk.dataset.status; render(); };
+  });
+  document.querySelectorAll('.pchip[data-period]').forEach((b) => {
+    b.onclick = () => { state.period = b.dataset.period; fetchTerminals(); };
+  });
+  document.querySelectorAll('.sort-seg [data-sort]').forEach((b) => {
+    b.onclick = () => { state.sort = b.dataset.sort; render(); };
+  });
   const fi = el('filterInput');
   if (fi) {
     fi.oninput = (e) => {
       state.q = e.target.value;
-      render(); // render() preserva foco+cursor da busca
+      render(); // renderHome preserva foco+cursor da busca
     };
   }
-  const ss = el('sortSelect');
-  if (ss) ss.onchange = (e) => { state.sort = e.target.value; render(); };
   const ps = el('projectSelect');
   if (ps) ps.onchange = (e) => { state.projectSlug = e.target.value; render(); };
+}
+
+function bindFeed() {
+  document.querySelectorAll('.feed-item[data-run]').forEach((row) => {
+    row.onclick = () => { state.modal = { type: 'run', id: row.dataset.run }; mountModal(); };
+  });
 }
 
 function bindCards() {
   // expandir/recolher terminal
   document.querySelectorAll('.tcard-head[data-toggle]').forEach((h) => {
-    h.onclick = (e) => {
-      if (e.target.closest('[data-more]')) return;
+    h.onclick = () => {
       const sid = h.dataset.toggle;
       if (state.expanded.has(sid)) state.expanded.delete(sid);
       else {
@@ -567,39 +711,31 @@ function bindCards() {
       render();
     };
   });
-  // "ver mais" → página exclusiva do terminal (URL própria)
+  // "abrir página do terminal" → URL própria
   document.querySelectorAll('[data-more]').forEach((b) => {
     b.onclick = (e) => {
       e.stopPropagation();
       location.hash = '#/t/' + encodeURIComponent(b.dataset.more);
     };
   });
-  // expandir/recolher nó de agente
-  document.querySelectorAll('[data-node-toggle]').forEach((c) => {
-    c.onclick = (e) => {
-      e.stopPropagation();
-      const id = c.dataset.nodeToggle;
-      if (state.expandedNodes.has(id)) state.expandedNodes.delete(id);
-      else state.expandedNodes.add(id);
-      render();
-    };
-  });
-  // abrir modal de um nó de agente
-  document.querySelectorAll('.tnode[data-node]').forEach((row) => {
+  // abrir modal de um nó de agente (escadinha + timeline)
+  document.querySelectorAll('[data-node]').forEach((row) => {
     row.onclick = (e) => {
-      if (e.target.closest('[data-node-toggle]') || e.target.closest('.copy-btn')) return;
+      e.stopPropagation();
       state.modal = { type: 'node', sessionId: row.dataset.session, nodeId: row.dataset.node };
       mountModal();
     };
   });
-  // copiar comando de restaurar
-  document.querySelectorAll('.copy-btn').forEach((b) => {
+  // copiar comando de retomar
+  document.querySelectorAll('.chip.copy[data-copy]').forEach((b) => {
     b.onclick = (e) => {
       e.stopPropagation();
       navigator.clipboard.writeText(b.dataset.copy).then(() => {
-        b.textContent = '✓ copiado';
-        b.classList.add('done');
-        setTimeout(() => { b.textContent = 'copiar'; b.classList.remove('done'); }, 1600);
+        const cv = b.querySelector('.cv');
+        if (cv) {
+          cv.textContent = '✓ copiado';
+          setTimeout(() => { cv.textContent = 'copiar comando ⧉'; }, 1600);
+        }
       });
     };
   });
@@ -618,71 +754,81 @@ function findNode(sessionId, nodeId) {
   t.agents.forEach(walk);
   return found;
 }
-function usageBlockHTML(node) {
-  const t = node.ownTokens || {};
-  return `<h4>Custo & uso</h4>
-    <div class="modal-times">
-      <span>próprio <b>${fmtUSD(node.ownCostUSD)}</b></span>
-      ${node.children && node.children.length ? `<span>subtree <b>${fmtUSD(node.subtreeCostUSD)}</b></span>` : ''}
-      <span>modelo <b>${esc(node.model || '—')}</b></span>
-      <span>tokens <b>${fmtTok(tokTotal(t))}</b></span>
-    </div>
-    <div class="usage-note">in ${fmtTok(t.input)} · out ${fmtTok(t.output)} · cache write ${fmtTok((t.cacheWrite5m || 0) + (t.cacheWrite1h || 0))} · cache read ${fmtTok(t.cacheRead)}</div>`;
-}
-function flattenAgents(agents) {
-  const out = [];
-  const walk = (n, d) => { out.push({ ...n, depth: d }); (n.children || []).forEach((c) => walk(c, d + 1)); };
-  (agents || []).forEach((n) => walk(n, 0));
-  return out;
+
+function metricHTML(k, v, green) {
+  return `<div class="metric"><div class="mk">${k}</div><div class="mv ${green ? 'green' : ''}">${v}</div></div>`;
 }
 
 function modalHTML() {
   if (!state.modal) return '';
-  let head, body, running = false, sub = '';
+  let role, label, running = false, metrics = '', task = '', result = '', hasResult = false;
+
   if (state.modal.type === 'run') {
     const run = state.agentRuns[state.modal.id];
     if (!run) return '';
-    running = run.status === 'running';
+    running = runLooksRunning(run);
+    role = run.agent || 'agent';
+    label = run.description || run.agent || 'agent';
     const dur = running ? fmtDuration(Date.now() - (run.startedAt || Date.now())) : fmtDuration((run.endedAt || 0) - (run.startedAt || 0));
-    head = `${agIcon(run.agent)} ${esc(run.agent || 'agent')}`;
-    sub = `${esc(run.slug || '')} · ${esc(run.description || '')}`;
-    body = `<div class="modal-times">
-        <span>início <b>${fmtClock(run.startedAt)}</b></span>
-        <span>fim <b>${running ? '—' : fmtClock(run.endedAt)}</b></span>
-        <span>duração <b>${dur || '—'}</b></span>
-      </div>
-      ${run.task || run.description ? `<h4>Tarefa</h4><pre class="modal-pre">${esc(run.task || run.description)}</pre>` : ''}
-      ${run.result || running ? `<h4>Resultado ${running ? '<span class="muted">(rodando…)</span>' : ''}</h4><pre class="modal-pre">${esc(run.result || 'aguardando…')}</pre>` : ''}`;
+    metrics = [
+      metricHTML('início', fmtClock(run.startedAt)),
+      metricHTML('fim', running ? '—' : fmtClock(run.endedAt), running),
+      metricHTML('duração', running ? 'em curso' : (dur || '—')),
+      run.slug ? metricHTML('projeto', esc(run.slug)) : '',
+      metricHTML('agente', esc(run.agent || '—')),
+      metricHTML('eventos', String((run.log || []).length)),
+    ].filter(Boolean).join('');
+    task = resText(run.task || run.description);
+    result = resText(run.result);
+    hasResult = !!result || running;
   } else {
     const node = findNode(state.modal.sessionId, state.modal.nodeId);
     if (!node) return '';
-    running = node.live;
+    const t = state.trees[state.modal.sessionId] || {};
+    running = nodeStatus(node, t.live) === 'running';
     const hookRun = node.toolUseId ? state.agentRuns[node.toolUseId] : null;
-    const dur = fmtDuration((node.endedAt || 0) - (node.startedAt || 0));
-    head = `${agIcon(node.agentType)} ${esc(node.agentType || 'agent')}`;
-    sub = `${esc(node.description || '')}${node.spawnDepth != null ? ` · profundidade ${node.spawnDepth}` : ''}`;
-    body = `<div class="modal-times">
-        <span>início <b>${fmtClock(node.startedAt)}</b></span>
-        <span>fim <b>${running ? '—' : fmtClock(node.endedAt)}</b></span>
-        <span>duração <b>${dur || '—'}</b></span>
-      </div>
-      ${usageBlockHTML(node)}
-      ${hookRun && (hookRun.task || hookRun.description) ? `<h4>Tarefa</h4><pre class="modal-pre">${esc(hookRun.task || hookRun.description)}</pre>` : ''}
-      ${hookRun && hookRun.result ? `<h4>Resultado</h4><pre class="modal-pre">${esc(hookRun.result)}</pre>` : ''}`;
+    role = node.agentType || 'agent';
+    label = node.description || node.agentType || 'agent';
+    const tok = node.ownTokens || {};
+    const dur = running ? fmtDuration(Date.now() - (node.startedAt || Date.now())) : fmtDuration((node.endedAt || 0) - (node.startedAt || 0));
+    const kids = (node.children || []).length;
+    metrics = [
+      metricHTML('início', fmtClock(node.startedAt)),
+      metricHTML('fim', running ? '—' : fmtClock(node.endedAt), running),
+      metricHTML('duração', running ? 'em curso' : (dur || '—')),
+      metricHTML('custo próprio', fmtUSD(node.ownCostUSD)),
+      kids ? metricHTML('custo subtree', fmtUSD(node.subtreeCostUSD)) : metricHTML('modelo', esc(node.model || '—')),
+      metricHTML('tokens i/o', `${fmtTok(tok.input)} / ${fmtTok(tok.output)}`),
+      metricHTML('cache read', fmtTok(tok.cacheRead)),
+      metricHTML('cache write', fmtTok((tok.cacheWrite5m || 0) + (tok.cacheWrite1h || 0))),
+      metricHTML('sub-agentes', String(kids)),
+    ].join('');
+    task = hookRun ? resText(hookRun.task || hookRun.description) : '';
+    result = hookRun ? resText(hookRun.result) : '';
+    hasResult = !!result || running;
   }
+
+  const tile = tileOf(role);
   return `<div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal oc-scroll ${running ? 'running' : ''}" onclick="event.stopPropagation()">
       <div class="modal-head">
-        <div>
-          <div class="modal-title">${head} <span class="badge ${running ? 'active' : 'done'}">${running ? '● rodando' : 'concluído'}</span></div>
-          <div class="muted" style="font-size:12px">${sub}</div>
+        <span class="tile lg" style="background:color-mix(in srgb,${tile.c} 15%,transparent);border-color:color-mix(in srgb,${tile.c} 34%,transparent);color:${tile.c}">${tile.code}</span>
+        <div class="modal-head-main">
+          <div class="modal-title">${esc(String(label).slice(0, 90))}</div>
+          <div class="modal-role">${esc(role)}</div>
         </div>
-        <button class="btn" id="modalClose">✕</button>
+        <span class="badge lg ${running ? 'active' : ''}"><span class="bdot"></span><span class="blabel">${running ? 'rodando' : 'concluído'}</span></span>
+        <button class="modal-close" id="modalClose">✕</button>
       </div>
-      ${body}
+      <div class="modal-body">
+        <div class="metric-grid">${metrics}</div>
+        ${task ? `<div><div class="block-h"><span class="bt">Tarefa</span><span class="bhint">prompt de delegação</span></div><pre class="modal-pre oc-scroll">${esc(task)}</pre></div>` : ''}
+        ${hasResult ? `<div><div class="block-h"><span class="bt">Resultado</span>${running ? '<span class="bhint">rodando…</span>' : ''}</div><pre class="modal-pre oc-scroll ${running && !result ? 'running' : ''}">${esc(result || 'aguardando…')}</pre></div>` : ''}
+      </div>
     </div>
   </div>`;
 }
+
 function mountModal() {
   let host = el('modalHost');
   if (!host) {
@@ -697,16 +843,6 @@ function mountModal() {
     if (bd) bd.onclick = close;
     const cl = el('modalClose');
     if (cl) cl.onclick = close;
-    host.querySelectorAll('.copy-btn').forEach((b) => {
-      b.onclick = (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(b.dataset.copy).then(() => {
-          b.textContent = '✓ copiado';
-          b.classList.add('done');
-          setTimeout(() => { b.textContent = 'copiar'; b.classList.remove('done'); }, 1600);
-        });
-      };
-    });
   }
 }
 
@@ -726,7 +862,12 @@ function applyHash() {
 window.addEventListener('hashchange', applyHash);
 
 // ---------- boot ----------
-el('rescanBtn').onclick = async () => { await fetch('/api/rescan'); };
+el('rescanBtn').onclick = async () => {
+  const btn = el('rescanBtn');
+  btn.classList.add('spinning');
+  try { await fetch('/api/rescan'); await fetchTerminals(); } catch {}
+  setTimeout(() => btn.classList.remove('spinning'), 600);
+};
 el('brandHome').onclick = () => {
   state.q = '';
   state.status = 'todos';
@@ -740,7 +881,17 @@ connectStream();
 fetchTerminals();
 if (state.view.type === 'terminal') loadTree(state.view.sessionId);
 
-// mantém durações "ao vivo" da barra enquanto houver agentes rodando
+// ticker: mantém durações/idades/status frescos sem depender de eventos SSE.
+// Na home só quando a busca não está focada; nunca com modal rodando aberto
+// (o modal de nó rodando atualiza a duração ao fechar/reabrir).
 setInterval(() => {
-  if (runningRuns().length) renderLiveBar();
-}, 1000);
+  if (state.modal) return;
+  if (state.view.type === 'terminal') {
+    const t = state.trees[state.view.sessionId];
+    if (t && t.live) render();
+    return;
+  }
+  const fi = el('filterInput');
+  if (fi && document.activeElement === fi) return;
+  if (state.terminals.some((t) => t.live)) render();
+}, 5000);

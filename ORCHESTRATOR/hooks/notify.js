@@ -45,14 +45,24 @@ process.stdin.on('end', () => {
   // tarefa completa = o prompt de delegação (o que o agente foi incumbido de fazer)
   const task = input.prompt || input.task || description || null;
 
-  // resultado = o que o agente devolveu (só no término). Pode vir string ou objeto.
-  let result = null;
-  const tr = hook.tool_response;
-  if (tr != null) {
-    if (typeof tr === 'string') result = tr;
-    else if (typeof tr === 'object') result = tr.content || tr.text || tr.output || JSON.stringify(tr);
-    else result = String(tr);
+  // resultado = o que o agente devolveu (só no término). Pode vir string, objeto
+  // ou blocos de conteúdo aninhados ({content:[{type:'text',text:…}]}) — extrai o texto.
+  function textOf(v) {
+    if (v == null) return null;
+    if (typeof v === 'string') return v;
+    if (Array.isArray(v)) {
+      const parts = v.map(textOf).filter(Boolean);
+      return parts.length ? parts.join('\n') : null;
+    }
+    if (typeof v === 'object') {
+      if (typeof v.text === 'string') return v.text;
+      if (v.content != null) return textOf(v.content);
+      if (v.output != null) return textOf(v.output);
+      return JSON.stringify(v);
+    }
+    return String(v);
   }
+  const result = textOf(hook.tool_response);
 
   const clip = (s, n) => (typeof s === 'string' && s.length > n ? s.slice(0, n) + '…' : s);
 
