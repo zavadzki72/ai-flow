@@ -466,6 +466,28 @@ function terminalCardHTML(t, maxCost) {
   </div>`;
 }
 
+// ---------- preservação de scroll entre re-renders ----------
+// os re-renders trocam o innerHTML inteiro do #app; sem isso, todo refresh
+// automático (SSE/ticker) jogava a página de volta pro topo.
+const SCROLL_SELS = ['.main', '.tpage', '.side', '.feed-list', '.tree-body', '.prompt-text'];
+function captureScrolls(root) {
+  const saved = [];
+  if (!root) return saved;
+  for (const sel of SCROLL_SELS) {
+    root.querySelectorAll(sel).forEach((n, i) => {
+      if (n.scrollTop || n.scrollLeft) saved.push({ sel, i, top: n.scrollTop, left: n.scrollLeft });
+    });
+  }
+  return saved;
+}
+function restoreScrolls(root, saved) {
+  if (!root || !saved.length) return;
+  for (const s of saved) {
+    const n = root.querySelectorAll(s.sel)[s.i];
+    if (n) { n.scrollTop = s.top; n.scrollLeft = s.left; }
+  }
+}
+
 // ---------- render principal ----------
 function render() {
   if (state.view.type === 'terminal') {
@@ -495,7 +517,9 @@ function renderHome() {
     cards = `<div class="tlist">${ts.map((t) => terminalCardHTML(t, maxCost)).join('')}</div>`;
   }
 
-  el('app').innerHTML = `<div class="home">
+  const app = el('app');
+  const scrolls = captureScrolls(app);
+  app.innerHTML = `<div class="home">
     ${sidebarHTML()}
     <main class="main oc-scroll">
       ${kpisHTML(ts)}
@@ -503,6 +527,7 @@ function renderHome() {
       ${cards}
     </main>
   </div>`;
+  restoreScrolls(app, scrolls);
 
   bindSidebar();
   bindCards();
@@ -616,6 +641,7 @@ function renderTerminalPage(sessionId) {
     ['Duração', dur],
   ].map(([k, v]) => `<div class="summary-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
 
+  const scrolls = captureScrolls(app);
   app.innerHTML = `<div class="tpage oc-scroll"><div class="tpage-inner">
     ${back}
     <div class="tpage-head">
@@ -660,6 +686,7 @@ function renderTerminalPage(sessionId) {
       </div>
     </div>
   </div></div>`;
+  restoreScrolls(app, scrolls);
 
   bindBack();
   bindCards();
@@ -836,14 +863,40 @@ function mountModal() {
     host.id = 'modalHost';
     document.body.appendChild(host);
   }
-  host.innerHTML = modalHTML();
-  if (state.modal) {
-    const close = () => { state.modal = null; mountModal(); };
-    const bd = el('modalBackdrop');
-    if (bd) bd.onclick = close;
-    const cl = el('modalClose');
-    if (cl) cl.onclick = close;
+  const key = state.modal ? JSON.stringify(state.modal) : '';
+  const html = modalHTML();
+  if (!html) {
+    if (host.innerHTML) host.innerHTML = '';
+    host.dataset.key = '';
+    return;
   }
+  // mesma modal já aberta: patch só do conteúdo interno, mantendo o backdrop
+  // (senão o fade do .modal-backdrop replaya a cada refresh e a modal "pisca")
+  // e preservando o scroll da modal e dos <pre>
+  const curModal = key === host.dataset.key ? host.querySelector('.modal') : null;
+  if (curModal) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    const newModal = tpl.content.querySelector('.modal');
+    if (newModal && newModal.innerHTML !== curModal.innerHTML) {
+      const top = curModal.scrollTop;
+      const preScrolls = [...curModal.querySelectorAll('.modal-pre')].map((p) => ({ top: p.scrollTop, left: p.scrollLeft }));
+      curModal.className = newModal.className;
+      curModal.innerHTML = newModal.innerHTML;
+      curModal.scrollTop = top;
+      curModal.querySelectorAll('.modal-pre').forEach((p, i) => {
+        if (preScrolls[i]) { p.scrollTop = preScrolls[i].top; p.scrollLeft = preScrolls[i].left; }
+      });
+    }
+  } else {
+    host.innerHTML = html;
+    host.dataset.key = key;
+  }
+  const close = () => { state.modal = null; mountModal(); };
+  const bd = el('modalBackdrop');
+  if (bd) bd.onclick = close;
+  const cl = el('modalClose');
+  if (cl) cl.onclick = close;
 }
 
 // ---------- roteamento por hash (#/ = lista, #/t/<sessão> = página do terminal) ----------
@@ -882,10 +935,10 @@ fetchTerminals();
 if (state.view.type === 'terminal') loadTree(state.view.sessionId);
 
 // ticker: mantém durações/idades/status frescos sem depender de eventos SSE.
-// Na home só quando a busca não está focada; nunca com modal rodando aberto
-// (o modal de nó rodando atualiza a duração ao fechar/reabrir).
+// Na home só quando a busca não está focada. Com modal aberta, atualiza só a
+// modal (mountModal faz patch incremental, sem piscar nem perder scroll).
 setInterval(() => {
-  if (state.modal) return;
+  if (state.modal) { mountModal(); return; }
   if (state.view.type === 'terminal') {
     const t = state.trees[state.view.sessionId];
     if (t && t.live) render();
