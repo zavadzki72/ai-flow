@@ -245,15 +245,56 @@ tempo — a barreira de merge + testes integrados é o que mantém o repositóri
 
 ---
 
-### Passo 4: FASE 4 — Tech Lead (`/code-review`)
+### Passo 4: FASE 4 — QA E2E (`/test-e2e`)
 
-**4.1.** Delegar ao subagent **`tech-lead`** (read-only), passando os paths do **PRD**, do
-**PLAN** e a **branch da feature**. O agente devolve **apenas o relatório** 🔴/🟡/🟢 + decisão.
+Validação no browser **sempre** roda ao fim da implementação — não é opcional e **não depende de
+o ambiente já estar configurado**. O único pré-requisito duro é o **MCP de browser** (sem ele não
+há como navegar): indisponível → **pule sem erro**, anotando no relatório que o E2E não rodou por
+falta de MCP de browser. Ambiente local ausente **não** é motivo para pular — é motivo para
+configurar.
 
-**4.2. Broker.** Dúvida de intenção → consultar `product-manager`; de arquitetura →
+**4.1. Ambiente: configure-and-run (nunca "pule por falta de config").**
+- `map.environments.local` **preenchido** → use-o.
+- `map.environments.local` **ausente/incompleto** → **configure-o você mesmo** antes de rodar:
+  derive `mode`/`compose-path`/`processes`/`services`/`seed`/`test-users` a partir do
+  `README`, do `{slug}-context.md` (§ Comandos / § Ambiente Local E2E) e da inspeção do repo
+  (compose files, portas, scripts de dev). **Persista** o bloco no `{slug}-map.json` (para os
+  próximos ciclos não reconfigurarem) e registre em `adr/` "environments.local inferido — {resumo}".
+- **Apps sem login programável** (ex.: OAuth social sem senha): a automação não consegue passar da
+  tela do provedor. Nesse caso, o E2E dos fluxos que **dependem de sessão** usa **injeção de sessão**
+  (fixtures no storage do app, um por papel/estado) em vez de senha — declare isso nos `test-users`
+  como fixtures. Só suba os serviços de fato necessários para os cenários (não suba LLM/infra pesada
+  se o que mudou é navegação/UI).
+
+**4.2.** Delegar ao subagent **`qa`**, passando os paths do **PRD**, do **PLAN**, a **branch da
+feature** e o **worktree dela** (reutilize o que já existe — não crie outro). Modo orquestrado:
+sem perguntas ao humano (o modo do ciclo vale aqui também); confirmação do Plano de Teste do
+`test-e2e` é **auto-aprovada** (deriva os cenários do PRD + diff e segue). O agente sobe o ambiente,
+executa os cenários, captura evidências, **derruba o ambiente (incondicional)** e devolve o
+relatório 🔴/🟡/🟢 + veredito.
+
+> Se o `qa` não tiver acesso ao MCP de browser na sua instalação (lista `tools:` sem os tools de
+> browser), rode você mesmo (orquestrador) o processo do `test-e2e` — a validação não pode ser
+> pulada só por limitação de delegação.
+
+**4.3. ✅ Fechamento automático do E2E:**
+- **✅ / ⚠️** → segue para a FASE 5 (code-review). Ressalvas 🟡 entram no relatório final.
+- **❌ (bug bloqueante)** → re-invoque o `dev-senior` com os 🔴 (correção **sequencial, direto na
+  branch da feature**), depois **re-rode o E2E**. Máx. **2 ciclos** correção→E2E; persistiu ❌ →
+  ⛔ parada por guardrail com os 🔴 remanescentes.
+
+---
+
+### Passo 5: FASE 5 — Tech Lead (`/code-review`)
+
+**5.1.** Delegar ao subagent **`tech-lead`** (read-only), passando os paths do **PRD**, do
+**PLAN**, a **branch da feature** e o **relatório de E2E** da FASE 4. O agente devolve **apenas o
+relatório** 🔴/🟡/🟢 + decisão.
+
+**5.2. Broker.** Dúvida de intenção → consultar `product-manager`; de arquitetura →
 `arquiteto-senior`.
 
-**4.3. ✅ Fechamento automático (substitui o gate humano):**
+**5.3. ✅ Fechamento automático (substitui o gate humano):**
 - **✅ / ⚠️** → ciclo concluído. O relatório final **sugere** push + PR (conforme `map.tooling`)
   — **não executa**.
 - **❌** → re-invoque o `dev-senior` com a lista de 🔴 (correção **sequencial, direto na branch
@@ -282,7 +323,11 @@ O fluxo só volta ao humano quando um limite automático estoura:
 - Validação de artefato (PRD/PLAN) reprovada após 2 re-invocações;
 - Build/testes vermelhos após 2 correções;
 - Conflito de merge persistente após 1 re-execução;
+- E2E ❌ (bug bloqueante) após 2 ciclos de correção→E2E;
 - Review ❌ após 2 ciclos de correção.
+
+> O E2E **não pula por falta de ambiente** — ambiente ausente se configura (Passo 4.1). Só é
+> legítimo pular por ausência de **MCP de browser** (anotado no relatório, nunca é guardrail).
 
 Nesses casos: **PARE**, preserve o estado (branch, worktrees, PLAN com progresso real) e reporte
 **exatamente** onde parou, o que falhou e o que falta — o humano decide como retomar.
@@ -298,6 +343,7 @@ Modo:     {normal | --auto}
 PRD:      {path} ✅ — {N} premissas assumidas
 PLAN:     {path} ✅ — {N}/{N} etapas · {W} ondas (máx. 3 devs/onda)
 Código:   branch {branch} — {N} commits
+E2E:      {✅/⚠️/❌/pulado} — {nº 🔴/🟡/🟢} · {relatório path} · {N} ciclo(s) de correção
 Review:   {✅/⚠️/❌} — {nº 🔴/🟡/🟢} · {N} ciclo(s) de correção
 Decisões: {adr/...} — ⚠️ revise as premissas assumidas antes de publicar
 
@@ -316,6 +362,8 @@ Sugerido (NÃO executado):
 - Valida cada artefato com checklist objetivo e libera a fase seguinte sem gate humano
 - Paraleliza as etapas do PLAN em ondas topológicas (máx. 3 devs, branch efêmera + worktree por etapa)
 - Fecha cada onda com merge + build/testes integrados e consolida o PLAN
+- Valida no browser (FASE 4 / `/test-e2e`) **sempre** — configurando o ambiente local se faltar,
+  em vez de pular; só pula por ausência de MCP de browser (anotado, nunca guardrail)
 - Faz o broker de consultas agente→agente; converte dúvidas tardias em premissas registradas
 - Para e reporta com estado preservado quando um guardrail estoura
 
