@@ -74,6 +74,11 @@ paralelo. O processo abaixo muda nestes pontos (o restante segue igual ao `--aut
 2. **Interação humana limitada.** Modo normal = só a rodada inicial; `--auto` = nenhuma. Depois
    da rodada, dúvida nova **não volta ao humano**: vira consulta entre agentes (broker) ou
    **premissa registrada** — destacada no relatório final.
+   **Corolário — não pause entre ondas.** Fechar uma onda de etapas (merge + build/testes verdes) e
+   disparar a próxima é **transição automática** por estado objetivo, nunca por confirmação humana.
+   Não termine o turno num ponto de decisão que é seu ("aguardo ok", "pode seguir?"); encadeie as
+   ondas e relate em voz ativa. O único silêncio legítimo é dependência técnica real (agente ainda
+   rodando) ou ⛔ parada por guardrail.
 3. **Delegação isolada.** Cada fase roda num subagent com janela própria. Passe **paths** (não o
    conteúdo inteiro) + as respostas/premissas já coletadas.
 4. **Broker.** Consultas agente→agente passam por você (§ Broker). Perguntas agente→humano **só

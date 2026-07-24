@@ -27,6 +27,18 @@ artefato do épico e no log de decisões (`adr/`).
 A única volta ao humano é a **parada por guardrail** (§ Falha isolada e propagação) e o **relatório
 final**. Em nenhum cenário há push ou PR automático.
 
+> 🔴 **Autônomo também significa: NÃO pare entre ondas para "confirmar" nem espere o humano dizer
+> "pode seguir".** Fechar uma onda (merge + build/testes verdes) e disparar a próxima é **transição
+> automática** — o gatilho é o estado objetivo (todos os EMs da onda retornaram e a barreira passou),
+> nunca uma fala do humano. Enquanto uma onda roda em background, você **prossegue no que já é
+> possível** (fechar features que já voltaram, preparar branches da próxima onda) e o único motivo de
+> silêncio é dependência técnica real (agente ainda em execução), **não** aguardo de aprovação.
+> Frases como "aguardo sua confirmação", "quer que eu seja siga?", "pode prosseguir?" ou terminar o
+> turno num ponto de decisão que é seu **violam o contrato desta skill**. Relate progresso em voz
+> ativa ("onda X fechada, disparando onda Y") e continue. Isto vale igualmente para o
+> `/feature-workflow` sub-orquestrado (§ Modo Sub-orquestrado): entre ondas de etapas, o EM também
+> não pede confirmação — encadeia.
+
 ### `--so-planejar` — parar antes do código
 
 `/epic-workflow --so-planejar` roda as **FASES 0, 1 e 2** (decomposição → validação cruzada →
