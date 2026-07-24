@@ -543,9 +543,16 @@ tudo junto**:
   🔴 numa feature ⛔ **Bloqueada** → não há o que reconciliar; registre e siga.
   Depois, re-invocar o `tech-lead`. Máx. **2 ciclos**; persistiu ❌ → ⛔ parada por guardrail.
 
-**6.3. `/test-e2e` (condicional).** Se `map.environments.local` estiver preenchido **e** houver MCP
-de browser, delegar ao `qa` sobre as branches do épico. Faltando qualquer um → **pular sem erro**,
-anotando no relatório. Nunca é gate.
+**6.3. `/test-e2e` (configure-and-run).** Valide no browser as branches do épico, delegando ao `qa`.
+O E2E **não pula por falta de ambiente configurado** — ambiente ausente **se configura**:
+- `map.environments.local` **ausente/incompleto** → **infira e persista** o bloco no `{slug}-map.json`
+  (a partir do README / `{slug}-context.md` § Comandos / inspeção do repo — compose, portas, scripts
+  de dev), registrando em `adr/` "environments.local inferido — {resumo}". Apps sem login programável
+  (OAuth social sem senha) usam **injeção de sessão** por papel/estado (fixtures no storage) em vez de
+  senha; suba só os serviços necessários aos cenários. Ver `feature-workflow.md` FASE 4 (Passo 4.1).
+- O **único** motivo legítimo para pular é a **ausência de MCP de browser** (sem ele não há como
+  navegar) → pular sem erro, anotando no relatório. Se o `qa` não tiver o MCP na sua instalação, o
+  orquestrador roda o `test-e2e` ele mesmo. Nunca é gate.
 
 ---
 

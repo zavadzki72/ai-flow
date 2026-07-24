@@ -40,12 +40,24 @@ Liste e leia **todos** os arquivos `.md` de:
 - `{AI_FLOW_ROOT}/{map-path}/docs/architecture/` — rotas, telas e fluxos principais da aplicação
 - `{slug}-context.md`, seção `## Ambiente Local E2E` (ou `## Comandos`, se a seção dedicada não existir) — como o dev sobe o projeto manualmente
 
-**0.4. Verificar pré-requisitos**
+**0.4. Verificar pré-requisitos (configure-and-run)**
 
-- `map.environments.local` está preenchido? Se não, parar e orientar o dev a preenchê-lo
-  (ver `MAPS/_template/map.json`) antes de rodar `/test-e2e`.
-- As ferramentas de automação de browser (Playwright MCP) estão disponíveis nesta sessão? Se não,
-  informar o dev e parar — **sem** subir containers à toa.
+- `map.environments.local` está preenchido? **Se não, configure-o você mesmo — não pare.** Derive
+  `mode`/`compose-path`/`processes`/`services`/`seed`/`test-users` a partir do `README`, do
+  `{slug}-context.md` (§ Comandos / § Ambiente Local E2E) e da inspeção do repo (compose files,
+  portas, scripts de dev), tomando o `MAPS/_template/map.json` como forma. **Persista** o bloco no
+  `{slug}-map.json` (para os próximos ciclos não reconfigurarem) e registre em `adr/`
+  "environments.local inferido — {resumo}".
+  - **App sem login programável** (ex.: OAuth social sem senha): a automação não passa da tela do
+    provedor. Os cenários que dependem de sessão usam **injeção de sessão** — fixtures no storage do
+    app (localStorage/cookie), uma por papel/estado, declaradas nos `test-users` como fixtures em vez
+    de `password-env`. Suba **apenas** os serviços necessários aos cenários (não suba LLM/infra pesada
+    para validar navegação/UI).
+  - Parar aqui **só** faz sentido se o repo não der nenhuma pista de como subir (sem README, sem
+    compose, sem script de dev) — aí sim reporte que não há como inferir o ambiente.
+- As ferramentas de automação de browser (Playwright MCP / equivalente) estão disponíveis nesta
+  sessão? Se **não**, informar e parar — **sem** subir containers à toa. Este é o único pré-requisito
+  realmente bloqueante (sem browser não há E2E).
 
 **0.5. Resolver Worktree da Branch (OBRIGATÓRIO)**
 

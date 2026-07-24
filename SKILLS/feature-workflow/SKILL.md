@@ -31,7 +31,8 @@ Agentes referenciados (instalados em `.claude/agents/` — ver `AGENTS/SHARED/`)
 - `product-manager` (Fase 1 · /spec)
 - `arquiteto-senior` (Fase 2 · /planejar)
 - `dev-senior` (Fase 3 · /implementar — até 3 em paralelo por onda)
-- `tech-lead` (Fase 4 · /code-review)
+- `qa` (Fase 4 · /test-e2e — validação no browser; configura o ambiente local se faltar)
+- `tech-lead` (Fase 5 · /code-review)
 
 ---
 
@@ -118,6 +119,7 @@ observabilidade, **nunca** um gate e nunca uma parada por guardrail.
 ---
 
 ## Próximos Skills na Sequência
-- Validar no browser: `/test-e2e`
+- Validar no browser: **já integrado** como FASE 4 (`/test-e2e` via agente `qa`) — roda dentro do
+  ciclo, configurando o ambiente local se faltar. Rode `/test-e2e` avulso só para re-validar fora do fluxo.
 - Épico / pacote de features (uma altitude acima): `/epic-workflow`
 - Publicar: o relatório final sugere `git push` + comando de PR — o humano decide e executa.
