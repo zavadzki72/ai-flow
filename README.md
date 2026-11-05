@@ -164,6 +164,7 @@ mv MAPS/{slug} ../ai-flow-maps/{slug} && ./scripts/link-maps.sh
 | `setup-project` | `/setup-project` | Cria novo projeto no ai-flow ({slug}-map.json, {slug}-context.md, .ai-project) |
 | `start-project` | `/start-project` | Orquestrador zero → projeto planejado: descoberta da ideia, recorte, boilerplate, bootstrap físico e os artefatos — **enxuto** (1 PRD + 1 PLAN do MVP_000001) ou **completo** (N PRDs + N PLANs via `/epic-workflow --so-planejar`), à escolha do dev |
 | `feature-workflow` | `/feature-workflow [--auto]` | Orquestra o ciclo por feature de forma autônoma (PM → Arquiteto → Dev em ondas paralelas → Tech Lead), com validação objetiva entre artefatos; normal = 1 rodada de perguntas no início, `--auto` = zero interação |
+| `rea` | `/rea <url\|path> [pergunta]` | Engenharia reversa com o [REA](https://github.com/morluto/rea): descobre como uma funcionalidade de um software de terceiros (site, jogo, exe, Electron, apk, wasm) funciona sem o código-fonte e gera relatório com evidências — insumo para o `/spec` |
 | `epic-workflow` | `/epic-workflow [--so-planejar]` | Orquestra um **pacote de features** ou um **épico que não cabe num PRD só**: decompõe, roda `/spec` e `/planejar` de todas em paralelo, monta o grafo global e executa as features em ondas — cada uma num `/feature-workflow` isolado. Sempre autônomo; `--so-planejar` para nos artefatos (N PRDs + N PLANs + grafo), sem escrever código |
 
 ---

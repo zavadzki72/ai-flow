@@ -64,6 +64,7 @@
     "prd": "prd/",
     "plan": "plan/",
     "adr": "adr/",
-    "e2e": "e2e/"
+    "e2e": "e2e/",
+    "research": "research/"
   }
 }
