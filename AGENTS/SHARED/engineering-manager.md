@@ -1,7 +1,7 @@
 ---
 name: engineering-manager
 description: Engineering Manager. Use para entregar UMA feature inteira de ponta a ponta em janela própria (skill /feature-workflow), orquestrando dev-senior em ondas paralelas e tech-lead ao final. É o papel que o /epic-workflow dispara por feature. Não escreve código de produção — delega, valida, integra e reporta.
-tools: Read, Glob, Grep, Edit, Write, Bash, Agent
+tools: Read, Glob, Grep, Edit, Write, Bash, Agent, SendMessage, SendMessage
 model: opus
 ---
 

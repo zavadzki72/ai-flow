@@ -54,6 +54,26 @@ paralelo. O processo abaixo muda nestes pontos (o restante segue igual ao `--aut
 8. **Correção pós-review de integração:** se o prompt te reinvocar com 🔴 de um review de épico, ele
    traz uma **branch de correção própria** (`fix/...`) e o worktree dela. Trabalhe nela — a branch
    original da feature já não existe, e a do épico não é sua.
+9. **Review por feature pode vir desligado.** Se o prompt disser `review por feature: não`, **pule
+   as FASES 4 e 5** e retorne logo após a última barreira 3.4 verde (o resumo diz "review: delegado
+   ao épico"). Quem cobre é o review de integração do `/epic-workflow` (FASE 4 dele), que então
+   revisa o diff inteiro da feature, não só a integração. Sem a flag, as FASES 4 e 5 rodam como
+   sempre.
+10. **Textos e registros em módulo próprio.** Arquivos de registro onde toda feature **acrescenta no
+    fim** (dicionário de i18n, teste de i18n, barrels) colidem em **todo** par de features paralelas,
+    mesmo sendo hot-file. Siga a instrução do prompt: textos novos num módulo próprio da feature
+    (ex.: `i18n/{feature}.ts` + teste próprio) e, no arquivo compartilhado, só `import` + referência
+    inseridos **junto de uma chave relacionada**, nunca no fim do objeto/arquivo.
+11. **Velocidade (padrão em épico — `epic-workflow.md` § Velocidade).**
+    - **E2E por escopo:** nas etapas, cada dev roda unit + **só os specs da feature**; a suíte E2E
+      inteira roda **uma vez**, no fim, antes de retornar.
+    - **Porta isolada:** config temporária fora do repo, porta exclusiva, `reuseExistingServer: false`,
+      `--workers=2` — outras features estão rodando servidores ao mesmo tempo.
+    - **Código de saída real:** leia o exit do Playwright/Vitest, não o de `| tail` (`cmd; echo "EXIT=$?"`).
+    - **Queda de dev (429, rede, fim de sessão):** retome-o com `SendMessage` reconciliando com o disco;
+      só redispare se ele não tiver contexto útil.
+    - **Não edite asserções compartilhadas que enumeram registros** de outras features; teste o seu
+      registro em teste próprio.
 
 ---
 
@@ -201,6 +221,18 @@ Reprovou → re-invoque com os gaps (máx. **2**). Persistiu → ⛔ parada por 
 5. **PLAN antigo** (sem `Paralelizável` ou sem `Arquivo(s) Afetado(s)` em alguma etapa — ex.:
    ponto de entrada "já tenho PLAN"): trate essas etapas como **sequenciais** (onda de 1) — nunca
    assuma paralelismo sem os dois campos presentes.
+6. **Lotes por dev (padrão).** Depois de montar o grafo, agrupe em **lotes** as etapas que formam
+   uma **cadeia** — cada uma depende só da anterior do lote e de etapas já concluídas, e nenhuma
+   etapa de outro lote da mesma onda depende delas no meio do caminho. Cada lote vai para **um**
+   `dev-senior`, que as implementa em sequência, com commit por etapa (`implementar.md` § Modo
+   Orquestrado item 6). Tamanho alvo: **3-5 etapas por lote**; etapa `Paralelizável: Não` continua
+   sozinha. A "onda" passa a ser um conjunto de **lotes** em paralelo (máx. = teto de devs), e a
+   barreira 3.4 roda ao fim dos lotes, não de cada etapa.
+   > **Por quê:** a unidade de custo do ciclo é o **dev disparado**, não a etapa — cada um relê
+   > PRD/PLAN/contexto/código do zero. Medido no épico 001 do business-city: features de 11-17
+   > etapas em ondas de 2-3 etapas abriam 11-17 devs e levavam 45-50 min cada; lotes cortam o número
+   > de devs para ~3-4 por feature sem perder o verde por etapa nem o commit por etapa.
+   > Use etapa-por-dev só quando o PLAN tiver etapas largas e independentes (sem cadeias).
 
 **3.2. Preparar branches e worktrees da onda — é você quem cria, não o dev:**
 - Branch da feature: `{branch}` (da rodada inicial, ou derivada no `--auto`). Ela vive no seu
@@ -219,8 +251,9 @@ Reprovou → re-invoque com os gaps (máx. **2**). Persistiu → ⛔ parada por 
 > essa tarefa, N devs simultâneos disputariam a criação no mesmo repo. `worktree add` a partir do
 > clone principal é permitido (não altera o working tree dele) — `checkout`/`pull` não.
 
-**3.3. Disparar os `dev-senior` da onda EM PARALELO** (uma invocação por etapa, simultâneas),
-cada um recebendo: **path do PLAN** + **número da ETAPA** + **branch a usar** (efêmera ou da
+**3.3. Disparar os `dev-senior` da onda EM PARALELO** (uma invocação por **lote** — ou por etapa,
+se não houver lotes —, simultâneas), cada um recebendo: **path do PLAN** + **número(s) da(s)
+ETAPA(s)**, em ordem + **branch a usar** (efêmera do lote — `{branch}--etapa-{N}` com o N da 1ª — ou da
 feature) + **branch base** + **path do worktree dela** (obrigatório — o dev não o cria e retorna
 bloqueio se não vier) + instrução de **modo orquestrado** (ver `implementar.md` § Modo
 Orquestrado): sem confirmações, **não atualizar o PLAN** (o orquestrador consolida), devolver

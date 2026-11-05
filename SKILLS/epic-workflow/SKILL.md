@@ -18,6 +18,10 @@ para rodar `/spec` → `/planejar` → `/implementar` → `/code-review` na mão
 
 `/epic-workflow --so-planejar` · "planeja tudo mas não implementa" · "quero ver o plano inteiro antes de codar"
 → roda as FASES 0-2, monta o grafo e **para** (`SKILLS/SHARED/epic-workflow.md` § `--so-planejar`).
+
+`/epic-workflow --review-no-fim` · "pula o review por feature" · "quero mais rápido"
+→ os EMs não revisam cada feature; um `tech-lead` por feature + o de integração rodam uma vez só, no
+fim (`SKILLS/SHARED/epic-workflow.md` § `--review-no-fim`). Combina com qualquer outra entrada.
 É também como o `/start-project` entra aqui, no caminho "completo" do recorte inicial.
 
 ## Processo Completo

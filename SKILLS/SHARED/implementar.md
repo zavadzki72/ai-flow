@@ -30,6 +30,15 @@ Quando o prompt de invocação indicar **modo orquestrado**, o processo abaixo m
    commit, branch usada e Observações da Implementação (Nota de Handoff).
 5. **Working tree sujo** (Passo 3.5) num worktree efêmero recém-criado é anomalia: não pergunte —
    retorne ao orquestrador como bloqueio.
+6. **Lote de etapas.** O prompt pode trazer uma **lista ordenada de ETAPAs** (lote — ver
+   `feature-workflow.md` § 3.1 item 6) em vez de uma só. Implemente-as **em sequência, no mesmo
+   worktree**: para cada etapa, rode os Passos de implementação → build/testes verdes → **um commit
+   por etapa** (mensagem com o nº da etapa) → só então a próxima. Etapa que não fica verde após as
+   correções normais → **pare o lote ali** e retorne o que fechou (hashes) + o bloqueio; não pule
+   para a seguinte. O resumo devolve **um bloco por etapa** (arquivos, testes, hash, Observações).
+   **Por quê:** cada dev novo relê PRD, PLAN, contexto e código antes de escrever uma linha; num
+   PLAN de 15 etapas, isso é a maior parte do tempo do ciclo. Um dev que já carregou o contexto
+   faz as etapas encadeadas seguintes a uma fração do custo.
 
 ---
 

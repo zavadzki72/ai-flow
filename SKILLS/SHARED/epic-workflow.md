@@ -86,6 +86,19 @@ Revise os PLANs e, quando quiser implementar:
   /epic-workflow {path-do-épico}
 ```
 
+### `--review-no-fim` — review só no fim (mais rápido)
+
+Com a flag, cada EM roda **sem as FASES 4 e 5** dele (`review por feature: não` no prompt da 5.2) e
+devolve a feature logo após a última barreira verde. O review passa a acontecer **uma vez**, na
+FASE 4 do épico (6.1), em modo **completo**: um `tech-lead` **por feature** (em paralelo, read-only)
+sobre o diff `epic/{nome}` da feature inteira contra a base da onda dela, mais o foco de integração
+de sempre. Os 🔴 seguem o caminho da 6.2 (micro-feature de reconciliação).
+
+**Troca:** economiza ~15-30 min por feature (review + ciclo de correção dentro do EM) e alguns
+agentes simultâneos; em troca, um 🔴 de uma feature só aparece no fim — depois que outras já foram
+construídas em cima dela. Prefira-a em épicos de features pequenas/baixo risco ou quando o humano
+pediu velocidade. Ela **não** relaxa a barreira de build/testes integrados de cada onda.
+
 > **Onde esta skill se encaixa:**
 > `start-project` = bootstrap zero→MVP (cria o projeto). Ele **delega para cá com `--so-planejar`**
 > quando o dev escolhe o caminho "completo" no recorte inicial (`start-project.md § Enxuto × Completo`) —
@@ -177,6 +190,51 @@ poria o EM em contradição com a própria skill dele. Uma onda de 1 feature usa
 > `tech-lead` na FASE 4 de cada uma ≈ **12 janelas**. O Claude Code **não documenta** limite de
 > subagents concorrentes; o teto é auto-imposto e existe para o custo não explodir — dimensione
 > sabendo que o número real de agentes é ~2× o número de devs.
+
+### Velocidade — o que mais custa tempo e como cortar
+
+> Aprendido no épico 000001 do jdk-foot (16 features, ~380 etapas): ondas rígidas, review por
+> feature e E2E completo repetido fizeram cada onda levar horas; o humano reclamou ("MUITO lento").
+> As regras abaixo valem por padrão; desligá-las exige motivo registrado no artefato do épico.
+
+1. **Fluxo contínuo por vagas, não ondas congeladas.** A "onda" é só o teto de concorrência
+   (§ Teto). Quando **um** EM retorna verde: mergeie **aquela** feature já (5.3.1–5.3.4 só para ela),
+   recalcule as candidatas (5.0) e preencha a vaga liberada na hora. Não espere a feature mais lenta
+   do lote — no épico 000001, F8 e F11 ficaram horas prontas esperando a F4. O "nunca duas ondas ao
+   mesmo tempo" significa **nunca passar do teto**, não "esperar todo mundo".
+2. **Puxe para frente toda feature cujas dependências já estão ✅.** O grafo previsto no Passo 4 é
+   uma estimativa; features "folha" com dependências antigas (ex.: editor e auto-save, que só dependiam
+   das fundações) devem entrar na primeira vaga livre, não na onda que o grafo sugeriu.
+3. **Review por feature só onde o padrão nasce.** Rode as FASES 4/5 do EM nas features que
+   **estabelecem padrão** (a 1ª com código, as `Isolada: Sim`, as donas de contratos compartilhados).
+   As demais rodam com `review por feature: não` e o review completo acontece uma vez, no fim
+   (§ `--review-no-fim`). Economia típica: 15–30 min por feature + ciclos de correção.
+4. **E2E completo só na barreira de merge.** Nas etapas, o dev roda unit + **os specs da própria
+   feature**; a suíte E2E inteira roda **uma vez** pelo EM no fim e **uma vez** pelo orquestrador no
+   merge. Repetir a suíte (3–4 min) a cada etapa custou dezenas de minutos por feature.
+5. **E2E sempre em porta isolada.** Config temporária fora do repo, porta exclusiva por feature,
+   `reuseExistingServer: false`, `--workers=2`. Com `reuseExistingServer: true` na porta padrão, as
+   features paralelas testam o servidor **umas das outras**. E **leia o código de saída do Playwright**,
+   não o do `tail`/pipe (`cmd; echo "EXIT=$?"`) — um EM declarou verde com 5 testes vermelhos assim.
+6. **Fixe os caminhos dos registros compartilhados ANTES da FASE 2**, com linhas reservadas
+   `// [Fx]` por feature já criadas pela feature-fundação (ADR no épico). Sem isso os arquitetos
+   inventam caminhos em paralelo e cada onda exige uma rodada de reconciliação de contratos.
+7. **Proíba asserções compartilhadas que enumeram registros** (ex.: um `contracts.test.ts` que lista
+   os itens de um menu). Toda feature edita a mesma linha e o merge conflita sempre — foi o motivo
+   das duas re-execuções por porte do épico 000001. Cada feature testa o próprio registro em teste
+   próprio.
+8. **Re-execução por porte é rápida — use `cherry-pick` em sequência**, adaptando só os arquivos que
+   conflitam; não reimplemente.
+9. **Limite de uso e rede.** Mais agentes simultâneos esgotam o limite mais cedo e cada queda custa a
+   retomada de todos. Mantenha ≈ 3 features × 2 devs; ao cair (429, ENOTFOUND, fim de sessão),
+   retome com SendMessage reconciliando com o disco. **Dê `SendMessage` ao `engineering-manager`**
+   (frontmatter) — sem ele o EM não consegue retomar os próprios devs e redispara do zero.
+10. **Planeje as features consumidoras depois que a fundação existir em código**, quando possível:
+    PLANs escritos "pelo papel" contra uma fundação ainda não implementada exigiram uma etapa de
+    reconciliação K1–K26 em toda feature seguinte.
+
+- **Isolar E2E de verdade entre features paralelas.** Cada feature recebe uma *faixa* de portas (suíte final + devs, ex.: 53N0–53N9), log/config/outputDir com prefixo da feature, e proibição de matar processos fora da própria faixa. No jdk-foot, a F5 e a F6 usaram a mesma porta e o mesmo nome de log, e a suíte da F6 rodou duas vezes. Se o épico não andou desde a base da feature (`git diff --quiet feature epic` após o merge), o E2E da feature já vale como integrado: pule a re-execução.
+- **Worktrees de etapa com link para `node_modules`:** apague o link antes do `git worktree remove --force`, que segue o link e apaga as dependências da feature.
 
 ### Quando o épico não se paga
 
@@ -418,6 +476,14 @@ Colisão só em hot-file → **rodam em paralelo**. O risco é um conflito de me
 fechamento da onda, e o custo dele já está coberto pelo guardrail de re-execução (5.3.2). Colisão em
 **qualquer arquivo de domínio** → serializam, sem exceção.
 
+> 🔴 **Hot-file de "acréscimo no fim" conflita SEMPRE.** Dicionário de i18n, o teste dele, barrels:
+> se duas features paralelas acrescentam um bloco no fim do mesmo objeto/arquivo, o Git vê as duas
+> inserções no mesmo ponto e conflita — toda vez, não "às vezes". No épico 001 do business-city isso
+> derrubou 2 das 3 features da onda 1 (re-execução inteira de cada uma). **Prevenção, no prompt de
+> todo EM (5.2):** textos/registros novos num **módulo próprio da feature** (`i18n/{feature}.ts` +
+> teste próprio), e no arquivo compartilhado só `import` + referência **junto de uma chave
+> relacionada**, nunca no fim. Ver `feature-workflow.md` § Modo Sub-orquestrado item 10.
+
 Registre **todas** as colisões (e a classificação de cada uma) no artefato — é o que explica por que
 o épico não é mais paralelo do que é.
 
@@ -477,10 +543,16 @@ Branch/worktree já existe (retomada, ou tentativa anterior descartada) → § B
 - path do **PLAN** (ponto de entrada — o `/feature-workflow` resolve que isso é "comece na FASE 3"),
   path do **PRD** e path do **épico**
 - **branch da feature**, **branch base** (`epic/{nome}`) e **os worktrees por repo**
-- **teto de `dev-senior`** (≤ 3)
+- **teto de `dev-senior`** (≤ 3) — e a instrução de **lotes por dev** (`feature-workflow.md` § 3.1
+  item 6), que é o padrão: o teto conta devs (lotes) simultâneos, não etapas
 - **modo sub-orquestrado** (`feature-workflow.md` § Modo Sub-orquestrado)
+- **review por feature: sim | não** — `não` quando o épico roda com `--review-no-fim` (§ Review só
+  no fim); aí o EM pula as FASES 4 e 5 dele e o seu review de integração (6.1) cobre o diff inteiro
+- a **regra de módulo próprio** para textos/registros de acréscimo (4.2)
 
-**5.3. Fechar a onda (barreira — só depois que TODOS os EMs retornarem):**
+**5.3. Fechar cada feature assim que o EM dela retornar** (fluxo contínuo — § Velocidade item 1).
+A barreira é **por feature**, não por onda: mergeie, teste e limpe aquela feature e preencha a vaga
+(5.4) sem esperar os outros EMs do lote. Os passos abaixo valem para a feature que retornou:
 
 1. **Merge**, por repo, na ordem das features: `git merge --no-ff` dentro do worktree do épico
    daquele repo;
@@ -492,16 +564,32 @@ Branch/worktree já existe (retomada, ou tentativa anterior descartada) → § B
    - descartar a branch e o worktree da feature (§ Branches e worktrees órfãos);
    - re-invocar o EM sobre o épico atualizado. Máx. **1** re-execução. Conflitou de novo → feature
      ⛔ **Bloqueada**, o épico **segue**;
+   - **re-execução barata por porte:** antes de descartar, **renomeie** a branch para
+     `feature/{x}-tentativa1` (evidência, nunca mergeada) e diga ao EM que os devs **podem portar**
+     cada etapa dela (`git show`/cherry-pick + adaptar à base nova) em vez de reimplementar do zero.
+     Continua sendo reimplementação sobre a base certa — cada etapa fecha verde no worktree dela —,
+     mas custa uma fração (no épico 001: ~35 min contra ~50 min da 1ª execução, review aprovado de
+     primeira). Re-invoque **o mesmo EM** (SendMessage), que já tem o contexto;
+   - **ordem das re-execuções:** se duas features da onda conflitam com o épico **e entre si**
+     (`git merge-tree --write-tree --name-only A B`), re-execute **uma de cada vez** — a segunda só
+     depois da primeira mergeada. Em paralelo, a segunda conflitaria de novo e queimaria a única
+     re-execução;
+   - ❌ **Nunca** use merge driver `union` (`.gitattributes`/`info/attributes`) para "resolver
+     sozinho" conflito de acréscimo: ele deduplica linhas comuns (`},`, `});`) e quebra a sintaxe —
+     tentado no épico 001, typecheck vermelho, merge desfeito;
 3. **Build + testes integrados** — os comandos de **todos os repos** tocados pela onda
    (`docs/architecture/`). Falhou → re-invocar o EM responsável com o erro (máx. **2**). Persistiu →
    ⛔ **parada do épico**: a branch de integração está quebrada e as ondas seguintes sairiam de uma
    base podre. **Antes de parar**, cheque se a causa é uma dependência bloqueada (§ Falha isolada) —
    se for, é bug de propagação seu, não do código;
-4. **Limpeza** das features mescladas: `git worktree remove` + `git branch -d`, em cada repo;
+4. **Limpeza** das features mescladas: `git worktree remove` + `git branch -d`, em cada repo.
+   O `git branch -d` compara com o HEAD do clone principal (a branch base), não com o épico, e
+   recusa; confirme com `git merge-base --is-ancestor feature/{x} epic/{nome}` e use `-D`;
 5. **Atualizar o artefato do épico** (você, nunca o EM): status das features, progresso, log da
    onda, premissas devolvidas.
 
-**5.4.** Volte a 5.0. **Nunca** duas ondas ao mesmo tempo.
+**5.4.** Volte a 5.0 e **preencha as vagas livres** com as próximas candidatas, respeitando o teto
+(máx. 3 features e 6 `dev-senior` simultâneos). **Nunca** passe do teto; não espere o lote inteiro.
 
 ---
 
@@ -510,8 +598,13 @@ Branch/worktree já existe (retomada, ou tentativa anterior descartada) → § B
 **6.1.** Delegar ao **`tech-lead`** (read-only): path do épico, paths de todos os PRDs/PLANs, e as
 branches `epic/{nome}` de cada repo contra `{repo.branch}`.
 
-Cada feature já foi revisada dentro do seu `/feature-workflow`. O foco aqui é o que **só aparece com
-tudo junto**:
+**Com `--review-no-fim`**, as features que rodaram com `review por feature: não` **não** foram
+revisadas: dispare, em paralelo, um `tech-lead` por feature para o review completo (PRD/PLAN dela +
+o diff da feature no épico — `git log --merges` dá o merge de cada uma), além do review de integração
+abaixo. Todos os 🔴 vão para a mesma reconciliação da 6.2.
+
+Sem a flag, cada feature já foi revisada dentro do seu `/feature-workflow`. O foco aqui é o que
+**só aparece com tudo junto**:
 - Contradição entre features (duas implementações do mesmo conceito, contratos divergentes)
 - Duplicação de features planejadas em paralelo (o helper que virou dois — ver § Limite conhecido)
 - Premissas de uma feature que outra quebrou
@@ -692,6 +785,14 @@ trava não conta nada e a barreira da 5.3 espera para sempre, segurando os workt
 Não há timeout confiável para subagent. Mitigação: se a onda retornar com **algum EM sem resumo
 estruturado** (retorno vazio, truncado ou sem hash de commit), trate como **falha**, não como
 sucesso — feature ⛔ Bloqueada, e o épico segue. **Nunca** interprete silêncio como verde.
+
+**Exceção: morte por limite de uso (HTTP 429 / "session limit") não é falha da feature.** O trabalho
+do agente fica salvo; quando o limite resetar, **retome o mesmo agente** (SendMessage) mandando-o
+reconciliar com o disco (`git worktree list`, efêmeras com commit sem merge → validar e mergear;
+sem commit → redisparar a etapa; PLAN só ✅ com hash existente). Isso não consome guardrail. No
+épico 001 isso aconteceu 4 vezes (9 arquitetos de uma vez, 2 EMs) e todos retomaram sem perda.
+Dimensione as ondas sabendo que **muitos agentes simultâneos esgotam o limite mais cedo** — outro
+motivo para os lotes por dev.
 
 ## Retomada
 
